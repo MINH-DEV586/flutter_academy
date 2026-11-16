@@ -70,9 +70,11 @@ và đoạn code mẫu trong `assets/bai_hoc_ai.json`. Bài đầu có video t�
 Flutter. Tutor dựa vào phần tài liệu và code của bài đang mở. Video là tài
 liệu xem thêm.
 
-1. Cài Node.js 22 trở lên. Đặt `GEMINI_API_KEY` hoặc `OPENAI_API_KEY` trong
-   môi trường của terminal chạy backend. Nếu có cả hai khóa, backend dùng
-   Gemini. Có thể chọn model bằng `GEMINI_MODEL` hoặc `OPENAI_MODEL` tương ứng.
+1. Cài Node.js 22 trở lên. Tạo tệp `.env` ở thư mục gốc dự án và thêm dòng
+   `GEMINI_API_KEY=khóa_của_bạn` hoặc `OPENAI_API_KEY=khóa_của_bạn`. Git bỏ
+   qua tệp này. Backend dùng Gemini nếu có cả hai khóa. Có thể chọn model
+   bằng `GEMINI_MODEL` hoặc `OPENAI_MODEL` tương ứng. Các biến đã đặt trong
+   terminal được ưu tiên hơn tệp `.env`.
 2. Từ thư mục gốc dự án, chạy `node server/ai-tutor.mjs`.
 3. Mở terminal khác và chạy Flutter Web với địa chỉ backend.
 

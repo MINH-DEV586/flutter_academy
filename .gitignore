@@ -10,3 +10,4 @@ windows/
 *.iml
 .idea/
 .vscode/
+/.env

@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 const baiHoc = JSON.parse(
@@ -143,7 +143,9 @@ export function taoMayChu({
       const cauTraLoi = layVanBan(nhaCungCap, ketQua);
       if (!cauTraLoi) return tra(502, { loi: 'Phản hồi AI trống.' });
       return tra(200, { cauTraLoi });
-    } catch {
+    } catch (loi) {
+      const maLoi = loi.cause?.code ?? loi.name;
+      console.error(`AI Tutor (${nhaCungCap}): ${maLoi}`);
       return tra(502, { loi: 'Không kết nối được dịch vụ AI.' });
     } finally {
       dangXuLy--;
@@ -152,6 +154,8 @@ export function taoMayChu({
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const envFile = new URL('../.env', import.meta.url);
+  if (existsSync(envFile)) process.loadEnvFile(envFile);
   const port = Number(process.env.AI_TUTOR_PORT ?? 8787);
   const geminiKey = process.env.GEMINI_API_KEY?.trim();
   const nhaCungCap = geminiKey ? 'gemini' : 'openai';
