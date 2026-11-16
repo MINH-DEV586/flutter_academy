@@ -25,6 +25,9 @@ dependencies:
   # `hive_ce` là bản cộng đồng tiếp nối, vẫn ra bản mới.
   hive_ce: ^2.20.0
   hive_ce_flutter: ^2.3.4
+  http: ^1.5.0
+  youtube_player_iframe: ^6.0.0
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:
@@ -35,3 +38,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/bai_hoc_ai.json

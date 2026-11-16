@@ -54,12 +54,41 @@ flutter analyze
 | **Trang chủ** | mảng giới thiệu, dải "Tiếp tục học", dải khoá học nổi bật, danh sách chủ đề |
 | **Danh sách khoá học** | tìm theo từ khoá (bỏ dấu tiếng Việt), lọc theo chủ đề / mức độ / học phí, năm kiểu sắp xếp — **tất cả nằm trong URL** |
 | **Chi tiết khoá học** | mô tả, danh sách bài, thanh tiến độ, nút "Học tiếp" |
-| **Trang học** | toàn màn hình, mục lục bên phải, đánh dấu đã xong, bài trước / bài sau |
+| **Trang học** | toàn màn hình, mục lục bên phải, đánh dấu đã xong, bài trước / bài sau, video và AI Tutor ở các bài mẫu |
 | **Khoá học của tôi** | cần đăng nhập; khoá đang học dở xếp trước khoá đã hoàn thành |
 | **Hồ sơ** | thống kê, chọn giao diện sáng/tối, đăng xuất |
 
-Tiến độ học được lưu bằng **Hive**, ngay trong trình duyệt (IndexedDB). Không
-có máy chủ, không có dữ liệu nào rời khỏi máy người dùng.
+Tiến độ học được lưu bằng **Hive**, ngay trong trình duyệt (IndexedDB).
+Trình phát bài mẫu kết nối YouTube. Khi bật AI Tutor, backend gửi câu hỏi và
+tài liệu bài học hiện tại tới OpenAI. Email và tiến độ học vẫn lưu cục bộ.
+
+### Dùng thử AI Tutor
+
+Ba bài đầu của khóa **Điều hướng theo URL với go_router** có tài liệu viết tay
+và đoạn code mẫu trong `assets/bai_hoc_ai.json`. Bài đầu có video từ kênh
+Flutter. Tutor dựa vào phần tài liệu và code của bài đang mở. Video là tài
+liệu xem thêm.
+
+1. Cài Node.js 22 trở lên. Đặt `OPENAI_API_KEY` trong môi trường của terminal
+   chạy backend. Có thể đặt `OPENAI_MODEL` để chọn model khác.
+2. Từ thư mục gốc dự án, chạy `node server/ai-tutor.mjs`.
+3. Mở terminal khác và chạy Flutter Web với địa chỉ backend.
+
+   ```powershell
+   flutter run -d chrome --dart-define=AI_TUTOR_URL=http://127.0.0.1:8787/api/ai-tutor
+   ```
+
+4. Mở một trong ba bài mẫu, chọn mức giải thích và đặt câu hỏi.
+
+Backend demo chỉ lắng nghe trên loopback. Để chạy Android debug với cùng
+backend, chạy `adb reverse tcp:8787 tcp:8787` rồi dùng cùng giá trị
+`AI_TUTOR_URL` khi chạy Flutter trên thiết bị. Nếu Android chặn HTTP cục bộ,
+cho phép cleartext trong manifest **debug**. Để phát video trực tuyến trong
+bản Android release, thêm quyền `android.permission.INTERNET` vào manifest
+chính sau khi sinh thư mục Android.
+
+Khóa OpenAI chỉ được cấu hình ở backend. Bản demo local có thể kiểm tra bằng
+`node --test server/ai-tutor.test.mjs`.
 
 ---
 
@@ -289,8 +318,8 @@ Xếp theo độ khó tăng dần, bám đúng mạch các chương của sách.
 * Kỳ vọng của các bài kiểm thử về **thứ tự sắp xếp** đã được kiểm chứng bằng
   một bản dịch sang Python chạy độc lập — đặc biệt là chi tiết dễ sai:
   sau khi bỏ dấu, `"kiem thu"` đứng **trước** `"kien truc"` vì `m < n`.
-* Không có video thật. Chỗ dành cho trình phát là một khung trống ghi rõ
-  điều đó.
+* Bài đầu của khóa `go_router` có một video YouTube mẫu. Các bài còn lại
+  hiện thông báo khi chưa có video.
 * "Đăng nhập" không có mật khẩu và không xác thực gì cả. Nó tồn tại để dạy
   phần điều hướng có bảo vệ và trạng thái phiên.
 * Dữ liệu mẫu chỉ gieo **một lần** vào hộp Hive trống. Sửa

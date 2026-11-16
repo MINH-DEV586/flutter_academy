@@ -3,22 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../cau_hinh/diem_ngat.dart';
+import '../data/tai_lieu_bai_hoc.dart';
 import '../dinh_tuyen/duong_dan.dart';
 import '../models/bai_hoc.dart';
 import '../models/dinh_dang.dart' as dd;
 import '../models/khoa_hoc.dart';
 import '../models/tien_do.dart';
 import '../viewmodels/providers.dart';
+import '../widgets/gia_su_ai.dart';
 import '../widgets/trang_thai.dart';
+import '../widgets/video_bai_hoc.dart';
 
 /// Trang học một bài: `/khoa-hoc/<mã>/bai/<mã bài>`.
 ///
 /// Trang này nằm ở navigator gốc nên chiếm trọn màn hình, không có thanh
 /// điều hướng — giống chế độ toàn màn hình của mọi nền tảng học trực tuyến.
-///
-/// Không có video thật. Chỗ lẽ ra là trình phát được thay bằng một khung
-/// trống ghi rõ như vậy: dự án này dạy **kiến trúc web**, không dạy phát
-/// video, và giả vờ có video chỉ làm mã nguồn rối thêm.
 class BaiHocScreen extends ConsumerStatefulWidget {
   final String maKhoaHoc;
   final String maBaiHoc;
@@ -79,7 +78,8 @@ class _BaiHocScreenState extends ConsumerState<BaiHocScreen> {
               return KhoiRong(
                 bieuTuong: Icons.link_off,
                 tieuDe: 'Không có bài học này',
-                moTa: 'Đường dẫn "/khoa-hoc/${widget.maKhoaHoc}'
+                moTa:
+                    'Đường dẫn "/khoa-hoc/${widget.maKhoaHoc}'
                     '/bai/${widget.maBaiHoc}" không dẫn tới bài nào.',
                 hanhDong: FilledButton(
                   onPressed: () => context.go(DuongDan.danhSach),
@@ -104,11 +104,7 @@ class _NoiDung extends ConsumerWidget {
   final BaiHoc bai;
   final TienDo? tienDo;
 
-  const _NoiDung({
-    required this.khoaHoc,
-    required this.bai,
-    this.tienDo,
-  });
+  const _NoiDung({required this.khoaHoc, required this.bai, this.tienDo});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -118,52 +114,70 @@ class _NoiDung extends ConsumerWidget {
 
     final viTri = khoaHoc.viTriBaiHoc(bai.ma);
     final truoc = viTri > 0 ? khoaHoc.baiHoc[viTri - 1] : null;
-    final sau =
-        viTri >= 0 && viTri < khoaHoc.baiHoc.length - 1
-            ? khoaHoc.baiHoc[viTri + 1]
-            : null;
+    final sau = viTri >= 0 && viTri < khoaHoc.baiHoc.length - 1
+        ? khoaHoc.baiHoc[viTri + 1]
+        : null;
     final daXong = tienDo?.daXong(bai.ma) ?? false;
+    final maTaiLieu = '${khoaHoc.ma}/${bai.ma}';
+    final taiLieu = ref.watch(taiLieuBaiHocProvider);
+    final taiLieuBai = taiLieu.asData?.value[maTaiLieu];
+    final youtubeId = taiLieuBai?.youtubeId;
 
     final khungPhat = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AspectRatio(
-          aspectRatio: 16 / 9,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: mau.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: mau.outlineVariant),
-            ),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.play_circle_outline,
-                      size: 56, color: mau.outline),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Chỗ dành cho trình phát video',
-                    style: t.titleSmall?.copyWith(color: mau.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Dự án mẫu không kèm nội dung video.',
-                    style: t.bodySmall?.copyWith(color: mau.outline),
-                  ),
-                ],
+        if (youtubeId != null)
+          VideoBaiHoc(key: ValueKey(youtubeId), youtubeId: youtubeId)
+        else
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: mau.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: mau.outlineVariant),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.play_circle_outline,
+                      size: 56,
+                      color: mau.outline,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Video bài học',
+                      style: t.titleSmall?.copyWith(
+                        color: mau.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Bài này chưa có video.',
+                      style: t.bodySmall?.copyWith(color: mau.outline),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
+        const SizedBox(height: 20),
+        Text(
+          'Bài ${viTri + 1} · ${dd.thoiLuong(bai.thoiLuongGiay)}',
+          style: t.labelMedium?.copyWith(color: mau.onSurfaceVariant),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          bai.tieuDe,
+          style: t.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 20),
-        Text('Bài ${viTri + 1} · ${dd.thoiLuong(bai.thoiLuongGiay)}',
-            style: t.labelMedium?.copyWith(color: mau.onSurfaceVariant)),
-        const SizedBox(height: 6),
-        Text(bai.tieuDe,
-            style: t.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 20),
-        Row(
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             FilledButton.icon(
               onPressed: () => ref
@@ -172,7 +186,6 @@ class _NoiDung extends ConsumerWidget {
               icon: Icon(daXong ? Icons.undo : Icons.check),
               label: Text(daXong ? 'Bỏ đánh dấu' : 'Đánh dấu đã xong'),
             ),
-            const Spacer(),
             if (truoc != null)
               TextButton.icon(
                 onPressed: () =>
@@ -190,6 +203,38 @@ class _NoiDung extends ConsumerWidget {
               ),
           ],
         ),
+        if (taiLieu.isLoading)
+          const LinearProgressIndicator(semanticsLabel: 'Đang tải tài liệu')
+        else if (taiLieu.hasError)
+          TextButton(
+            onPressed: () => ref.invalidate(taiLieuBaiHocProvider),
+            child: const Text('Tải lại tài liệu bài học'),
+          )
+        else if (taiLieuBai != null) ...[
+          const SizedBox(height: 24),
+          Text('Nội dung bài học', style: t.titleLarge),
+          const SizedBox(height: 8),
+          SelectableText(taiLieuBai.noiDung),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: mau.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: SelectableText(
+              taiLieuBai.code,
+              style: t.bodyMedium?.copyWith(fontFamily: 'monospace'),
+            ),
+          ),
+          const SizedBox(height: 24),
+          GiaSuAi(
+            key: ValueKey(maTaiLieu),
+            maBai: maTaiLieu,
+            tenBai: bai.tieuDe,
+          ),
+        ],
       ],
     );
 
@@ -217,11 +262,7 @@ class _NoiDung extends ConsumerWidget {
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Column(
-                    children: [
-                      khungPhat,
-                      const SizedBox(height: 24),
-                      mucLuc,
-                    ],
+                    children: [khungPhat, const SizedBox(height: 24), mucLuc],
                   ),
                 ),
         ),
@@ -253,9 +294,7 @@ class _ThanhTren extends StatelessWidget {
               khoaHoc.tieuDe,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
+              style: Theme.of(context).textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
@@ -283,8 +322,10 @@ class _MucLuc extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-          child: Text('Nội dung khoá học',
-              style: t.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+          child: Text(
+            'Nội dung khoá học',
+            style: t.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+          ),
         ),
         for (var i = 0; i < khoaHoc.baiHoc.length; i++)
           _MucBai(
@@ -336,8 +377,10 @@ class _MucBai extends StatelessWidget {
           fontWeight: dangXem ? FontWeight.w700 : FontWeight.w400,
         ),
       ),
-      subtitle: Text(dd.thoiLuong(bai.thoiLuongGiay),
-          style: const TextStyle(fontSize: 11)),
+      subtitle: Text(
+        dd.thoiLuong(bai.thoiLuongGiay),
+        style: const TextStyle(fontSize: 11),
+      ),
       onTap: dangXem ? null : onMo,
     );
   }
