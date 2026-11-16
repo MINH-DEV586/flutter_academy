@@ -1,0 +1,37 @@
+name: flutter_academy
+description: >-
+  Nền tảng học trực tuyến chạy trên web, dựng lại theo sách
+  "Taking Flutter to the Web" (Damodar Lohani, Packt 2022)
+  bằng thư viện phiên bản 2026.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Điều hướng khai báo theo URL. Sách dùng Navigator 2.0 thô
+  # (RouterDelegate + RouteInformationParser tự viết) — xem
+  # DOI-CHIEU-2022-2026.md mục 5 để biết vì sao đổi.
+  go_router: ^18.0.1
+
+  # Quản lý trạng thái. Riverpod 3 đã chuyển StateNotifier sang legacy.
+  flutter_riverpod: ^3.4.3
+
+  # Lưu trữ cục bộ. Gói `hive` gốc dừng ở 2.2.3 (30/06/2022);
+  # `hive_ce` là bản cộng đồng tiếp nối, vẫn ra bản mới.
+  hive_ce: ^2.20.0
+  hive_ce_flutter: ^2.3.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/

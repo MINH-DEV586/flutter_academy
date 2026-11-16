@@ -1,0 +1,42 @@
+import 'package:hive_ce/hive_ce.dart';
+import 'package:hive_ce_flutter/hive_ce_flutter.dart';
+
+import '../models/khoa_hoc.dart';
+import '../models/nguoi_dung.dart';
+import '../models/tien_do.dart';
+import 'bo_chuyen_doi.dart';
+import 'kho_hive.dart';
+
+/// Gói gọn ba hộp Hive đã mở, để `main()` chỉ phải truyền một đối tượng.
+class HopDaMo {
+  final Box<KhoaHoc> khoaHoc;
+  final Box<TienDo> tienDo;
+  final Box<NguoiDung> phien;
+
+  const HopDaMo({
+    required this.khoaHoc,
+    required this.tienDo,
+    required this.phien,
+  });
+}
+
+/// Khởi tạo Hive và mở toàn bộ hộp. Gọi trong `main()` trước `runApp`.
+///
+/// Trên web, `Hive.initFlutter()` bỏ qua đường dẫn thư mục và dùng IndexedDB
+/// của trình duyệt — cùng một dòng mã chạy được cả sáu nền tảng.
+///
+/// Mở hộp **trước** `runApp` thay vì mở dần trong lúc chạy: ứng dụng chỉ có
+/// một trạng thái khởi động duy nhất, không màn hình nào phải tự hỏi "hộp đã
+/// mở chưa". Ba hộp này rất nhỏ nên thời gian mở không đáng kể.
+Future<HopDaMo> khoiTaoHive() async {
+  await Hive.initFlutter();
+  dangKyBoChuyenDoi();
+
+  final khoaHoc = await Hive.openBox<KhoaHoc>(TenHop.khoaHoc);
+  final tienDo = await Hive.openBox<TienDo>(TenHop.tienDo);
+  final phien = await Hive.openBox<NguoiDung>(TenHop.phien);
+
+  await HiveKhoKhoaHoc.gieoNeuTrong(khoaHoc);
+
+  return HopDaMo(khoaHoc: khoaHoc, tienDo: tienDo, phien: phien);
+}

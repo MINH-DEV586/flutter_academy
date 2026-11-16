@@ -1,0 +1,75 @@
+# Dựng và triển khai bản web mỗi khi đẩy mã lên nhánh main.
+#
+# Hai việc tách riêng có chủ đích: `kiem-thu` chạy trên MỌI pull request,
+# còn `trien-khai` chỉ chạy trên `main` và chỉ khi kiểm thử đã xanh. Nhờ vậy
+# không bao giờ có bản hỏng lên thẳng trang thật.
+name: Web
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  kiem-thu:
+    name: Phân tích và kiểm thử
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter --version
+      - run: flutter pub get
+
+      # `--fatal-infos` để một cảnh báo nhỏ cũng làm đỏ CI. Nghiêm khắc từ
+      # đầu thì cảnh báo không kịp tích tụ thành hàng trăm dòng ai cũng lờ đi.
+      - run: flutter analyze --fatal-infos
+
+      - run: flutter test --reporter expanded
+
+  trien-khai:
+    name: Dựng và đưa lên GitHub Pages
+    needs: kiem-thu
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # GitHub Pages phục vụ dự án ở đường dẫn con /<tên-kho>/, nên phải khai
+      # `--base-href`. Thiếu dòng này là trang trắng và console báo không tải
+      # được main.dart.js — lỗi hay gặp nhất khi triển khai Flutter web.
+      - name: Dựng bản phát hành
+        run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
+
+      # GitHub Pages không có cơ chế rewrite. Chép index.html thành 404.html
+      # để tải lại một trang con (ví dụ /khoa-hoc/dart-co-ban) không ra lỗi
+      # 404 — đây là cái giá của điều hướng phía trình duyệt.
+      - name: Thêm 404.html cho điều hướng phía trình duyệt
+        run: cp build/web/index.html build/web/404.html
+
+      - uses: actions/configure-pages@v5
+        id: pages
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+      - uses: actions/deploy-pages@v4
