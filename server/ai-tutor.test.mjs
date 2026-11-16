@@ -67,6 +67,32 @@ test('từ chối yêu cầu không hợp lệ trước khi gọi AI', async (t)
   assert.equal(soLanGoi, 0);
 });
 
+test('Gemini nhận tài liệu bài học và trả nội dung hiển thị', async (t) => {
+  const url = await khoiDong(t, {
+    nhaCungCap: 'gemini',
+    apiKey: 'test-key',
+    goiApi: async (diaChi, options) => {
+      assert.equal(diaChi,
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent');
+      assert.equal(options.headers['x-goog-api-key'], 'test-key');
+      const payload = JSON.parse(options.body);
+      assert.match(payload.systemInstruction.parts[0].text, /queryParameters/);
+      assert.equal(payload.contents[0].parts[0].text, cauHoi.cauHoi);
+      return Response.json({
+        candidates: [{ content: { parts: [
+          { thought: true, text: 'Suy luận nội bộ' },
+          { text: 'Dùng queryParameters để đọc bộ lọc.' },
+        ] } }],
+      });
+    },
+  });
+  const response = await gui(url, cauHoi);
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    cauTraLoi: 'Dùng queryParameters để đọc bộ lọc.',
+  });
+});
+
 test('báo rõ khi chưa có khóa hoặc phản hồi AI trống', async (t) => {
   const chuaCauHinh = await khoiDong(t);
   assert.equal((await gui(chuaCauHinh, cauHoi)).status, 503);

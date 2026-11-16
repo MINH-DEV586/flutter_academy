@@ -60,7 +60,8 @@ flutter analyze
 
 Tiến độ học được lưu bằng **Hive**, ngay trong trình duyệt (IndexedDB).
 Trình phát bài mẫu kết nối YouTube. Khi bật AI Tutor, backend gửi câu hỏi và
-tài liệu bài học hiện tại tới OpenAI. Email và tiến độ học vẫn lưu cục bộ.
+tài liệu bài học hiện tại tới Gemini hoặc OpenAI tùy cấu hình. Email và tiến
+độ học vẫn lưu cục bộ.
 
 ### Dùng thử AI Tutor
 
@@ -69,8 +70,9 @@ và đoạn code mẫu trong `assets/bai_hoc_ai.json`. Bài đầu có video t�
 Flutter. Tutor dựa vào phần tài liệu và code của bài đang mở. Video là tài
 liệu xem thêm.
 
-1. Cài Node.js 22 trở lên. Đặt `OPENAI_API_KEY` trong môi trường của terminal
-   chạy backend. Có thể đặt `OPENAI_MODEL` để chọn model khác.
+1. Cài Node.js 22 trở lên. Đặt `GEMINI_API_KEY` hoặc `OPENAI_API_KEY` trong
+   môi trường của terminal chạy backend. Nếu có cả hai khóa, backend dùng
+   Gemini. Có thể chọn model bằng `GEMINI_MODEL` hoặc `OPENAI_MODEL` tương ứng.
 2. Từ thư mục gốc dự án, chạy `node server/ai-tutor.mjs`.
 3. Mở terminal khác và chạy Flutter Web với địa chỉ backend.
 
@@ -87,7 +89,7 @@ cho phép cleartext trong manifest **debug**. Để phát video trực tuyến t
 bản Android release, thêm quyền `android.permission.INTERNET` vào manifest
 chính sau khi sinh thư mục Android.
 
-Khóa OpenAI chỉ được cấu hình ở backend. Bản demo local có thể kiểm tra bằng
+Khóa API chỉ được cấu hình ở backend. Bản demo local có thể kiểm tra bằng
 `node --test server/ai-tutor.test.mjs`.
 
 ---

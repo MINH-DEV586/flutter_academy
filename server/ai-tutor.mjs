@@ -23,7 +23,47 @@ async function docJson(request) {
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 
-export function taoMayChu({ apiKey, model = 'gpt-5.4-mini', goiApi = fetch } = {}) {
+function yeuCauAi(nhaCungCap, apiKey, model, instructions, input) {
+  if (nhaCungCap === 'gemini') {
+    return {
+      url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model ?? 'gemini-3.5-flash')}:generateContent`,
+      headers: { 'x-goog-api-key': apiKey },
+      body: {
+        systemInstruction: { parts: [{ text: instructions }] },
+        contents: [{ role: 'user', parts: [{ text: input }] }],
+        generationConfig: { maxOutputTokens: 1400 },
+      },
+    };
+  }
+  return {
+    url: 'https://api.openai.com/v1/responses',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    body: {
+      model: model ?? 'gpt-5.4-mini',
+      store: false,
+      max_output_tokens: 1400,
+      instructions,
+      input,
+    },
+  };
+}
+
+function layVanBan(nhaCungCap, ketQua) {
+  if (nhaCungCap === 'gemini') {
+    return ketQua.candidates?.[0]?.content?.parts
+      ?.filter((muc) => !muc.thought && typeof muc.text === 'string')
+      .map((muc) => muc.text).join('\n').trim();
+  }
+  return ketQua.output
+    ?.filter((muc) => muc.type === 'message')
+    .flatMap((muc) => muc.content)
+    .filter((muc) => muc.type === 'output_text')
+    .map((muc) => muc.text).join('\n').trim();
+}
+
+export function taoMayChu({
+  apiKey, model, nhaCungCap = 'openai', goiApi = fetch,
+} = {}) {
   let dangXuLy = 0;
   return createServer({ requestTimeout: 15_000 }, async (request, response) => {
     const tra = (status, body) => {
@@ -72,48 +112,35 @@ export function taoMayChu({ apiKey, model = 'gpt-5.4-mini', goiApi = fetch } = {
     if (!Object.hasOwn(baiHoc, duLieu.baiHoc)) {
       return tra(404, { loi: 'Bài học chưa có tài liệu AI Tutor.' });
     }
-    if (!apiKey) return tra(503, { loi: 'Máy chủ chưa cấu hình OpenAI.' });
+    if (!apiKey) return tra(503, { loi: 'Máy chủ chưa cấu hình khóa API.' });
     if (dangXuLy >= 4) return tra(429, { loi: 'Máy chủ đang bận.' });
 
     const taiLieu = baiHoc[duLieu.baiHoc];
     dangXuLy++;
     try {
-      const upstream = await goiApi('https://api.openai.com/v1/responses', {
+      const instructions = [
+        'Bạn là gia sư Flutter. Trả lời bằng tiếng Việt rõ ràng.',
+        'Dựa vào tài liệu của bài hiện tại và chỉ ra chi tiết liên quan.',
+        'Nếu câu hỏi ngoài bài hoặc tài liệu không đủ, nói rõ điều đó.',
+        'Không nói rằng bạn đã xem video hoặc đọc transcript.',
+        'Dùng văn bản thuần. Xuống dòng cho ví dụ và các bước.',
+        mucDo[duLieu.mucDo],
+        `Bài học: ${taiLieu.tieuDe}\n${taiLieu.noiDung}\nVí dụ:\n${taiLieu.code}`,
+      ].join('\n');
+      const yeuCau = yeuCauAi(nhaCungCap, apiKey, model, instructions, cauHoi);
+      const upstream = await goiApi(yeuCau.url, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { ...yeuCau.headers, 'Content-Type': 'application/json' },
         signal: AbortSignal.timeout(30_000),
-        body: JSON.stringify({
-          model,
-          store: false,
-          max_output_tokens: 1400,
-          instructions: [
-            'Bạn là gia sư Flutter. Trả lời bằng tiếng Việt rõ ràng.',
-            'Dựa vào tài liệu của bài hiện tại và chỉ ra chi tiết liên quan.',
-            'Nếu câu hỏi ngoài bài hoặc tài liệu không đủ, nói rõ điều đó.',
-            'Không nói rằng bạn đã xem video hoặc đọc transcript.',
-            'Dùng văn bản thuần. Xuống dòng cho ví dụ và các bước.',
-            mucDo[duLieu.mucDo],
-            `Bài học: ${taiLieu.tieuDe}\n${taiLieu.noiDung}\nVí dụ:\n${taiLieu.code}`,
-          ].join('\n'),
-          input: cauHoi,
-        }),
+        body: JSON.stringify(yeuCau.body),
       });
       if (!upstream.ok) {
         await upstream.body?.cancel();
-        console.error(`OpenAI Responses API: HTTP ${upstream.status}`);
+        console.error(`AI Tutor (${nhaCungCap}): HTTP ${upstream.status}`);
         return tra(502, { loi: 'Dịch vụ AI chưa trả lời được.' });
       }
       const ketQua = await upstream.json();
-      const cauTraLoi = ketQua.output
-        ?.filter((muc) => muc.type === 'message')
-        .flatMap((muc) => muc.content)
-        .filter((muc) => muc.type === 'output_text')
-        .map((muc) => muc.text)
-        .join('\n')
-        .trim();
+      const cauTraLoi = layVanBan(nhaCungCap, ketQua);
       if (!cauTraLoi) return tra(502, { loi: 'Phản hồi AI trống.' });
       return tra(200, { cauTraLoi });
     } catch {
@@ -126,10 +153,13 @@ export function taoMayChu({ apiKey, model = 'gpt-5.4-mini', goiApi = fetch } = {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const port = Number(process.env.AI_TUTOR_PORT ?? 8787);
+  const geminiKey = process.env.GEMINI_API_KEY?.trim();
+  const nhaCungCap = geminiKey ? 'gemini' : 'openai';
   taoMayChu({
-    apiKey: process.env.OPENAI_API_KEY,
-    model: process.env.OPENAI_MODEL,
+    nhaCungCap,
+    apiKey: geminiKey || process.env.OPENAI_API_KEY?.trim(),
+    model: geminiKey ? process.env.GEMINI_MODEL : process.env.OPENAI_MODEL,
   }).listen(port, '127.0.0.1', () => {
-    console.log(`AI Tutor: http://127.0.0.1:${port}/api/ai-tutor`);
+    console.log(`AI Tutor (${nhaCungCap}): http://127.0.0.1:${port}/api/ai-tutor`);
   });
 }
