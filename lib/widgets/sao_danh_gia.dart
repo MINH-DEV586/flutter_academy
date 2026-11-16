@@ -20,6 +20,7 @@ class SaoDanhGia extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (soLuot == 0) return const SizedBox.shrink();
     final mau = Theme.of(context).colorScheme;
     final nuaSao = (diem * 2).round(); // 0..10
     return Row(

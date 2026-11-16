@@ -127,7 +127,11 @@ class _NoiDung extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (youtubeId != null)
-          VideoBaiHoc(key: ValueKey(youtubeId), youtubeId: youtubeId)
+          VideoBaiHoc(
+            key: ValueKey(youtubeId),
+            youtubeId: youtubeId,
+            kenhYouTube: taiLieuBai?.kenhYouTube,
+          )
         else
           AspectRatio(
             aspectRatio: 16 / 9,

@@ -1,17 +1,71 @@
 {
+  "flutter-nhap-mon/b1": {
+    "tieuDe": "Tạo ứng dụng Flutter đầu tiên",
+    "youtubeId": "sE1M2EayFes",
+    "kenhYouTube": "Flutter",
+    "noiDung": "Tạo một ứng dụng tối giản rồi chạy trên thiết bị. Hot reload giúp xem thay đổi trong giao diện trong khi giữ trạng thái hiện tại của ứng dụng.",
+    "code": "flutter create birdle --empty\ncd birdle\nflutter run"
+  },
+  "flutter-nhap-mon/b2": {
+    "tieuDe": "Cấu tạo của widget",
+    "youtubeId": "gyBUnaojFDg",
+    "kenhYouTube": "Flutter",
+    "noiDung": "Widget mô tả giao diện. Dùng một StatelessWidget khi dữ liệu cần để dựng giao diện được truyền từ bên ngoài. Chia màn hình thành các widget nhỏ để dễ đọc và tái sử dụng.",
+    "code": "class LoiChao extends StatelessWidget {\n  const LoiChao({super.key});\n\n  @override\n  Widget build(BuildContext context) => const Text('Xin chào');\n}"
+  },
+  "flutter-nhap-mon/b3": {
+    "tieuDe": "Bố cục và constraints",
+    "youtubeId": "z8bY3XVAzgI",
+    "kenhYouTube": "Flutter",
+    "noiDung": "Widget cha truyền constraints xuống widget con. Widget con chọn kích thước trong phạm vi đó, còn widget cha quyết định vị trí. Dùng Row để xếp theo chiều ngang và Expanded để chia phần chiều rộng còn lại.",
+    "code": "Row(\n  children: [\n    const Icon(Icons.school),\n    const SizedBox(width: 8),\n    const Expanded(child: Text('Flutter Academy')),\n  ],\n)"
+  },
+  "flutter-nhap-mon/b4": {
+    "tieuDe": "Kiểm tra giao diện với DevTools",
+    "youtubeId": "CIfLE0CShbg",
+    "kenhYouTube": "Flutter",
+    "noiDung": "Mở Flutter Inspector trong DevTools và chọn một phần tử trên màn hình. Xem đường dẫn trong cây widget và kiểm tra constraints của tổ tiên khi phần tử bị tràn hoặc nằm sai vị trí.",
+    "code": "flutter run\n# Mở DevTools từ đường dẫn trong terminal.\n# Chọn Flutter Inspector rồi bật Select Widget Mode."
+  },
+  "trang-thai-flutter/b1": {
+    "tieuDe": "StatefulWidget và setState",
+    "youtubeId": "Gzz8FwSlsUg",
+    "kenhYouTube": "Flutter",
+    "noiDung": "StatefulWidget mô tả cấu hình bất biến, còn đối tượng State giữ dữ liệu có thể thay đổi. Gọi setState khi dữ liệu cục bộ thay đổi để Flutter lên lịch dựng lại giao diện.",
+    "code": "int dem = 0;\n\nvoid tang() {\n  setState(() => dem++);\n}"
+  },
+  "trang-thai-flutter/b2": {
+    "tieuDe": "Phát thông báo bằng ChangeNotifier",
+    "youtubeId": "iBRrnCqzTuk",
+    "kenhYouTube": "Flutter",
+    "noiDung": "ChangeNotifier tập trung trạng thái và thông báo cho các đối tượng đang lắng nghe khi có thay đổi. Cập nhật dữ liệu trước khi gọi notifyListeners.",
+    "code": "class BoDem extends ChangeNotifier {\n  int giaTri = 0;\n\n  void tang() {\n    giaTri++;\n    notifyListeners();\n  }\n}"
+  },
+  "trang-thai-flutter/b3": {
+    "tieuDe": "Dựng lại giao diện với ValueListenableBuilder",
+    "youtubeId": "s-ZG-jS5QHQ",
+    "kenhYouTube": "Flutter",
+    "noiDung": "ValueListenableBuilder gọi hàm builder khi giá trị trong ValueListenable thay đổi. Dùng tham số child để tái sử dụng phần giao diện độc lập với giá trị đang được theo dõi.",
+    "code": "final dem = ValueNotifier<int>(0);\n\nValueListenableBuilder<int>(\n  valueListenable: dem,\n  builder: (context, giaTri, child) => Text('$giaTri'),\n)"
+  },
   "dieu-huong-url/b1": {
     "tieuDe": "Navigator 1.0, 2.0 và vì sao có go_router",
     "youtubeId": "b6Z885Z46cU",
+    "kenhYouTube": "Flutter",
     "noiDung": "Navigator.push thêm màn hình vào ngăn xếp; Navigator.pop quay về màn hình trước. Trên web, ứng dụng còn cần dựng đúng màn hình khi mở URL trực tiếp. Router API của Flutter hỗ trợ mô tả điều hướng theo trạng thái. go_router bọc Router API và cho phép khai báo bảng URL bằng GoRoute. Thử mở trực tiếp một URL của trang khoá học trong tab mới để kiểm tra deep link.",
     "code": "final router = GoRouter(routes: [\n  GoRoute(path: '/', builder: (context, state) => const HomePage()),\n  GoRoute(path: '/khoa-hoc', builder: (context, state) => const CoursesPage()),\n]);\n// Truyền router vào MaterialApp.router(routerConfig: router)."
   },
   "dieu-huong-url/b2": {
     "tieuDe": "GoRoute, tham số đường dẫn và tham số truy vấn",
+    "youtubeId": "9c5A-iaiLqI",
+    "kenhYouTube": "Prof. Dr. Ute Trapp",
     "noiDung": "Dùng tham số đường dẫn để xác định tài nguyên, ví dụ mã khóa trong /khoa-hoc/flutter-web. Dùng tham số truy vấn cho tùy chọn của màn hình, ví dụ ?q=flutter&sap=danh-gia. GoRouterState.pathParameters đọc tham số đường dẫn, còn state.uri.queryParameters đọc tham số truy vấn. Hãy dựng bộ lọc từ URL mỗi khi route thay đổi để tải lại trang hoặc mở link ở tab mới vẫn khôi phục đúng bộ lọc. Dùng Uri để mã hóa tham số tìm kiếm.",
     "code": "final maKhoa = state.pathParameters['ma'];\nfinal tuKhoa = state.uri.queryParameters['q'] ?? '';\nfinal url = Uri(path: '/khoa-hoc', queryParameters: {'q': 'điều hướng'});\ncontext.go(url.toString());"
   },
   "dieu-huong-url/b3": {
     "tieuDe": "ShellRoute: khung chung cho nhiều trang",
+    "youtubeId": "L-DhEd5hF3M",
+    "kenhYouTube": "Mehmet Artun",
     "noiDung": "ShellRoute tạo một Navigator cho các route con và truyền màn hình hiện tại qua tham số child của builder. Dùng cùng một Scaffold để giữ thanh điều hướng trên các trang danh sách và hồ sơ. Trang học toàn màn hình có thể nằm ngoài shell để mở mà không hiện thanh điều hướng. Với yêu cầu mỗi tab có ngăn xếp riêng, tìm hiểu StatefulShellRoute.indexedStack.",
     "code": "ShellRoute(\n  builder: (context, state, child) => KhungUngDung(child: child),\n  routes: [\n    GoRoute(path: '/khoa-hoc', builder: (context, state) => const CoursesPage()),\n  ],\n);"
   }

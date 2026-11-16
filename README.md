@@ -54,7 +54,7 @@ flutter analyze
 | **Trang chủ** | mảng giới thiệu, dải "Tiếp tục học", dải khoá học nổi bật, danh sách chủ đề |
 | **Danh sách khoá học** | tìm theo từ khoá (bỏ dấu tiếng Việt), lọc theo chủ đề / mức độ / học phí, năm kiểu sắp xếp — **tất cả nằm trong URL** |
 | **Chi tiết khoá học** | mô tả, danh sách bài, thanh tiến độ, nút "Học tiếp" |
-| **Trang học** | toàn màn hình, mục lục bên phải, đánh dấu đã xong, bài trước / bài sau, video và AI Tutor ở các bài mẫu |
+| **Trang học** | video YouTube, mục lục, đánh dấu đã xong, bài trước / bài sau và AI Tutor |
 | **Khoá học của tôi** | cần đăng nhập; khoá đang học dở xếp trước khoá đã hoàn thành |
 | **Hồ sơ** | thống kê, chọn giao diện sáng/tối, đăng xuất |
 
@@ -65,10 +65,15 @@ tài liệu bài học hiện tại tới Gemini hoặc OpenAI tùy cấu hình.
 
 ### Dùng thử AI Tutor
 
-Ba bài đầu của khóa **Điều hướng theo URL với go_router** có tài liệu viết tay
-và đoạn code mẫu trong `assets/bai_hoc_ai.json`. Bài đầu có video từ kênh
-Flutter. Tutor dựa vào phần tài liệu và code của bài đang mở. Video là tài
-liệu xem thêm.
+Danh mục có ba khóa miễn phí với 10 video YouTube tiếng Anh. Mỗi bài có tên
+kênh, liên kết YouTube và nội dung hướng dẫn tiếng Việt trong
+`assets/bai_hoc_ai.json`. Tutor dựa vào nội dung và code của bài đang mở.
+
+- **Bắt đầu với Flutter** theo [lộ trình chính thức của Flutter](https://docs.flutter.dev/learn/pathway).
+- **Quản lý trạng thái trong Flutter** tuyển chọn từ [kênh Flutter](https://www.youtube.com/@flutterdev).
+- **Điều hướng theo URL với go_router** gồm [video giới thiệu của Flutter](https://www.youtube.com/watch?v=b6Z885Z46cU),
+  [ví dụ điều hướng với tham số](https://www.youtube.com/watch?v=9c5A-iaiLqI) và
+  [bài thực hành ShellRoute](https://www.youtube.com/watch?v=L-DhEd5hF3M).
 
 1. Cài Node.js 22 trở lên. Tạo tệp `.env` ở thư mục gốc dự án và thêm dòng
    `GEMINI_API_KEY=khóa_của_bạn` hoặc `OPENAI_API_KEY=khóa_của_bạn`. Git bỏ
@@ -82,7 +87,7 @@ liệu xem thêm.
    flutter run -d chrome --dart-define=AI_TUTOR_URL=http://127.0.0.1:8787/api/ai-tutor
    ```
 
-4. Mở một trong ba bài mẫu, chọn mức giải thích và đặt câu hỏi.
+4. Mở một bài học, chọn mức giải thích và đặt câu hỏi.
 
 Backend demo chỉ lắng nghe trên loopback. Để chạy Android debug với cùng
 backend, chạy `adb reverse tcp:8787 tcp:8787` rồi dùng cùng giá trị
@@ -115,7 +120,7 @@ lib/
 │   ├── kho_hive.dart          Bản cài đặt dùng Hive
 │   ├── bo_chuyen_doi.dart     TypeAdapter viết tay, không cần build_runner
 │   ├── khoi_tao_hive.dart     Mở hộp trước runApp
-│   └── du_lieu_mau.dart       12 khoá học gieo vào lần chạy đầu
+│   └── du_lieu_mau.dart       Danh mục khoá học YouTube
 ├── viewmodels/                Biết models và data; KHÔNG import material.dart
 │   ├── providers.dart         Toàn bộ provider gom một chỗ
 │   ├── tien_do_vm.dart        AsyncNotifier + cập nhật lạc quan
@@ -276,7 +281,7 @@ Bước chép `404.html` là cần thiết vì GitHub Pages không có cơ chế
 
 | Muốn làm gì | Sửa ở đâu |
 |---|---|
-| Thêm / sửa khoá học | `lib/data/du_lieu_mau.dart`, rồi xoá dữ liệu trang web để gieo lại |
+| Thêm / sửa khoá học | `lib/data/du_lieu_mau.dart` và `assets/bai_hoc_ai.json`. Tăng phiên bản hộp danh mục trong `kho_hive.dart` để trình duyệt đã dùng bản cũ tự nạp lại danh mục. |
 | Đổi màu thương hiệu | `ChuDe.mauGoc` trong `lib/cau_hinh/mau_sac.dart` |
 | Đổi ngưỡng khổ màn hình | `lib/cau_hinh/diem_ngat.dart` |
 | Thêm một trang mới | thêm `GoRoute` trong `lib/dinh_tuyen/bo_dinh_tuyen.dart` |
@@ -322,13 +327,12 @@ Xếp theo độ khó tăng dần, bám đúng mạch các chương của sách.
 * Kỳ vọng của các bài kiểm thử về **thứ tự sắp xếp** đã được kiểm chứng bằng
   một bản dịch sang Python chạy độc lập — đặc biệt là chi tiết dễ sai:
   sau khi bỏ dấu, `"kiem thu"` đứng **trước** `"kien truc"` vì `m < n`.
-* Bài đầu của khóa `go_router` có một video YouTube mẫu. Các bài còn lại
-  hiện thông báo khi chưa có video.
+* Video được phát từ YouTube. Nếu trình phát nhúng không khả dụng, dùng
+  nút **Xem trên YouTube** ngay dưới video.
 * "Đăng nhập" không có mật khẩu và không xác thực gì cả. Nó tồn tại để dạy
   phần điều hướng có bảo vệ và trạng thái phiên.
-* Dữ liệu mẫu chỉ gieo **một lần** vào hộp Hive trống. Sửa
-  `du_lieu_mau.dart` xong phải xoá dữ liệu trang web trong trình duyệt thì
-  mới thấy thay đổi.
+* Danh mục YouTube được nạp vào hộp Hive riêng khi mở bản mới lần đầu.
+  Tiến độ học và phiên đăng nhập dùng các hộp riêng.
 
 ---
 

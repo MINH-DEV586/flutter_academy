@@ -8,16 +8,19 @@ class TaiLieuBaiHoc {
     required this.noiDung,
     required this.code,
     this.youtubeId,
+    this.kenhYouTube,
   });
 
   final String noiDung;
   final String code;
   final String? youtubeId;
+  final String? kenhYouTube;
 
   factory TaiLieuBaiHoc.tuJson(Map<String, dynamic> json) => TaiLieuBaiHoc(
     noiDung: json['noiDung'] as String,
     code: json['code'] as String,
     youtubeId: json['youtubeId'] as String?,
+    kenhYouTube: json['kenhYouTube'] as String?,
   );
 }
 

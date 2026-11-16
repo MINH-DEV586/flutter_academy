@@ -4,9 +4,10 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 class VideoBaiHoc extends StatefulWidget {
-  const VideoBaiHoc({super.key, required this.youtubeId});
+  const VideoBaiHoc({super.key, required this.youtubeId, this.kenhYouTube});
 
   final String youtubeId;
+  final String? kenhYouTube;
 
   @override
   State<VideoBaiHoc> createState() => _VideoBaiHocState();
@@ -53,6 +54,7 @@ class _VideoBaiHocState extends State<VideoBaiHoc> {
   @override
   Widget build(BuildContext context) {
     final trinhPhat = _trinhPhat;
+    final kenh = widget.kenhYouTube;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -64,7 +66,9 @@ class _VideoBaiHocState extends State<VideoBaiHoc> {
         TextButton.icon(
           onPressed: _moYouTube,
           icon: const Icon(Icons.open_in_new),
-          label: const Text('Mở video trên YouTube'),
+          label: Text(
+            kenh == null ? 'Mở video trên YouTube' : 'Xem trên YouTube · $kenh',
+          ),
         ),
       ],
     );
