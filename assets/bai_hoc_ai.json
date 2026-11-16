@@ -68,5 +68,47 @@
     "kenhYouTube": "Mehmet Artun",
     "noiDung": "ShellRoute tạo một Navigator cho các route con và truyền màn hình hiện tại qua tham số child của builder. Dùng cùng một Scaffold để giữ thanh điều hướng trên các trang danh sách và hồ sơ. Trang học toàn màn hình có thể nằm ngoài shell để mở mà không hiện thanh điều hướng. Với yêu cầu mỗi tab có ngăn xếp riêng, tìm hiểu StatefulShellRoute.indexedStack.",
     "code": "ShellRoute(\n  builder: (context, state, child) => KhungUngDung(child: child),\n  routes: [\n    GoRoute(path: '/khoa-hoc', builder: (context, state) => const CoursesPage()),\n  ],\n);"
+  },
+  "python-co-ban/b1": {
+    "tieuDe": "Biến và kiểu dữ liệu trong Python",
+    "youtubeId": "7IoQ5BGkTJo",
+    "kenhYouTube": "Bro Code",
+    "noiDung": "Dùng phép gán để đặt tên cho một giá trị. Kiểu dữ liệu thuộc về giá trị đang được tham chiếu, ví dụ str, int, float hoặc bool. Dùng f-string để đưa giá trị vào chuỗi.",
+    "code": "ten = \"Lan\"\nso_bai = 3\ndiem = 8.5\nda_hoan_thanh = False\nprint(f\"{ten} có {so_bai} bài, điểm {diem}\")"
+  },
+  "python-co-ban/b2": {
+    "tieuDe": "Rẽ nhánh với if, elif và else",
+    "youtubeId": "FvMPfrgGeKs",
+    "kenhYouTube": "Bro Code",
+    "noiDung": "Python kiểm tra các điều kiện theo thứ tự và chạy nhánh đúng đầu tiên. Nếu mọi điều kiện đều sai, nhánh else được chạy. Thụt lề xác định những câu lệnh thuộc mỗi nhánh.",
+    "code": "diem = 8\n\nif diem >= 9:\n    print(\"Xuất sắc\")\nelif diem >= 5:\n    print(\"Đạt\")\nelse:\n    print(\"Cần ôn thêm\")"
+  },
+  "python-co-ban/b3": {
+    "tieuDe": "Định nghĩa và gọi hàm trong Python",
+    "youtubeId": "89cGQjB5R4M",
+    "kenhYouTube": "Bro Code",
+    "noiDung": "Dùng def để định nghĩa một hàm. Tham số nhận giá trị khi gọi hàm và return gửi kết quả về nơi gọi, để chương trình có thể tiếp tục dùng kết quả đó.",
+    "code": "def dien_tich(rong, cao):\n    return rong * cao\n\nket_qua = dien_tich(4, 3)\nprint(ket_qua)  # 12"
+  },
+  "java-co-ban/b1": {
+    "tieuDe": "Biến và kiểu dữ liệu trong Java",
+    "youtubeId": "TGVLmr194DI",
+    "kenhYouTube": "Bro Code",
+    "noiDung": "Java yêu cầu kiểu dữ liệu của biến khi khai báo theo cú pháp thông thường. int, double và boolean là các kiểu nguyên thủy, còn String là kiểu tham chiếu.",
+    "code": "class Main {\n    public static void main(String[] args) {\n        String ten = \"Lan\";\n        int soBai = 3;\n        double diem = 8.5;\n        boolean daHoanThanh = false;\n        System.out.println(ten + \": \" + soBai + \" bài\");\n    }\n}"
+  },
+  "java-co-ban/b2": {
+    "tieuDe": "Rẽ nhánh với if, else if và else",
+    "youtubeId": "Q_ll-EKocuI",
+    "kenhYouTube": "Bro Code",
+    "noiDung": "Một điều kiện trong if của Java phải cho kết quả boolean. Khi điều kiện đúng, khối trong dấu ngoặc nhọn được chạy. Với chuỗi nhiều nhánh, Java chạy nhánh đúng đầu tiên.",
+    "code": "class Main {\n    public static void main(String[] args) {\n        int diem = 8;\n        if (diem >= 9) {\n            System.out.println(\"Xuất sắc\");\n        } else if (diem >= 5) {\n            System.out.println(\"Đạt\");\n        } else {\n            System.out.println(\"Cần ôn thêm\");\n        }\n    }\n}"
+  },
+  "java-co-ban/b3": {
+    "tieuDe": "Viết và gọi phương thức trong Java",
+    "youtubeId": "v5p_SUfi710",
+    "kenhYouTube": "Bro Code",
+    "noiDung": "Một phương thức khai báo kiểu trả về, tên và các tham số. Phương thức static trong ví dụ gọi được trực tiếp từ main. return trả về một giá trị phù hợp với kiểu đã khai báo.",
+    "code": "class Main {\n    static int dienTich(int rong, int cao) {\n        return rong * cao;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(dienTich(4, 3)); // 12\n    }\n}"
   }
 }

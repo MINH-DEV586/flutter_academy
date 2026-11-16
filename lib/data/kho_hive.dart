@@ -10,7 +10,7 @@ import 'kho_du_lieu.dart';
 class TenHop {
   TenHop._();
   // Danh mục YouTube dùng hộp riêng để trình duyệt tự nhận dữ liệu mới.
-  static const String khoaHoc = 'khoa_hoc_youtube_v1';
+  static const String khoaHoc = 'khoa_hoc_youtube_v2';
   static const String tienDo = 'tien_do';
   static const String phien = 'phien';
 }

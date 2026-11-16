@@ -11,7 +11,16 @@ void main() {
     final taiLieu = await container.read(taiLieuBaiHocProvider.future);
 
     final khoaHoc = DuLieuMau.khoaHoc();
-    expect(khoaHoc, hasLength(3));
+    expect(
+      khoaHoc.map((khoa) => khoa.ma),
+      unorderedEquals([
+        'flutter-nhap-mon',
+        'trang-thai-flutter',
+        'dieu-huong-url',
+        'python-co-ban',
+        'java-co-ban',
+      ]),
+    );
     expect(khoaHoc.every((khoa) => khoa.mienPhi), isTrue);
     final cacBai = {
       for (final khoa in khoaHoc)

@@ -65,7 +65,7 @@ tài liệu bài học hiện tại tới Gemini hoặc OpenAI tùy cấu hình.
 
 ### Dùng thử AI Tutor
 
-Danh mục có ba khóa miễn phí với 10 video YouTube tiếng Anh. Mỗi bài có tên
+Danh mục có năm khóa miễn phí với 16 video YouTube tiếng Anh. Mỗi bài có tên
 kênh, liên kết YouTube và nội dung hướng dẫn tiếng Việt trong
 `assets/bai_hoc_ai.json`. Tutor dựa vào nội dung và code của bài đang mở.
 
@@ -74,6 +74,7 @@ kênh, liên kết YouTube và nội dung hướng dẫn tiếng Việt trong
 - **Điều hướng theo URL với go_router** gồm [video giới thiệu của Flutter](https://www.youtube.com/watch?v=b6Z885Z46cU),
   [ví dụ điều hướng với tham số](https://www.youtube.com/watch?v=9c5A-iaiLqI) và
   [bài thực hành ShellRoute](https://www.youtube.com/watch?v=L-DhEd5hF3M).
+- **Python cơ bản** và **Java cơ bản** tuyển chọn từ [kênh Bro Code](https://www.youtube.com/@BroCodez).
 
 1. Cài Node.js 22 trở lên. Tạo tệp `.env` ở thư mục gốc dự án và thêm dòng
    `GEMINI_API_KEY=khóa_của_bạn` hoặc `OPENAI_API_KEY=khóa_của_bạn`. Git bỏ

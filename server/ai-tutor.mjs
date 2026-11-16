@@ -119,7 +119,8 @@ export function taoMayChu({
     dangXuLy++;
     try {
       const instructions = [
-        'Bạn là gia sư Flutter. Trả lời bằng tiếng Việt rõ ràng.',
+        'Bạn là gia sư lập trình. Trả lời bằng tiếng Việt rõ ràng.',
+        'Giữ đúng ngôn ngữ lập trình và chủ đề được dùng trong bài.',
         'Dựa vào tài liệu của bài hiện tại và chỉ ra chi tiết liên quan.',
         'Nếu câu hỏi ngoài bài hoặc tài liệu không đủ, nói rõ điều đó.',
         'Không nói rằng bạn đã xem video hoặc đọc transcript.',

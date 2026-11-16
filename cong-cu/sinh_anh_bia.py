@@ -28,6 +28,10 @@ THU_MUC = os.path.join(os.path.dirname(__file__), "..", "assets", "images")
 
 FONT_DAM = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 FONT_THUONG = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+if os.name == "nt":
+    THU_MUC_FONT = os.path.join(os.environ["WINDIR"], "Fonts")
+    FONT_DAM = os.path.join(THU_MUC_FONT, "arialbd.ttf")
+    FONT_THUONG = os.path.join(THU_MUC_FONT, "arial.ttf")
 
 # Màu nền theo danh mục — phải khớp `ChuDe.mauDanhMuc` trong
 # lib/cau_hinh/mau_sac.dart. Đổi một bên thì nhớ đổi bên kia.
@@ -55,6 +59,8 @@ KHOA_HOC = [
     ("bia_dieu_huong_url.png",       "Web",       "Điều hướng theo URL, go_router",   "duong"),
     ("bia_kiem_thu_flutter.png",     "Nâng cao",  "Kiểm thử ứng dụng Flutter",        "tomau"),
     ("bia_trien_khai_ci_cd.png",     "Nâng cao",  "Đóng gói, triển khai và CI/CD",    "tang"),
+    ("bia_python_co_ban.png",       "Nhập môn",  "Python cơ bản",                   "luoi"),
+    ("bia_java_co_ban.png",         "Nhập môn",  "Java cơ bản",                     "khung"),
 ]
 
 
