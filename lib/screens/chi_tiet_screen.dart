@@ -190,24 +190,18 @@ class _NoiDung extends ConsumerWidget {
       ],
     );
 
-    final cot2 = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _XemTruoc(khoaHoc: khoaHoc),
-        const SizedBox(height: 12),
-        _TheHanhDong(
-          key: ValueKey(khoaHoc.ma),
-          khoaHoc: khoaHoc,
-          phanTram: phanTram,
-          soXong: soXong,
-          baiTiepTheo: bai,
-          daBatDau: tienDo != null,
-          onDatLai: tienDo == null
-              ? null
-              : () => ref.read(tienDoProvider.notifier).datLai(khoaHoc.ma),
-        ),
-      ],
+    final hanhDong = _TheHanhDong(
+      key: ValueKey(khoaHoc.ma),
+      khoaHoc: khoaHoc,
+      phanTram: phanTram,
+      soXong: soXong,
+      baiTiepTheo: bai,
+      daBatDau: tienDo != null,
+      onDatLai: tienDo == null
+          ? null
+          : () => ref.read(tienDoProvider.notifier).datLai(khoaHoc.ma),
     );
+    final xemTruoc = _XemTruoc(khoaHoc: khoaHoc);
 
     return Trang(
       con: [
@@ -219,20 +213,36 @@ class _NoiDung extends ConsumerWidget {
         const SizedBox(height: 8),
         tieuDe,
         const SizedBox(height: 24),
-        if (rong)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(flex: 2, child: cot1),
-              const SizedBox(width: 32),
-              SizedBox(width: 320, child: cot2),
-            ],
-          )
-        else ...[
-          cot2,
-          const SizedBox(height: 28),
-          cot1,
-        ],
+        LayoutBuilder(
+          builder: (context, khung) {
+            if (khung.maxWidth < 720) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  hanhDong,
+                  const SizedBox(height: 16),
+                  xemTruoc,
+                  const SizedBox(height: 28),
+                  cot1,
+                ],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: cot1),
+                const SizedBox(width: 24),
+                SizedBox(
+                  width: 320,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [xemTruoc, const SizedBox(height: 12), hanhDong],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ],
     );
   }
