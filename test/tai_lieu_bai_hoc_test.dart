@@ -1,4 +1,5 @@
 import 'package:flutter_academy/data/du_lieu_mau.dart';
+import 'package:flutter_academy/data/gioi_thieu_khoa_hoc.dart';
 import 'package:flutter_academy/data/tai_lieu_bai_hoc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -36,5 +37,19 @@ void main() {
     expect(taiLieu['dieu-huong-url/b1']?.youtubeId, 'b6Z885Z46cU');
     expect(taiLieu['dieu-huong-url/b2']?.code, contains('queryParameters'));
     expect(taiLieu['dieu-huong-url/b3']?.code, contains('ShellRoute'));
+  });
+
+  test('trang giới thiệu có mục tiêu, yêu cầu và đủ các bài theo chương', () {
+    for (final khoa in DuLieuMau.khoaHoc()) {
+      final gioiThieu = GioiThieuKhoaHoc.cua(khoa.ma)!;
+      expect(gioiThieu.mucTieu, isNotEmpty, reason: khoa.ma);
+      expect(gioiThieu.yeuCau, isNotEmpty, reason: khoa.ma);
+      expect(
+        gioiThieu.chuong.values.expand((ma) => ma),
+        orderedEquals(khoa.baiHoc.map((bai) => bai.ma)),
+        reason: khoa.ma,
+      );
+      expect(gioiThieu.chiaChuong(khoa), hasLength(2), reason: khoa.ma);
+    }
   });
 }

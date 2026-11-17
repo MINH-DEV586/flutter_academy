@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../cau_hinh/diem_ngat.dart';
+import '../data/gioi_thieu_khoa_hoc.dart';
 import '../data/kho_du_lieu.dart';
+import '../data/tai_lieu_bai_hoc.dart';
 import '../dinh_tuyen/duong_dan.dart';
 import '../models/bai_hoc.dart';
 import '../models/dinh_dang.dart' as dd;
@@ -14,6 +16,7 @@ import '../widgets/anh_bia.dart';
 import '../widgets/sao_danh_gia.dart';
 import '../widgets/trang.dart';
 import '../widgets/trang_thai.dart';
+import '../widgets/video_bai_hoc.dart';
 
 /// Trang chi tiết một khoá học: `/khoa-hoc/<mã>`.
 ///
@@ -106,24 +109,21 @@ class _NoiDung extends ConsumerWidget {
         : (soXong * 100 / khoaHoc.soBaiHoc).round();
 
     final bai = _baiTiepTheo;
+    final gioiThieu = GioiThieuKhoaHoc.cua(khoaHoc.ma);
+    final chuong =
+        gioiThieu?.chiaChuong(khoaHoc) ?? {'Danh sách bài học': khoaHoc.baiHoc};
 
-    final cot1 = Column(
+    final tieuDe = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: AnhBia(
-            tenTep: khoaHoc.anhBia,
-            danhMuc: khoaHoc.danhMuc,
-            tieuDe: khoaHoc.tieuDe,
-            tiLe: 21 / 9,
-          ),
-        ),
-        const SizedBox(height: 20),
         Text(
           khoaHoc.tieuDe,
-          style: t.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+          style: (rong ? t.displaySmall : t.headlineMedium)?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
         ),
+        const SizedBox(height: 8),
+        Text(khoaHoc.moTaNgan, style: t.titleMedium),
         const SizedBox(height: 10),
         Wrap(
           spacing: 16,
@@ -146,34 +146,67 @@ class _NoiDung extends ConsumerWidget {
             ),
           ],
         ),
-        const SizedBox(height: 20),
-        Text(khoaHoc.moTaDai, style: t.bodyLarge?.copyWith(height: 1.6)),
-        const SizedBox(height: 32),
+      ],
+    );
+
+    final cot1 = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (gioiThieu != null) ...[
+          _DanhSachGioiThieu(
+            tieuDe: 'Bạn sẽ học được gì',
+            dong: gioiThieu.mucTieu,
+            bieuTuong: Icons.check_circle_outline,
+          ),
+          const SizedBox(height: 28),
+        ],
         Text(
-          'Nội dung khoá học',
+          'Về khóa học',
+          style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 8),
+        Text(khoaHoc.moTaDai, style: t.bodyLarge?.copyWith(height: 1.5)),
+        if (gioiThieu != null) ...[
+          const SizedBox(height: 28),
+          _DanhSachGioiThieu(
+            tieuDe: 'Yêu cầu đầu vào',
+            dong: gioiThieu.yeuCau,
+            bieuTuong: Icons.circle_outlined,
+          ),
+        ],
+        const SizedBox(height: 28),
+        Text(
+          'Chương trình khóa học',
           style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 4),
         Text(
-          '${khoaHoc.soBaiHoc} bài · '
+          '${chuong.length} phần · ${khoaHoc.soBaiHoc} bài · '
           '${dd.thoiLuong(khoaHoc.tongThoiLuongGiay)}',
           style: t.bodySmall?.copyWith(color: mau.onSurfaceVariant),
         ),
         const SizedBox(height: 12),
-        _DanhSachBai(khoaHoc: khoaHoc, tienDo: tienDo),
+        _DanhSachBai(khoaHoc: khoaHoc, tienDo: tienDo, chuong: chuong),
       ],
     );
 
-    final cot2 = _TheHanhDong(
-      key: ValueKey(khoaHoc.ma),
-      khoaHoc: khoaHoc,
-      phanTram: phanTram,
-      soXong: soXong,
-      baiTiepTheo: bai,
-      daBatDau: tienDo != null,
-      onDatLai: tienDo == null
-          ? null
-          : () => ref.read(tienDoProvider.notifier).datLai(khoaHoc.ma),
+    final cot2 = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _XemTruoc(khoaHoc: khoaHoc),
+        const SizedBox(height: 12),
+        _TheHanhDong(
+          key: ValueKey(khoaHoc.ma),
+          khoaHoc: khoaHoc,
+          phanTram: phanTram,
+          soXong: soXong,
+          baiTiepTheo: bai,
+          daBatDau: tienDo != null,
+          onDatLai: tienDo == null
+              ? null
+              : () => ref.read(tienDoProvider.notifier).datLai(khoaHoc.ma),
+        ),
+      ],
     );
 
     return Trang(
@@ -184,6 +217,8 @@ class _NoiDung extends ConsumerWidget {
           label: const Text('Tất cả khoá học'),
         ),
         const SizedBox(height: 8),
+        tieuDe,
+        const SizedBox(height: 24),
         if (rong)
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,6 +234,130 @@ class _NoiDung extends ConsumerWidget {
           cot1,
         ],
       ],
+    );
+  }
+}
+
+class _DanhSachGioiThieu extends StatelessWidget {
+  const _DanhSachGioiThieu({
+    required this.tieuDe,
+    required this.dong,
+    required this.bieuTuong,
+  });
+
+  final String tieuDe;
+  final List<String> dong;
+  final IconData bieuTuong;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card.outlined(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 12,
+          children: [
+            Text(
+              tieuDe,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            for (final noiDung in dong)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(bieuTuong, size: 18, color: theme.colorScheme.primary),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(noiDung)),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _XemTruoc extends ConsumerWidget {
+  const _XemTruoc({required this.khoaHoc});
+
+  final KhoaHoc khoaHoc;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final taiLieu = ref.watch(taiLieuBaiHocProvider).asData?.value;
+    final bai = khoaHoc.baiHoc.where((b) => b.xemThu).firstOrNull;
+    final video = taiLieu?['${khoaHoc.ma}/${bai?.ma}'];
+    final youtubeId = video?.youtubeId;
+    final anhBia = AnhBia(
+      tenTep: khoaHoc.anhBia,
+      danhMuc: khoaHoc.danhMuc,
+      tieuDe: khoaHoc.tieuDe,
+    );
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          anhBia,
+          if (bai != null && youtubeId != null)
+            Positioned.fill(
+              child: ColoredBox(
+                color: Colors.black.withValues(alpha: 0.45),
+                child: Center(
+                  child: FilledButton.icon(
+                    onPressed: () => showDialog<void>(
+                      context: context,
+                      builder: (context) => Dialog(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 760),
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        bai.tieuDe,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleLarge,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      tooltip: 'Đóng video xem trước',
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(),
+                                      icon: const Icon(Icons.close),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                VideoBaiHoc(
+                                  youtubeId: youtubeId,
+                                  kenhYouTube: video?.kenhYouTube,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('Xem trước khóa học'),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -360,10 +519,13 @@ class _TheHanhDongState extends ConsumerState<_TheHanhDong> {
               bieuTuong: Icons.schedule,
               chu: dd.thoiLuong(khoaHoc.tongThoiLuongGiay),
             ),
-            _Dong(bieuTuong: Icons.devices, chu: 'Học trên mọi thiết bị'),
             const _Dong(
-              bieuTuong: Icons.all_inclusive,
-              chu: 'Truy cập không giới hạn',
+              bieuTuong: Icons.smart_display_outlined,
+              chu: 'Video tiếng Anh',
+            ),
+            const _Dong(
+              bieuTuong: Icons.translate,
+              chu: 'Bài viết và ví dụ tiếng Việt',
             ),
           ],
         ),
@@ -398,8 +560,13 @@ class _Dong extends StatelessWidget {
 class _DanhSachBai extends ConsumerWidget {
   final KhoaHoc khoaHoc;
   final TienDo? tienDo;
+  final Map<String, List<BaiHoc>> chuong;
 
-  const _DanhSachBai({required this.khoaHoc, this.tienDo});
+  const _DanhSachBai({
+    required this.khoaHoc,
+    required this.chuong,
+    this.tienDo,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -407,18 +574,29 @@ class _DanhSachBai extends ConsumerWidget {
     return Card(
       child: Column(
         children: [
-          for (var i = 0; i < khoaHoc.baiHoc.length; i++)
-            _MotBai(
-              soThuTu: i + 1,
-              bai: khoaHoc.baiHoc[i],
-              daXong: tienDo?.daXong(khoaHoc.baiHoc[i].ma) ?? false,
-              coVach: i < khoaHoc.baiHoc.length - 1,
-              mau: mau,
-              onMo: () =>
-                  context.go(DuongDan.baiHoc(khoaHoc.ma, khoaHoc.baiHoc[i].ma)),
-              onDao: () => ref
-                  .read(tienDoProvider.notifier)
-                  .daoTrangThaiBai(khoaHoc.ma, khoaHoc.baiHoc[i].ma),
+          for (final muc in chuong.entries)
+            ExpansionTile(
+              key: PageStorageKey((khoaHoc.ma, muc.key)),
+              initiallyExpanded: muc.key == chuong.keys.first,
+              title: Text(muc.key),
+              subtitle: Text(
+                '${muc.value.length} bài · '
+                '${dd.thoiLuong(muc.value.fold(0, (tong, bai) => tong + bai.thoiLuongGiay))}',
+              ),
+              children: [
+                for (final bai in muc.value)
+                  _MotBai(
+                    soThuTu: khoaHoc.viTriBaiHoc(bai.ma) + 1,
+                    bai: bai,
+                    daXong: tienDo?.daXong(bai.ma) ?? false,
+                    coVach: bai != muc.value.last,
+                    mau: mau,
+                    onMo: () => context.go(DuongDan.baiHoc(khoaHoc.ma, bai.ma)),
+                    onDao: () => ref
+                        .read(tienDoProvider.notifier)
+                        .daoTrangThaiBai(khoaHoc.ma, bai.ma),
+                  ),
+              ],
             ),
         ],
       ),

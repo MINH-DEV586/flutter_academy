@@ -53,7 +53,7 @@ flutter analyze
 |---|---|
 | **Trang chủ** | mảng giới thiệu, dải "Tiếp tục học", dải khoá học nổi bật, danh sách chủ đề |
 | **Danh sách khoá học** | tìm theo từ khoá (bỏ dấu tiếng Việt), lọc theo chủ đề / mức độ / học phí, năm kiểu sắp xếp — **tất cả nằm trong URL** |
-| **Chi tiết khoá học** | mô tả, danh sách bài, thanh tiến độ, nút "Học tiếp" |
+| **Giới thiệu khoá học** | video xem trước, mục tiêu, yêu cầu đầu vào, chương trình theo phần và đăng ký học |
 | **Trang học** | video YouTube, mục lục, đánh dấu đã xong, bài trước / bài sau và AI Tutor |
 | **Khoá học của tôi** | hiện các khóa đã đăng ký bằng tài khoản hiện tại |
 | **Hồ sơ** | thống kê, chọn giao diện sáng/tối, đăng xuất |
