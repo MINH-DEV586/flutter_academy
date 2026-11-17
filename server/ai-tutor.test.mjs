@@ -93,6 +93,30 @@ test('Gemini nhận tài liệu bài học và trả nội dung hiển thị', a
   });
 });
 
+test('OpenRouter nhận tài liệu bài hiện tại và trả nội dung chat', async (t) => {
+  const url = await khoiDong(t, {
+    nhaCungCap: 'openrouter',
+    apiKey: 'test-key',
+    goiApi: async (diaChi, options) => {
+      assert.equal(diaChi, 'https://openrouter.ai/api/v1/chat/completions');
+      assert.equal(options.headers.Authorization, 'Bearer test-key');
+      const payload = JSON.parse(options.body);
+      assert.equal(payload.model, 'openrouter/free');
+      assert.equal(payload.messages[0].role, 'system');
+      assert.match(payload.messages[0].content, /queryParameters/);
+      assert.deepEqual(payload.messages[1], { role: 'user', content: cauHoi.cauHoi });
+      return Response.json({
+        choices: [{ message: { content: 'Dùng queryParameters để đọc bộ lọc.' } }],
+      });
+    },
+  });
+  const response = await gui(url, cauHoi);
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    cauTraLoi: 'Dùng queryParameters để đọc bộ lọc.',
+  });
+});
+
 test('báo rõ khi chưa có khóa hoặc phản hồi AI trống', async (t) => {
   const chuaCauHinh = await khoiDong(t);
   assert.equal((await gui(chuaCauHinh, cauHoi)).status, 503);

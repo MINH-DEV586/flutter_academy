@@ -60,7 +60,7 @@ flutter analyze
 
 Tiến độ học được lưu bằng **Hive**, ngay trong trình duyệt (IndexedDB).
 Trình phát bài mẫu kết nối YouTube. Khi bật AI Tutor, backend gửi câu hỏi và
-tài liệu bài học hiện tại tới Gemini hoặc OpenAI tùy cấu hình. Email và tiến
+tài liệu bài học hiện tại tới OpenRouter, Gemini hoặc OpenAI tùy cấu hình. Email và tiến
 độ học vẫn lưu cục bộ.
 
 ### Dùng thử AI Tutor
@@ -76,11 +76,12 @@ kênh, liên kết YouTube và nội dung hướng dẫn tiếng Việt trong
   [bài thực hành ShellRoute](https://www.youtube.com/watch?v=L-DhEd5hF3M).
 - **Python cơ bản** và **Java cơ bản** tuyển chọn từ [kênh Bro Code](https://www.youtube.com/@BroCodez).
 
-1. Cài Node.js 22 trở lên. Tạo tệp `.env` ở thư mục gốc dự án và thêm dòng
-   `GEMINI_API_KEY=khóa_của_bạn` hoặc `OPENAI_API_KEY=khóa_của_bạn`. Git bỏ
-   qua tệp này. Backend dùng Gemini nếu có cả hai khóa. Có thể chọn model
-   bằng `GEMINI_MODEL` hoặc `OPENAI_MODEL` tương ứng. Các biến đã đặt trong
-   terminal được ưu tiên hơn tệp `.env`.
+1. Cài Node.js 22 trở lên. Tạo tệp `.env` ở thư mục gốc dự án và đặt khóa
+   vào `OPENROUTER_API_KEY`, `GEMINI_API_KEY` hoặc `OPENAI_API_KEY`. Git bỏ
+   qua tệp này. Nếu có nhiều khóa, backend ưu tiên OpenRouter, rồi Gemini,
+   rồi OpenAI. OpenRouter mặc định dùng `openrouter/free`. Có thể chọn
+   model bằng `OPENROUTER_MODEL`, `GEMINI_MODEL` hoặc `OPENAI_MODEL`. Các
+   biến đã đặt trong terminal được ưu tiên hơn tệp `.env`.
 2. Từ thư mục gốc dự án, chạy `node server/ai-tutor.mjs`.
 3. Mở terminal khác và chạy Flutter Web với địa chỉ backend.
 

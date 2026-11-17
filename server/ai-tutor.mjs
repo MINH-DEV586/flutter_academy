@@ -24,6 +24,20 @@ async function docJson(request) {
 }
 
 function yeuCauAi(nhaCungCap, apiKey, model, instructions, input) {
+  if (nhaCungCap === 'openrouter') {
+    return {
+      url: 'https://openrouter.ai/api/v1/chat/completions',
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: {
+        model: model ?? 'openrouter/free',
+        max_tokens: 1400,
+        messages: [
+          { role: 'system', content: instructions },
+          { role: 'user', content: input },
+        ],
+      },
+    };
+  }
   if (nhaCungCap === 'gemini') {
     return {
       url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model ?? 'gemini-3.5-flash')}:generateContent`,
@@ -49,6 +63,10 @@ function yeuCauAi(nhaCungCap, apiKey, model, instructions, input) {
 }
 
 function layVanBan(nhaCungCap, ketQua) {
+  if (nhaCungCap === 'openrouter') {
+    const noiDung = ketQua.choices?.[0]?.message?.content;
+    return typeof noiDung === 'string' ? noiDung.trim() : '';
+  }
   if (nhaCungCap === 'gemini') {
     return ketQua.candidates?.[0]?.content?.parts
       ?.filter((muc) => !muc.thought && typeof muc.text === 'string')
@@ -158,12 +176,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const envFile = new URL('../.env', import.meta.url);
   if (existsSync(envFile)) process.loadEnvFile(envFile);
   const port = Number(process.env.AI_TUTOR_PORT ?? 8787);
-  const geminiKey = process.env.GEMINI_API_KEY?.trim();
-  const nhaCungCap = geminiKey ? 'gemini' : 'openai';
+  const nhaCungCap = ['openrouter', 'gemini', 'openai'].find(
+    (ten) => process.env[`${ten.toUpperCase()}_API_KEY`]?.trim(),
+  ) ?? 'openai';
+  const prefix = nhaCungCap.toUpperCase();
   taoMayChu({
     nhaCungCap,
-    apiKey: geminiKey || process.env.OPENAI_API_KEY?.trim(),
-    model: geminiKey ? process.env.GEMINI_MODEL : process.env.OPENAI_MODEL,
+    apiKey: process.env[`${prefix}_API_KEY`]?.trim(),
+    model: process.env[`${prefix}_MODEL`]?.trim() || undefined,
   }).listen(port, '127.0.0.1', () => {
     console.log(`AI Tutor (${nhaCungCap}): http://127.0.0.1:${port}/api/ai-tutor`);
   });
