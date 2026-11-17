@@ -6,6 +6,7 @@ import '../models/khoa_hoc.dart';
 import '../models/nguoi_dung.dart';
 import '../models/tien_do.dart';
 import 'chu_de_vm.dart';
+import 'dang_ky_khoa_hoc_vm.dart';
 import 'phien_vm.dart';
 import 'tien_do_vm.dart';
 
@@ -105,6 +106,11 @@ final tienDoProvider =
 
 final phienProvider = AsyncNotifierProvider<PhienVM, NguoiDung?>(
   PhienVM.new,
+  retry: (_, _) => null,
+);
+
+final dangKyKhoaHocProvider = AsyncNotifierProvider<DangKyKhoaHocVM, Set<String>>(
+  DangKyKhoaHocVM.new,
   retry: (_, _) => null,
 );
 

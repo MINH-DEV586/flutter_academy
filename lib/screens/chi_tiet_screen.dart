@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../cau_hinh/diem_ngat.dart';
+import '../data/kho_du_lieu.dart';
 import '../dinh_tuyen/duong_dan.dart';
 import '../models/bai_hoc.dart';
 import '../models/dinh_dang.dart' as dd;
@@ -45,7 +46,8 @@ class ChiTietScreen extends ConsumerWidget {
               KhoiRong(
                 bieuTuong: Icons.link_off,
                 tieuDe: 'Khoá học không tồn tại',
-                moTa: 'Không có khoá học nào mang mã "$maKhoaHoc". '
+                moTa:
+                    'Không có khoá học nào mang mã "$maKhoaHoc". '
                     'Có thể khoá học đã bị gỡ hoặc link đã cũ.',
                 hanhDong: FilledButton(
                   onPressed: () => context.go(DuongDan.danhSach),
@@ -99,8 +101,9 @@ class _NoiDung extends ConsumerWidget {
     final soXong = tienDo == null
         ? 0
         : khoaHoc.baiHoc.where((b) => tienDo!.daXong(b.ma)).length;
-    final phanTram =
-        khoaHoc.soBaiHoc == 0 ? 0 : (soXong * 100 / khoaHoc.soBaiHoc).round();
+    final phanTram = khoaHoc.soBaiHoc == 0
+        ? 0
+        : (soXong * 100 / khoaHoc.soBaiHoc).round();
 
     final bai = _baiTiepTheo;
 
@@ -117,8 +120,10 @@ class _NoiDung extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 20),
-        Text(khoaHoc.tieuDe,
-            style: t.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
+        Text(
+          khoaHoc.tieuDe,
+          style: t.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+        ),
         const SizedBox(height: 10),
         Wrap(
           spacing: 16,
@@ -144,8 +149,10 @@ class _NoiDung extends ConsumerWidget {
         const SizedBox(height: 20),
         Text(khoaHoc.moTaDai, style: t.bodyLarge?.copyWith(height: 1.6)),
         const SizedBox(height: 32),
-        Text('Nội dung khoá học',
-            style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+        Text(
+          'Nội dung khoá học',
+          style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 4),
         Text(
           '${khoaHoc.soBaiHoc} bài · '
@@ -158,6 +165,7 @@ class _NoiDung extends ConsumerWidget {
     );
 
     final cot2 = _TheHanhDong(
+      key: ValueKey(khoaHoc.ma),
       khoaHoc: khoaHoc,
       phanTram: phanTram,
       soXong: soXong,
@@ -195,7 +203,7 @@ class _NoiDung extends ConsumerWidget {
   }
 }
 
-class _TheHanhDong extends StatelessWidget {
+class _TheHanhDong extends ConsumerStatefulWidget {
   final KhoaHoc khoaHoc;
   final int phanTram;
   final int soXong;
@@ -204,6 +212,7 @@ class _TheHanhDong extends StatelessWidget {
   final VoidCallback? onDatLai;
 
   const _TheHanhDong({
+    super.key,
     required this.khoaHoc,
     required this.phanTram,
     required this.soXong,
@@ -213,10 +222,51 @@ class _TheHanhDong extends StatelessWidget {
   });
 
   @override
+  ConsumerState<_TheHanhDong> createState() => _TheHanhDongState();
+}
+
+class _TheHanhDongState extends ConsumerState<_TheHanhDong> {
+  bool _dangGui = false;
+
+  Future<void> _dangKy() async {
+    final maKhoaHoc = widget.khoaHoc.ma;
+    if (!ref.read(daDangNhapProvider)) {
+      context.go(DuongDan.dangNhapRoiVe(DuongDan.chiTiet(maKhoaHoc)));
+      return;
+    }
+    setState(() => _dangGui = true);
+    try {
+      await ref.read(dangKyKhoaHocProvider.notifier).dangKy(maKhoaHoc);
+      if (!mounted) return;
+      _thongBao('Đã đăng ký khóa học. Hãy xem trong Khóa học của tôi.');
+    } catch (loi) {
+      if (!mounted) return;
+      _thongBao(
+        loi is LoiTaiKhoan
+            ? loi.thongBao
+            : 'Chưa đăng ký được khóa học. Vui lòng thử lại.',
+      );
+    } finally {
+      if (mounted) setState(() => _dangGui = false);
+    }
+  }
+
+  void _thongBao(String noiDung) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(noiDung)));
+  }
+
+  @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     final mau = Theme.of(context).colorScheme;
-    final bai = baiTiepTheo;
+    final khoaHoc = widget.khoaHoc;
+    final bai = widget.baiTiepTheo;
+    final daDangNhap = ref.watch(daDangNhapProvider);
+    final dangKy = ref.watch(dangKyKhoaHocProvider);
+    final daDangKy =
+        daDangNhap && (dangKy.asData?.value.contains(khoaHoc.ma) ?? false);
+    final dangTai = daDangNhap && dangKy.isLoading;
 
     return Card(
       child: Padding(
@@ -232,40 +282,60 @@ class _TheHanhDong extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            if (daBatDau) ...[
+            if (widget.daBatDau && daDangKy) ...[
               Row(
                 children: [
                   Expanded(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
-                        value: phanTram / 100,
+                        value: widget.phanTram / 100,
                         minHeight: 8,
                       ),
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Text('$phanTram%', style: t.labelLarge),
+                  Text('${widget.phanTram}%', style: t.labelLarge),
                 ],
               ),
               const SizedBox(height: 6),
               Text(
-                'Đã xong $soXong/${khoaHoc.soBaiHoc} bài',
+                'Đã xong ${widget.soXong}/${khoaHoc.soBaiHoc} bài',
                 style: t.bodySmall?.copyWith(color: mau.onSurfaceVariant),
               ),
               const SizedBox(height: 16),
             ],
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: bai == null
-                    ? null
-                    : () => context
-                        .go(DuongDan.baiHoc(khoaHoc.ma, bai.ma)),
-                child: Text(daBatDau ? 'Học tiếp' : 'Bắt đầu học'),
+            if (!daDangKy)
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _dangGui || dangTai ? null : _dangKy,
+                  child: Text(_dangGui ? 'Đang đăng ký…' : 'Đăng ký khóa học'),
+                ),
+              )
+            else
+              const Text('Đã đăng ký khóa học'),
+            if (bai != null) const SizedBox(height: 8),
+            if (daDangKy)
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: bai == null
+                      ? null
+                      : () => context.go(DuongDan.baiHoc(khoaHoc.ma, bai.ma)),
+                  child: Text(widget.daBatDau ? 'Học tiếp' : 'Bắt đầu học'),
+                ),
+              )
+            else if (bai != null)
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () =>
+                      context.go(DuongDan.baiHoc(khoaHoc.ma, bai.ma)),
+                  child: const Text('Xem bài học'),
+                ),
               ),
-            ),
-            if (bai != null) ...[
+            if (bai != null && daDangKy) ...[
               const SizedBox(height: 8),
               Text(
                 'Bài kế: ${bai.tieuDe}',
@@ -274,10 +344,10 @@ class _TheHanhDong extends StatelessWidget {
                 style: t.bodySmall?.copyWith(color: mau.onSurfaceVariant),
               ),
             ],
-            if (onDatLai != null) ...[
+            if (widget.onDatLai != null && daDangKy) ...[
               const SizedBox(height: 4),
               TextButton(
-                onPressed: onDatLai,
+                onPressed: widget.onDatLai,
                 child: const Text('Đặt lại tiến độ'),
               ),
             ],
@@ -290,10 +360,7 @@ class _TheHanhDong extends StatelessWidget {
               bieuTuong: Icons.schedule,
               chu: dd.thoiLuong(khoaHoc.tongThoiLuongGiay),
             ),
-            _Dong(
-              bieuTuong: Icons.devices,
-              chu: 'Học trên mọi thiết bị',
-            ),
+            _Dong(bieuTuong: Icons.devices, chu: 'Học trên mọi thiết bị'),
             const _Dong(
               bieuTuong: Icons.all_inclusive,
               chu: 'Truy cập không giới hạn',
@@ -347,9 +414,8 @@ class _DanhSachBai extends ConsumerWidget {
               daXong: tienDo?.daXong(khoaHoc.baiHoc[i].ma) ?? false,
               coVach: i < khoaHoc.baiHoc.length - 1,
               mau: mau,
-              onMo: () => context.go(
-                DuongDan.baiHoc(khoaHoc.ma, khoaHoc.baiHoc[i].ma),
-              ),
+              onMo: () =>
+                  context.go(DuongDan.baiHoc(khoaHoc.ma, khoaHoc.baiHoc[i].ma)),
               onDao: () => ref
                   .read(tienDoProvider.notifier)
                   .daoTrangThaiBai(khoaHoc.ma, khoaHoc.baiHoc[i].ma),

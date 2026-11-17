@@ -238,6 +238,24 @@ void main() {
       expect(nd?.hoTen, 'Trần Thu Hà');
       expect(c.read(daDangNhapProvider), isTrue);
     });
+
+    test('đăng ký khóa cập nhật danh sách và tách theo tài khoản', () async {
+      final c = dung();
+      final phien = c.read(phienProvider.notifier);
+      expect(await c.read(dangKyKhoaHocProvider.future), isEmpty);
+      await phien.dangNhap(email: 'a@b.vn', matKhau: 'mat-khau-kiem-thu');
+      expect(await c.read(dangKyKhoaHocProvider.future), isEmpty);
+
+      await c.read(dangKyKhoaHocProvider.notifier).dangKy('python-co-ban');
+      expect(await c.read(dangKyKhoaHocProvider.future), {'python-co-ban'});
+
+      await phien.dangXuat();
+      await phien.dangNhap(email: 'c@b.vn', matKhau: 'mat-khau-kiem-thu');
+      expect(await c.read(dangKyKhoaHocProvider.future), isEmpty);
+      await phien.dangXuat();
+      await phien.dangNhap(email: 'a@b.vn', matKhau: 'mat-khau-kiem-thu');
+      expect(await c.read(dangKyKhoaHocProvider.future), {'python-co-ban'});
+    });
   });
 
   group('hopLeEmail', () {

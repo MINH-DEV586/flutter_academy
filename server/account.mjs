@@ -14,7 +14,7 @@ function bam(matKhau, salt) {
   });
 }
 
-export function taoTaiKhoan(duongDan) {
+export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
   const db = new DatabaseSync(duongDan);
   db.exec(`
     PRAGMA journal_mode = WAL;
@@ -32,6 +32,11 @@ export function taoTaiKhoan(duongDan) {
       het_han INTEGER NOT NULL
     ) STRICT;
     CREATE INDEX IF NOT EXISTS phien_het_han ON phien(het_han);
+    CREATE TABLE IF NOT EXISTS dang_ky_khoa_hoc (
+      email TEXT NOT NULL REFERENCES tai_khoan(email),
+      ma_khoa_hoc TEXT NOT NULL,
+      PRIMARY KEY (email, ma_khoa_hoc)
+    ) STRICT;
   `);
   const themTaiKhoan = db.prepare(
     'INSERT INTO tai_khoan VALUES (?, ?, ?, ?) ON CONFLICT(email) DO NOTHING',
@@ -45,6 +50,12 @@ export function taoTaiKhoan(duongDan) {
     FROM phien JOIN tai_khoan USING (email)
     WHERE phien.ma_bam = ? AND phien.het_han > ?
   `);
+  const danhSachDangKy = db.prepare(
+    'SELECT ma_khoa_hoc FROM dang_ky_khoa_hoc WHERE email = ? ORDER BY ma_khoa_hoc',
+  );
+  const themDangKy = db.prepare(
+    'INSERT INTO dang_ky_khoa_hoc VALUES (?, ?) ON CONFLICT(email, ma_khoa_hoc) DO NOTHING',
+  );
   let dangBam = 0;
   let soLuot = 0;
   let hetCuaSo = 0;
@@ -59,6 +70,35 @@ export function taoTaiKhoan(duongDan) {
 
   async function xuLy(request, tra, docJson) {
     const { url, method } = request;
+    if (url === '/api/account/enrollments') {
+      const match = /^Bearer ([a-f0-9]{64})$/.exec(request.headers.authorization ?? '');
+      const nguoiDung = match && docPhien.get(bamToken(match[1]), Date.now());
+      if (!nguoiDung) return tra(401, { loi: 'Vui lòng đăng nhập để đăng ký khóa học.' });
+      if (method === 'GET') {
+        const maKhoaHoc = danhSachDangKy.all(nguoiDung.email).map((row) => row.ma_khoa_hoc);
+        return tra(200, { maKhoaHoc });
+      }
+      if (method !== 'POST') return tra(405, { loi: 'Chỉ hỗ trợ GET và POST.' });
+      if (request.headers['content-type']?.split(';')[0] !== 'application/json') {
+        return tra(415, { loi: 'Yêu cầu nội dung JSON.' });
+      }
+      let duLieu;
+      try {
+        duLieu = await docJson(request);
+      } catch {
+        return tra(400, { loi: 'JSON không hợp lệ.' });
+      }
+      const maKhoaHoc = duLieu?.maKhoaHoc;
+      if (!maKhoaHocHopLe.has(maKhoaHoc)) {
+        return tra(404, { loi: 'Không tìm thấy khóa học để đăng ký.' });
+      }
+      // Kiểm tra lại phiên sau khi đọc body vì nó có thể vừa bị thu hồi.
+      if (!docPhien.get(bamToken(match[1]), Date.now())) {
+        return tra(401, { loi: 'Phiên đã hết hạn. Vui lòng đăng nhập lại.' });
+      }
+      themDangKy.run(nguoiDung.email, maKhoaHoc);
+      return tra(200, { maKhoaHoc });
+    }
     if (url === '/api/account/session' && (method === 'GET' || method === 'DELETE')) {
       const match = /^Bearer ([a-f0-9]{64})$/.exec(request.headers.authorization ?? '');
       if (!match) return tra(401, { loi: 'Bạn chưa đăng nhập.' });

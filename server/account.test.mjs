@@ -47,3 +47,37 @@ test('đăng ký, đăng nhập, đọc phiên và thu hồi token', async (t) =
   assert.equal((await session(token)).status, 401);
   assert.equal((await session(phienMoi.token)).status, 200);
 });
+
+test('chỉ lưu một đăng ký cho mỗi khóa và từng tài khoản', async (t) => {
+  const server = taoMayChu().listen(0, '127.0.0.1');
+  t.after(() => server.close());
+  await once(server, 'listening');
+  const base = `http://127.0.0.1:${server.address().port}/api/account`;
+  const dangKy = async (email) => {
+    const response = await fetch(`${base}/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, hoTen: 'Người học', matKhau: 'mat-khau-kiem-thu' }),
+    });
+    assert.equal(response.status, 201);
+    return (await response.json()).token;
+  };
+  const danhSach = (token) => fetch(`${base}/enrollments`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const ghiDanh = (token, maKhoaHoc) => fetch(`${base}/enrollments`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ maKhoaHoc }),
+  });
+
+  assert.equal((await ghiDanh('', 'python-co-ban')).status, 401);
+  const a = await dangKy('a@example.test');
+  const b = await dangKy('b@example.test');
+  assert.deepEqual(await (await danhSach(a)).json(), { maKhoaHoc: [] });
+  assert.equal((await ghiDanh(a, 'khoa-khong-ton-tai')).status, 404);
+  assert.equal((await ghiDanh(a, 'python-co-ban')).status, 200);
+  assert.equal((await ghiDanh(a, 'python-co-ban')).status, 200);
+  assert.deepEqual(await (await danhSach(a)).json(), { maKhoaHoc: ['python-co-ban'] });
+  assert.deepEqual(await (await danhSach(b)).json(), { maKhoaHoc: [] });
+});

@@ -55,6 +55,10 @@ abstract interface class KhoNguoiDung {
   });
 
   Future<void> dangXuat();
+
+  Future<Set<String>> khoaDaDangKy();
+
+  Future<void> dangKyKhoaHoc(String maKhoaHoc);
 }
 
 class LoiTaiKhoan implements Exception {

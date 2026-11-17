@@ -72,6 +72,7 @@ class KhoTienDoGiaLap implements KhoTienDo {
 class KhoNguoiDungGiaLap implements KhoNguoiDung {
   NguoiDung? duLieu;
   bool gayLoi;
+  final _dangKy = <String, Set<String>>{};
 
   KhoNguoiDungGiaLap({this.duLieu, this.gayLoi = false});
 
@@ -98,5 +99,15 @@ class KhoNguoiDungGiaLap implements KhoNguoiDung {
   @override
   Future<void> dangXuat() async {
     duLieu = null;
+  }
+
+  @override
+  Future<Set<String>> khoaDaDangKy() async => {...?_dangKy[duLieu?.email]};
+
+  @override
+  Future<void> dangKyKhoaHoc(String maKhoaHoc) async {
+    final email = duLieu?.email;
+    if (email == null) throw StateError('Chưa đăng nhập');
+    _dangKy.putIfAbsent(email, () => {}).add(maKhoaHoc);
   }
 }

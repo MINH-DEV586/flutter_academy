@@ -55,7 +55,7 @@ flutter analyze
 | **Danh sách khoá học** | tìm theo từ khoá (bỏ dấu tiếng Việt), lọc theo chủ đề / mức độ / học phí, năm kiểu sắp xếp — **tất cả nằm trong URL** |
 | **Chi tiết khoá học** | mô tả, danh sách bài, thanh tiến độ, nút "Học tiếp" |
 | **Trang học** | video YouTube, mục lục, đánh dấu đã xong, bài trước / bài sau và AI Tutor |
-| **Khoá học của tôi** | cần đăng nhập; khoá đang học dở xếp trước khoá đã hoàn thành |
+| **Khoá học của tôi** | hiện các khóa đã đăng ký bằng tài khoản hiện tại |
 | **Hồ sơ** | thống kê, chọn giao diện sáng/tối, đăng xuất |
 
 Tiến độ học được lưu bằng **Hive**, ngay trong trình duyệt (IndexedDB).
@@ -76,8 +76,10 @@ ngày và được thu hồi khi đăng xuất. Ứng dụng lưu token phiên t
 `ACCOUNT_API_URL` mặc định là `http://127.0.0.1:8787/api/account`. Android
 debug có thể dùng `adb reverse tcp:8787 tcp:8787` như với AI Tutor.
 
-Bản này chạy trên máy cục bộ. Tài khoản lưu hồ sơ người học. Tiến độ hiện
-vẫn gắn với trình duyệt hoặc thiết bị và chưa đồng bộ theo tài khoản.
+Bản này chạy trên máy cục bộ. Chọn **Đăng ký khóa học** tại trang giới thiệu
+để thêm khóa vào **Khóa học của tôi**. Backend lưu đăng ký theo tài khoản.
+Bạn có thể xem bài trước khi đăng ký. Tiến độ vẫn gắn với trình duyệt
+hoặc thiết bị và chưa đồng bộ theo tài khoản.
 Trước khi triển khai công khai, cần HTTPS, xác minh email và khôi phục
 mật khẩu.
 

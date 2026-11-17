@@ -6,6 +6,7 @@ import { taoTaiKhoan } from './account.mjs';
 const baiHoc = JSON.parse(
   readFileSync(new URL('../assets/bai_hoc_ai.json', import.meta.url), 'utf8'),
 );
+const maKhoaHoc = new Set(Object.keys(baiHoc).map((maBai) => maBai.split('/')[0]));
 const mucDo = {
   coBan: 'Giải thích thuật ngữ bằng từ đơn giản và một ví dụ ngắn.',
   trungCap: 'Giải thích từng bước và đưa một lỗi thường gặp.',
@@ -83,7 +84,7 @@ function layVanBan(nhaCungCap, ketQua) {
 export function taoMayChu({
   apiKey, model, nhaCungCap = 'openai', goiApi = fetch, accountDb = ':memory:',
 } = {}) {
-  const taiKhoan = taoTaiKhoan(accountDb);
+  const taiKhoan = taoTaiKhoan(accountDb, maKhoaHoc);
   let dangXuLy = 0;
   const server = createServer({ requestTimeout: 15_000 }, async (request, response) => {
     const tra = (status, body) => {

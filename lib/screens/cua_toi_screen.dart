@@ -8,60 +8,59 @@ import '../widgets/luoi_khoa_hoc.dart';
 import '../widgets/trang.dart';
 import '../widgets/trang_thai.dart';
 
-/// "Khoá học của tôi" — trang cần đăng nhập.
-///
-/// Không có dòng nào ở đây kiểm tra đăng nhập. Việc đó do `redirect` của
-/// go_router lo (xem `dinh_tuyen/bo_dinh_tuyen.dart`), nên người chưa đăng
-/// nhập không bao giờ chạm tới widget này.
-///
-/// Đặt chốt kiểm tra ở tầng điều hướng thay vì rải trong từng màn hình là
-/// một quyết định kiến trúc có chủ đích: thêm trang mới chỉ cần thêm đường
-/// dẫn vào `DuongDan.canDangNhap`, không ai quên được.
+/// Các khóa học mà tài khoản hiện tại đã đăng ký.
 class CuaToiScreen extends ConsumerWidget {
   const CuaToiScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dangHoc = ref.watch(khoaHocDangHocProvider);
+    final danhSach = ref.watch(danhSachKhoaHocProvider);
+    final dangKy = ref.watch(dangKyKhoaHocProvider);
     final phanTram = ref.watch(phanTramTienDoProvider);
 
     return Trang(
       con: [
         const TieuDeMuc(
           chu: 'Khoá học của tôi',
-          phu: 'Tiến độ được lưu bằng Hive, ngay trên máy bạn.',
+          phu: 'Các khóa học bạn đã đăng ký.',
         ),
         KhiAsync(
-          gia: dangHoc,
-          thuLai: () => ref.invalidate(danhSachKhoaHocProvider),
-          khiCo: (ds) {
-            if (ds.isEmpty) {
-              return KhoiRong(
-                bieuTuong: Icons.bookmark_border,
-                tieuDe: 'Bạn chưa bắt đầu khoá nào',
-                moTa: 'Mở một khoá học và đánh dấu bài đầu tiên là đã xong — '
-                    'khoá học sẽ xuất hiện ở đây.',
-                hanhDong: FilledButton(
-                  onPressed: () => context.go(DuongDan.danhSach),
-                  child: const Text('Tìm khoá học'),
-                ),
+          gia: dangKy,
+          thuLai: () => ref.invalidate(dangKyKhoaHocProvider),
+          khiCo: (maDaDangKy) => KhiAsync(
+            gia: danhSach,
+            thuLai: () => ref.invalidate(danhSachKhoaHocProvider),
+            khiCo: (khoaHoc) {
+              final ds = locDangHoc(khoaHoc, {
+                for (final ma in maDaDangKy) ma: phanTram[ma] ?? 0,
+              });
+              if (ds.isEmpty) {
+                return KhoiRong(
+                  bieuTuong: Icons.bookmark_border,
+                  tieuDe: 'Bạn chưa đăng ký khóa học nào',
+                  moTa: 'Mở khóa bạn muốn học và chọn Đăng ký khóa học.',
+                  hanhDong: FilledButton(
+                    onPressed: () => context.go(DuongDan.danhSach),
+                    child: const Text('Tìm khoá học'),
+                  ),
+                );
+              }
+              final xong = ds.where((k) => (phanTram[k.ma] ?? 0) >= 100).length;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Đã đăng ký ${ds.length} khóa · Đã hoàn thành $xong khóa',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  LuoiKhoaHoc(danhSach: ds, tienDo: phanTram),
+                ],
               );
-            }
-            final xong = ds.where((k) => (phanTram[k.ma] ?? 0) >= 100).length;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Đang học ${ds.length - xong} khoá · Đã hoàn thành $xong khoá',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-                const SizedBox(height: 16),
-                LuoiKhoaHoc(danhSach: ds, tienDo: phanTram),
-              ],
-            );
-          },
+            },
+          ),
         ),
       ],
     );

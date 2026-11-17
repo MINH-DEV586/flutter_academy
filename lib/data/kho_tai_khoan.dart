@@ -99,4 +99,29 @@ class KhoTaiKhoan implements KhoNguoiDung {
     if (response.statusCode != 401) _doc(response);
     await _phien.delete(_khoaToken);
   }
+
+  String _docToken() {
+    final token = _phien.get(_khoaToken);
+    if (token == null) {
+      throw const LoiTaiKhoan('Vui lòng đăng nhập để đăng ký khóa học.');
+    }
+    return token;
+  }
+
+  @override
+  Future<Set<String>> khoaDaDangKy() async {
+    final response = await _gui('GET', 'enrollments', token: _docToken());
+    return (_doc(response)['maKhoaHoc'] as List).cast<String>().toSet();
+  }
+
+  @override
+  Future<void> dangKyKhoaHoc(String maKhoaHoc) async {
+    final response = await _gui(
+      'POST',
+      'enrollments',
+      token: _docToken(),
+      duLieu: {'maKhoaHoc': maKhoaHoc},
+    );
+    _doc(response);
+  }
 }
