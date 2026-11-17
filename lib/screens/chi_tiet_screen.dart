@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../cau_hinh/diem_ngat.dart';
+import '../data/bai_luyen_tap.dart';
 import '../data/gioi_thieu_khoa_hoc.dart';
 import '../data/kho_du_lieu.dart';
 import '../data/tai_lieu_bai_hoc.dart';
@@ -187,6 +188,19 @@ class _NoiDung extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
         _DanhSachBai(khoaHoc: khoaHoc, tienDo: tienDo, chuong: chuong),
+        if (BaiLuyenTap.cua(khoaHoc.ma) case final luyenTap?) ...[
+          const SizedBox(height: 28),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.assignment_outlined),
+            title: const Text('Quiz và bài tập'),
+            subtitle: Text(
+              '${luyenTap.quiz.length} câu trắc nghiệm · 1 bài tập code',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.go(DuongDan.luyenTap(khoaHoc.ma)),
+          ),
+        ],
       ],
     );
 

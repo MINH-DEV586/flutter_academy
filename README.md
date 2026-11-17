@@ -55,6 +55,7 @@ flutter analyze
 | **Danh sách khoá học** | tìm theo từ khoá (bỏ dấu tiếng Việt), lọc theo chủ đề / mức độ / học phí, năm kiểu sắp xếp — **tất cả nằm trong URL** |
 | **Giới thiệu khoá học** | video xem trước, mục tiêu, yêu cầu đầu vào, chương trình theo phần và đăng ký học |
 | **Trang học** | video YouTube, mục lục, đánh dấu đã xong, bài trước / bài sau và AI Tutor |
+| **Luyện tập** | trắc nghiệm chấm điểm, giải thích đáp án và bài tập code có gợi ý, kết quả mong đợi, lời giải mẫu |
 | **Khoá học của tôi** | hiện các khóa đã đăng ký bằng tài khoản hiện tại |
 | **Hồ sơ** | thống kê, chọn giao diện sáng/tối, đăng xuất |
 
@@ -62,6 +63,10 @@ Tiến độ học được lưu bằng **Hive**, ngay trong trình duyệt (Ind
 Trình phát bài mẫu kết nối YouTube. Khi bật AI Tutor, backend gửi câu hỏi và
 tài liệu bài học hiện tại tới OpenRouter, Gemini hoặc OpenAI tùy cấu hình.
 Tiến độ học vẫn lưu cục bộ trong Hive.
+
+Mở **Quiz và bài tập** dưới chương trình khóa học hoặc ở bài cuối. Mỗi
+khóa có ba câu trắc nghiệm và một bài tập code. Phần code dùng để soạn và
+đối chiếu lời giải mẫu. Có thể chạy code trong môi trường của ngôn ngữ tương ứng.
 
 ### Tài khoản học viên
 

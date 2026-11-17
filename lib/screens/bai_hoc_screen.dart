@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../cau_hinh/diem_ngat.dart';
+import '../data/bai_luyen_tap.dart';
 import '../data/tai_lieu_bai_hoc.dart';
 import '../dinh_tuyen/duong_dan.dart';
 import '../models/bai_hoc.dart';
@@ -204,6 +205,12 @@ class _NoiDung extends ConsumerWidget {
                 icon: const Icon(Icons.chevron_right),
                 iconAlignment: IconAlignment.end,
                 label: const Text('Bài sau'),
+              ),
+            if (sau == null && BaiLuyenTap.cua(khoaHoc.ma) != null)
+              TextButton.icon(
+                onPressed: () => context.go(DuongDan.luyenTap(khoaHoc.ma)),
+                icon: const Icon(Icons.assignment_outlined),
+                label: const Text('Quiz và bài tập'),
               ),
           ],
         ),

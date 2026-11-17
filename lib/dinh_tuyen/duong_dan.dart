@@ -23,6 +23,7 @@ class DuongDan {
   /// Đoạn con trong cấu hình go_router. Không có dấu `/` đầu vì là route con.
   static const String doanMaKhoaHoc = ':ma';
   static const String doanBaiHoc = 'bai/:maBai';
+  static const String doanLuyenTap = 'luyen-tap';
 
   /// Tên tham số đường dẫn. Dùng hằng số để không gõ lệch giữa nơi khai báo
   /// route và nơi đọc `state.pathParameters[...]`.
@@ -38,6 +39,9 @@ class DuongDan {
   /// `/khoa-hoc/dieu-huong-url/bai/b3`
   static String baiHoc(String maKhoaHoc, String maBai) =>
       '${chiTiet(maKhoaHoc)}/bai/$maBai';
+
+  static String luyenTap(String maKhoaHoc) =>
+      '${chiTiet(maKhoaHoc)}/$doanLuyenTap';
 
   /// `/khoa-hoc?q=web&sap=danh-gia`
   ///

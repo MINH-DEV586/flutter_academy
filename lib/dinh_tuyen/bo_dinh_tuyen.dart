@@ -9,6 +9,7 @@ import '../screens/dang_nhap_screen.dart';
 import '../screens/danh_sach_screen.dart';
 import '../screens/ho_so_screen.dart';
 import '../screens/khong_tim_thay_screen.dart';
+import '../screens/luyen_tap_screen.dart';
 import '../screens/trang_chu_screen.dart';
 import '../viewmodels/providers.dart';
 import '../widgets/khung_ung_dung.dart';
@@ -81,6 +82,12 @@ final boDinhTuyenProvider = Provider<GoRouter>((ref) {
                   maKhoaHoc: state.pathParameters[DuongDan.thamSoMa] ?? '',
                 ),
                 routes: [
+                  GoRoute(
+                    path: DuongDan.doanLuyenTap,
+                    builder: (context, state) => LuyenTapScreen(
+                      maKhoaHoc: state.pathParameters[DuongDan.thamSoMa] ?? '',
+                    ),
+                  ),
                   GoRoute(
                     path: DuongDan.doanBaiHoc,
                     // Trang học chiếm trọn màn hình: đặt ở navigator gốc để
