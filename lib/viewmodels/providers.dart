@@ -103,7 +103,10 @@ KhoaHoc? timKhoaHoc(List<KhoaHoc> ds, String ma) {
 final tienDoProvider =
     AsyncNotifierProvider<TienDoVM, Map<String, TienDo>>(TienDoVM.new);
 
-final phienProvider = AsyncNotifierProvider<PhienVM, NguoiDung?>(PhienVM.new);
+final phienProvider = AsyncNotifierProvider<PhienVM, NguoiDung?>(
+  PhienVM.new,
+  retry: (_, _) => null,
+);
 
 /// Đã đăng nhập hay chưa. Lúc chưa tải xong thì coi như chưa — `redirect`
 /// của go_router cần một câu trả lời đồng bộ, không chờ được.

@@ -1,11 +1,4 @@
 /// Hồ sơ người học.
-///
-/// Dự án này **không có máy chủ**: "đăng nhập" chỉ là ghi hồ sơ xuống Hive.
-/// Lý do giữ nguyên bước đăng nhập dù không có máy chủ: toàn bộ phần điều
-/// hướng có bảo vệ (`redirect` của go_router) và phần trạng thái phiên đều
-/// cần một khái niệm "đã đăng nhập hay chưa". Khi thay bằng Firebase hay
-/// Appwrite thì chỉ đổi phần cài đặt của `KhoNguoiDung`, mọi lớp khác giữ
-/// nguyên — xem README mục "Thay kho cục bộ bằng máy chủ".
 class NguoiDung {
   final String email;
   final String hoTen;

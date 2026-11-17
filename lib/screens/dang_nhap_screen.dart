@@ -8,16 +8,6 @@ import '../viewmodels/providers.dart';
 import '../widgets/trang.dart';
 
 /// Màn hình đăng nhập.
-///
-/// Không có mật khẩu và không có máy chủ — chỉ ghi hồ sơ xuống Hive. Phần
-/// đáng học ở đây là **cách một biểu mẫu web hoạt động đúng**:
-///
-///   * `Form` + `GlobalKey<FormState>` để kiểm tra dữ liệu;
-///   * `autovalidateMode` chỉ bật sau khi người dùng đã chạm vào ô, chứ
-///     không tô đỏ ngay khi trang vừa mở;
-///   * `autofillHints` để trình duyệt gợi ý điền sẵn;
-///   * quay về đúng trang người dùng định vào (`?tiep=...`), và chỉ chấp
-///     nhận đường dẫn nội bộ.
 class DangNhapScreen extends ConsumerStatefulWidget {
   final String? diaChiTiep;
 
@@ -31,7 +21,10 @@ class _DangNhapScreenState extends ConsumerState<DangNhapScreen> {
   final _khoaForm = GlobalKey<FormState>();
   final _oEmail = TextEditingController();
   final _oTen = TextEditingController();
+  final _oMatKhau = TextEditingController();
 
+  bool _dangKy = false;
+  bool _hienMatKhau = false;
   bool _dangGui = false;
   String? _loiChung;
 
@@ -39,17 +32,22 @@ class _DangNhapScreenState extends ConsumerState<DangNhapScreen> {
   void dispose() {
     _oEmail.dispose();
     _oTen.dispose();
+    _oMatKhau.dispose();
     super.dispose();
   }
 
   Future<void> _gui() async {
+    if (_dangGui) return;
     setState(() => _loiChung = null);
     if (!(_khoaForm.currentState?.validate() ?? false)) return;
 
     setState(() => _dangGui = true);
-    final loi = await ref.read(phienProvider.notifier).dangNhap(
+    final loi = await ref
+        .read(phienProvider.notifier)
+        .dangNhap(
           email: _oEmail.text,
-          hoTen: _oTen.text,
+          hoTen: _dangKy ? _oTen.text : null,
+          matKhau: _oMatKhau.text,
         );
 
     // Người dùng có thể đã rời trang trong lúc chờ. Đụng vào `context` hay
@@ -85,34 +83,37 @@ class _DangNhapScreenState extends ConsumerState<DangNhapScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text('Đăng nhập',
-                          style: t.headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 6),
                       Text(
-                        'Hồ sơ chỉ được lưu trên máy này. Không có mật khẩu, '
-                        'không có dữ liệu nào rời khỏi trình duyệt.',
-                        style: t.bodySmall
-                            ?.copyWith(color: mau.onSurfaceVariant),
-                      ),
-                      const SizedBox(height: 24),
-                      TextFormField(
-                        controller: _oTen,
-                        textInputAction: TextInputAction.next,
-                        autofillHints: const [AutofillHints.name],
-                        decoration: const InputDecoration(
-                          labelText: 'Họ và tên',
-                          prefixIcon: Icon(Icons.person_outline),
+                        _dangKy ? 'Tạo tài khoản' : 'Đăng nhập',
+                        style: t.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
                         ),
-                        validator: (v) => (v ?? '').trim().length < 2
-                            ? 'Họ tên phải có ít nhất 2 ký tự.'
-                            : null,
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 6),
+                      const SizedBox(height: 24),
+                      if (_dangKy) ...[
+                        TextFormField(
+                          controller: _oTen,
+                          readOnly: _dangGui,
+                          maxLength: 80,
+                          textInputAction: TextInputAction.next,
+                          autofillHints: const [AutofillHints.name],
+                          decoration: const InputDecoration(
+                            labelText: 'Họ và tên',
+                            prefixIcon: Icon(Icons.person_outline),
+                          ),
+                          validator: (v) => (v ?? '').trim().length < 2
+                              ? 'Họ tên phải có ít nhất 2 ký tự.'
+                              : null,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       TextFormField(
                         controller: _oEmail,
+                        readOnly: _dangGui,
+                        maxLength: 254,
                         keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.done,
+                        textInputAction: TextInputAction.next,
                         autofillHints: const [AutofillHints.email],
                         decoration: const InputDecoration(
                           labelText: 'Email',
@@ -123,12 +124,53 @@ class _DangNhapScreenState extends ConsumerState<DangNhapScreen> {
                         validator: (v) => hopLeEmail(v ?? '')
                             ? null
                             : 'Email chưa đúng định dạng.',
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _oMatKhau,
+                        readOnly: _dangGui,
+                        obscureText: !_hienMatKhau,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        maxLength: 128,
+                        textInputAction: TextInputAction.done,
+                        autofillHints: [
+                          _dangKy
+                              ? AutofillHints.newPassword
+                              : AutofillHints.password,
+                        ],
+                        decoration: InputDecoration(
+                          labelText: 'Mật khẩu',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            tooltip: _hienMatKhau
+                                ? 'Ẩn mật khẩu'
+                                : 'Hiện mật khẩu',
+                            onPressed: () =>
+                                setState(() => _hienMatKhau = !_hienMatKhau),
+                            icon: Icon(
+                              _hienMatKhau
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
+                          ),
+                        ),
+                        validator: (giaTri) {
+                          final matKhau = giaTri ?? '';
+                          if (matKhau.isEmpty) return 'Nhập mật khẩu.';
+                          if (_dangKy && matKhau.length < 12) {
+                            return 'Mật khẩu phải có ít nhất 12 ký tự.';
+                          }
+                          return null;
+                        },
                         onFieldSubmitted: (_) => _gui(),
                       ),
                       if (_loiChung != null) ...[
                         const SizedBox(height: 16),
-                        Text(_loiChung!,
-                            style: TextStyle(color: mau.error, fontSize: 13)),
+                        Text(
+                          _loiChung!,
+                          style: TextStyle(color: mau.error, fontSize: 13),
+                        ),
                       ],
                       const SizedBox(height: 24),
                       FilledButton(
@@ -138,9 +180,26 @@ class _DangNhapScreenState extends ConsumerState<DangNhapScreen> {
                                 height: 18,
                                 width: 18,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2),
+                                  strokeWidth: 2,
+                                ),
                               )
-                            : const Text('Đăng nhập'),
+                            : Text(_dangKy ? 'Tạo tài khoản' : 'Đăng nhập'),
+                      ),
+                      TextButton(
+                        onPressed: _dangGui
+                            ? null
+                            : () => setState(() {
+                                _dangKy = !_dangKy;
+                                _loiChung = null;
+                                _hienMatKhau = false;
+                                _khoaForm.currentState?.reset();
+                                _oMatKhau.clear();
+                              }),
+                        child: Text(
+                          _dangKy
+                              ? 'Đã có tài khoản? Đăng nhập'
+                              : 'Chưa có tài khoản? Đăng ký',
+                        ),
                       ),
                     ],
                   ),

@@ -2,7 +2,6 @@ import 'package:hive_ce/hive_ce.dart';
 import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 
 import '../models/khoa_hoc.dart';
-import '../models/nguoi_dung.dart';
 import '../models/tien_do.dart';
 import 'bo_chuyen_doi.dart';
 import 'kho_hive.dart';
@@ -11,7 +10,7 @@ import 'kho_hive.dart';
 class HopDaMo {
   final Box<KhoaHoc> khoaHoc;
   final Box<TienDo> tienDo;
-  final Box<NguoiDung> phien;
+  final Box<String> phien;
 
   const HopDaMo({
     required this.khoaHoc,
@@ -34,7 +33,7 @@ Future<HopDaMo> khoiTaoHive() async {
 
   final khoaHoc = await Hive.openBox<KhoaHoc>(TenHop.khoaHoc);
   final tienDo = await Hive.openBox<TienDo>(TenHop.tienDo);
-  final phien = await Hive.openBox<NguoiDung>(TenHop.phien);
+  final phien = await Hive.openBox<String>(TenHop.phien);
 
   await HiveKhoKhoaHoc.gieoNeuTrong(khoaHoc);
 

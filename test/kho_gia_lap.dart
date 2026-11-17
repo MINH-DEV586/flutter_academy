@@ -79,9 +79,20 @@ class KhoNguoiDungGiaLap implements KhoNguoiDung {
   Future<NguoiDung?> hienTai() async => duLieu;
 
   @override
-  Future<void> dangNhap(NguoiDung nguoiDung) async {
+  Future<NguoiDung> dangNhap({
+    required String email,
+    required String matKhau,
+  }) => dangKy(email: email, matKhau: matKhau, hoTen: 'Người học');
+
+  @override
+  Future<NguoiDung> dangKy({
+    required String email,
+    required String hoTen,
+    required String matKhau,
+  }) async {
     if (gayLoi) throw Exception('Không ghi được hồ sơ');
-    duLieu = nguoiDung;
+    final nguoiDung = NguoiDung(email: email, hoTen: hoTen);
+    return duLieu = nguoiDung;
   }
 
   @override

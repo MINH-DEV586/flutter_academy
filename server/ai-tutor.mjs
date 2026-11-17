@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
-import { existsSync, readFileSync } from 'node:fs';
-import { pathToFileURL } from 'node:url';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { taoTaiKhoan } from './account.mjs';
 
 const baiHoc = JSON.parse(
   readFileSync(new URL('../assets/bai_hoc_ai.json', import.meta.url), 'utf8'),
@@ -80,10 +81,11 @@ function layVanBan(nhaCungCap, ketQua) {
 }
 
 export function taoMayChu({
-  apiKey, model, nhaCungCap = 'openai', goiApi = fetch,
+  apiKey, model, nhaCungCap = 'openai', goiApi = fetch, accountDb = ':memory:',
 } = {}) {
+  const taiKhoan = taoTaiKhoan(accountDb);
   let dangXuLy = 0;
-  return createServer({ requestTimeout: 15_000 }, async (request, response) => {
+  const server = createServer({ requestTimeout: 15_000 }, async (request, response) => {
     const tra = (status, body) => {
       response.writeHead(status, {
         'Content-Type': 'application/json; charset=utf-8',
@@ -102,13 +104,24 @@ export function taoMayChu({
       response.setHeader('Access-Control-Allow-Origin', origin);
       response.setHeader('Vary', 'Origin');
     }
-    if (request.url !== '/api/ai-tutor') return tra(404, { loi: 'Sai địa chỉ.' });
+    const laTaiKhoan = request.url?.startsWith('/api/account/');
+    if (request.url !== '/api/ai-tutor' && !laTaiKhoan) {
+      return tra(404, { loi: 'Sai địa chỉ.' });
+    }
     if (request.method === 'OPTIONS') {
       response.writeHead(204, {
-        'Access-Control-Allow-Methods': 'POST',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': laTaiKhoan ? 'GET, POST, DELETE' : 'POST',
+        'Access-Control-Allow-Headers': laTaiKhoan ? 'Content-Type, Authorization' : 'Content-Type',
       });
       return response.end();
+    }
+    if (laTaiKhoan) {
+      try {
+        return await taiKhoan.xuLy(request, tra, docJson);
+      } catch (loi) {
+        console.error(`Account: ${loi.code ?? loi.name}`);
+        return tra(500, { loi: 'Máy chủ chưa xử lý được tài khoản.' });
+      }
     }
     if (request.method !== 'POST') return tra(405, { loi: 'Chỉ hỗ trợ POST.' });
     if (request.headers['content-type']?.split(';')[0] !== 'application/json') {
@@ -170,6 +183,8 @@ export function taoMayChu({
       dangXuLy--;
     }
   });
+  server.once('close', taiKhoan.dong);
+  return server;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -180,10 +195,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     (ten) => process.env[`${ten.toUpperCase()}_API_KEY`]?.trim(),
   ) ?? 'openai';
   const prefix = nhaCungCap.toUpperCase();
+  const thuMucTaiKhoan = new URL('./.local/', import.meta.url);
+  mkdirSync(thuMucTaiKhoan, { recursive: true });
   taoMayChu({
     nhaCungCap,
     apiKey: process.env[`${prefix}_API_KEY`]?.trim(),
     model: process.env[`${prefix}_MODEL`]?.trim() || undefined,
+    accountDb: fileURLToPath(new URL('accounts.sqlite', thuMucTaiKhoan)),
   }).listen(port, '127.0.0.1', () => {
     console.log(`AI Tutor (${nhaCungCap}): http://127.0.0.1:${port}/api/ai-tutor`);
   });

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app.dart';
 import 'data/kho_hive.dart';
 import 'data/khoi_tao_hive.dart';
+import 'data/kho_tai_khoan.dart';
 import 'viewmodels/providers.dart';
 
 /// Điểm vào của ứng dụng.
@@ -13,7 +14,7 @@ import 'viewmodels/providers.dart';
 ///   1. `ensureInitialized` — bắt buộc khi có việc bất đồng bộ trước
 ///      `runApp`, nếu không thì Flutter chưa sẵn sàng nhận lời gọi nền tảng.
 ///   2. Mở các hộp Hive.
-///   3. Ghi đè ba provider kho dữ liệu bằng bản dùng Hive vừa mở.
+///   3. Nối kho danh mục và tiến độ với Hive, kho tài khoản với backend.
 ///
 /// Bước 3 chính là chỗ **lắp ghép** toàn bộ ứng dụng. Ngoài tệp này, không
 /// có dòng mã nào biết rằng dữ liệu được lưu bằng Hive. Muốn đổi sang
@@ -28,7 +29,7 @@ Future<void> main() async {
       overrides: [
         khoKhoaHocProvider.overrideWithValue(HiveKhoKhoaHoc(hop.khoaHoc)),
         khoTienDoProvider.overrideWithValue(HiveKhoTienDo(hop.tienDo)),
-        khoNguoiDungProvider.overrideWithValue(HiveKhoNguoiDung(hop.phien)),
+        khoNguoiDungProvider.overrideWithValue(KhoTaiKhoan(hop.phien)),
       ],
       child: const UngDung(),
     ),

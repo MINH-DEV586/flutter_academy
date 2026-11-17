@@ -103,8 +103,15 @@ class _NoiDung extends ConsumerWidget {
                 ),
                 OutlinedButton.icon(
                   onPressed: () async {
-                    await ref.read(phienProvider.notifier).dangXuat();
-                    if (context.mounted) context.go(DuongDan.trangChu);
+                    final daXuat = await ref.read(phienProvider.notifier).dangXuat();
+                    if (!context.mounted) return;
+                    if (daXuat) {
+                      context.go(DuongDan.trangChu);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Chưa đăng xuất được. Vui lòng thử lại.')),
+                      );
+                    }
                   },
                   icon: const Icon(Icons.logout, size: 18),
                   label: const Text('Đăng xuất'),

@@ -119,7 +119,7 @@ final boDinhTuyenProvider = Provider<GoRouter>((ref) {
 /// Luật chuyển hướng. Tách thành hàm riêng cho dễ đọc và dễ đối chiếu với
 /// `test/duong_dan_test.dart`.
 String? _chuyenHuong(Ref ref, GoRouterState state) {
-  // Chưa đọc xong phiên từ Hive thì chưa quyết định gì cả. Bỏ bước này thì
+  // Chưa xác minh xong phiên với backend thì chưa quyết định gì cả. Bỏ bước này thì
   // người đã đăng nhập sẽ thấy màn hình đăng nhập loé lên một nhịp.
   if (!ref.read(phienDaTaiProvider)) return null;
 

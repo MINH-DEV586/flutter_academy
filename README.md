@@ -60,8 +60,26 @@ flutter analyze
 
 Tiến độ học được lưu bằng **Hive**, ngay trong trình duyệt (IndexedDB).
 Trình phát bài mẫu kết nối YouTube. Khi bật AI Tutor, backend gửi câu hỏi và
-tài liệu bài học hiện tại tới OpenRouter, Gemini hoặc OpenAI tùy cấu hình. Email và tiến
-độ học vẫn lưu cục bộ.
+tài liệu bài học hiện tại tới OpenRouter, Gemini hoặc OpenAI tùy cấu hình.
+Tiến độ học vẫn lưu cục bộ trong Hive.
+
+### Tài khoản học viên
+
+Chạy `node server/ai-tutor.mjs` bằng Node.js 22.13 trở lên. Backend phục vụ
+cả tài khoản và AI Tutor ở cổng 8787. Tài khoản hoạt động khi chưa cấu hình AI.
+Mở **Đăng nhập → Chưa có tài khoản? Đăng ký** để tạo tài khoản bằng email,
+họ tên và mật khẩu từ 12 ký tự. Hồ sơ mẫu của bản cũ cần đăng ký lại.
+
+Backend lưu tài khoản trong `server/.local/accounts.sqlite`. Git bỏ qua thư
+mục này. Mật khẩu được băm bằng scrypt với salt riêng. Phiên hết hạn sau 14
+ngày và được thu hồi khi đăng xuất. Ứng dụng lưu token phiên trong Hive.
+`ACCOUNT_API_URL` mặc định là `http://127.0.0.1:8787/api/account`. Android
+debug có thể dùng `adb reverse tcp:8787 tcp:8787` như với AI Tutor.
+
+Bản này chạy trên máy cục bộ. Tài khoản lưu hồ sơ người học. Tiến độ hiện
+vẫn gắn với trình duyệt hoặc thiết bị và chưa đồng bộ theo tài khoản.
+Trước khi triển khai công khai, cần HTTPS, xác minh email và khôi phục
+mật khẩu.
 
 ### Dùng thử AI Tutor
 
@@ -331,8 +349,6 @@ Xếp theo độ khó tăng dần, bám đúng mạch các chương của sách.
   sau khi bỏ dấu, `"kiem thu"` đứng **trước** `"kien truc"` vì `m < n`.
 * Video được phát từ YouTube. Nếu trình phát nhúng không khả dụng, dùng
   nút **Xem trên YouTube** ngay dưới video.
-* "Đăng nhập" không có mật khẩu và không xác thực gì cả. Nó tồn tại để dạy
-  phần điều hướng có bảo vệ và trạng thái phiên.
 * Danh mục YouTube được nạp vào hộp Hive riêng khi mở bản mới lần đầu.
   Tiến độ học và phiên đăng nhập dùng các hộp riêng.
 

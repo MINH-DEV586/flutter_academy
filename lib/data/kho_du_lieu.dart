@@ -46,7 +46,19 @@ abstract interface class KhoNguoiDung {
   /// Người đang đăng nhập, null nếu chưa.
   Future<NguoiDung?> hienTai();
 
-  Future<void> dangNhap(NguoiDung nguoiDung);
+  Future<NguoiDung> dangNhap({required String email, required String matKhau});
+
+  Future<NguoiDung> dangKy({
+    required String email,
+    required String hoTen,
+    required String matKhau,
+  });
 
   Future<void> dangXuat();
+}
+
+class LoiTaiKhoan implements Exception {
+  const LoiTaiKhoan(this.thongBao);
+
+  final String thongBao;
 }

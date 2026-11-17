@@ -5,44 +5,43 @@ import '../models/nguoi_dung.dart';
 import 'providers.dart';
 
 /// Phiên đăng nhập. `null` nghĩa là khách vãng lai.
-///
-/// Không có mật khẩu và không có máy chủ — xem chú thích ở `NguoiDung`. Điều
-/// đáng học ở đây không phải cách xác thực mà là **hình dạng của trạng thái
-/// phiên**: một `AsyncValue<NguoiDung?>` mà cả giao diện lẫn `redirect` của
-/// go_router cùng đọc, nên không bao giờ có chuyện thanh địa chỉ và màn hình
-/// nói hai điều khác nhau.
 class PhienVM extends AsyncNotifier<NguoiDung?> {
   KhoNguoiDung get _kho => ref.read(khoNguoiDungProvider);
 
   @override
   Future<NguoiDung?> build() => _kho.hienTai();
 
-  /// "Đăng nhập": ghi hồ sơ xuống Hive.
-  ///
-  /// Trả về thông báo lỗi, hoặc null nếu thành công. Không ném ngoại lệ:
-  /// màn hình gọi hàm này cần hiển thị lỗi ngay dưới ô nhập, mà bắt ngoại lệ
-  /// để làm việc đó thì rườm rà hơn là đọc một giá trị trả về.
-  Future<String?> dangNhap({required String email, required String hoTen}) async {
+  Future<String?> dangNhap({
+    required String email,
+    required String matKhau,
+    String? hoTen,
+  }) async {
     final e = email.trim();
-    final t = hoTen.trim();
+    final t = hoTen?.trim();
     if (!hopLeEmail(e)) return 'Email chưa đúng định dạng.';
-    if (t.length < 2) return 'Họ tên phải có ít nhất 2 ký tự.';
+    if (t != null && t.length < 2) return 'Họ tên phải có ít nhất 2 ký tự.';
 
-    state = const AsyncLoading();
     try {
-      final nd = NguoiDung(email: e, hoTen: t);
-      await _kho.dangNhap(nd);
+      final nd = t == null
+          ? await _kho.dangNhap(email: e, matKhau: matKhau)
+          : await _kho.dangKy(email: e, hoTen: t, matKhau: matKhau);
       state = AsyncData(nd);
       return null;
-    } catch (loi, vet) {
-      state = AsyncError(loi, vet);
-      return 'Không lưu được hồ sơ. Vui lòng thử lại.';
+    } on LoiTaiKhoan catch (loi) {
+      return loi.thongBao;
+    } catch (_) {
+      return 'Không kết nối được máy chủ tài khoản. Vui lòng thử lại.';
     }
   }
 
-  Future<void> dangXuat() async {
-    await _kho.dangXuat();
-    state = const AsyncData(null);
+  Future<bool> dangXuat() async {
+    try {
+      await _kho.dangXuat();
+      state = const AsyncData(null);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }
 

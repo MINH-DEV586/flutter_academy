@@ -194,14 +194,18 @@ void main() {
       expect(c.read(phienDaTaiProvider), isTrue);
     });
 
-    test('đăng nhập rồi đăng xuất', () async {
+    test('đăng ký rồi đăng xuất', () async {
       final kho = KhoNguoiDungGiaLap();
       final c = dung(nguoiDung: kho);
       await c.read(phienProvider.future);
 
       final loi = await c
           .read(phienProvider.notifier)
-          .dangNhap(email: 'an@phenikaa-uni.edu.vn', hoTen: 'Võ Thái Anh');
+          .dangNhap(
+            email: 'an@phenikaa-uni.edu.vn',
+            hoTen: 'Võ Thái Anh',
+            matKhau: 'mat-khau-kiem-thu',
+          );
       expect(loi, isNull);
       expect(c.read(daDangNhapProvider), isTrue);
       expect(kho.duLieu?.hoTen, 'Võ Thái Anh');
@@ -218,7 +222,7 @@ void main() {
 
       final loi = await c
           .read(phienProvider.notifier)
-          .dangNhap(email: 'khong-phai-email', hoTen: 'Ai Đó');
+          .dangNhap(email: 'khong-phai-email', matKhau: 'mat-khau-kiem-thu');
       expect(loi, isNotNull);
       expect(kho.duLieu, isNull);
       expect(c.read(daDangNhapProvider), isFalse);

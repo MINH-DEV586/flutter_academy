@@ -1,7 +1,6 @@
 import 'package:hive_ce/hive_ce.dart';
 
 import '../models/khoa_hoc.dart';
-import '../models/nguoi_dung.dart';
 import '../models/tien_do.dart';
 import 'du_lieu_mau.dart';
 import 'kho_du_lieu.dart';
@@ -12,11 +11,8 @@ class TenHop {
   // Danh mục YouTube dùng hộp riêng để trình duyệt tự nhận dữ liệu mới.
   static const String khoaHoc = 'khoa_hoc_youtube_v2';
   static const String tienDo = 'tien_do';
-  static const String phien = 'phien';
+  static const String phien = 'phien_tai_khoan';
 }
-
-/// Khoá trong hộp `phien`.
-const String _khoaNguoiDung = 'nguoi_dung';
 
 /// Kho khoá học đọc từ hộp Hive.
 ///
@@ -63,25 +59,4 @@ class HiveKhoTienDo implements KhoTienDo {
 
   @override
   Future<void> xoa(String maKhoaHoc) => hop.delete(maKhoaHoc);
-}
-
-/// Kho phiên đăng nhập.
-///
-/// Không có mật khẩu, không có máy chủ: "đăng nhập" là ghi một bản ghi
-/// `NguoiDung` xuống Hive. Phần còn lại của ứng dụng — kể cả `redirect` của
-/// go_router — không biết và không cần biết điều đó.
-class HiveKhoNguoiDung implements KhoNguoiDung {
-  final Box<NguoiDung> hop;
-
-  HiveKhoNguoiDung(this.hop);
-
-  @override
-  Future<NguoiDung?> hienTai() async => hop.get(_khoaNguoiDung);
-
-  @override
-  Future<void> dangNhap(NguoiDung nguoiDung) =>
-      hop.put(_khoaNguoiDung, nguoiDung);
-
-  @override
-  Future<void> dangXuat() => hop.delete(_khoaNguoiDung);
 }
