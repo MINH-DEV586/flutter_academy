@@ -322,6 +322,7 @@ class _XemTruoc extends ConsumerWidget {
                   child: FilledButton.icon(
                     onPressed: () => showDialog<void>(
                       context: context,
+                      barrierDismissible: false,
                       builder: (context) => Dialog(
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 760),
