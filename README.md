@@ -88,6 +88,16 @@ hoặc thiết bị và chưa đồng bộ theo tài khoản.
 Trước khi triển khai công khai, cần HTTPS, xác minh email và khôi phục
 mật khẩu.
 
+### Mua khóa học
+
+Khóa **Java cơ bản** có giá **99.000 ₫** và bài đầu xem thử. Các bài sau
+và phần luyện tập mở khi tài khoản đã có quyền học. Tài khoản đã đăng ký
+Java từ bản miễn phí vẫn giữ quyền học.
+
+**Mua khóa học** mở thanh toán mô phỏng trên backend cục bộ. Backend kiểm
+tra giá và lưu đơn cùng quyền học trong một giao dịch SQLite. Bản này chưa
+tích hợp cổng thanh toán thật. Các video nguồn vẫn công khai trên YouTube.
+
 ### Chuỗi ngày học và Pro
 
 Đăng nhập và đánh dấu hoàn thành một bài để ghi nhận ngày học. Ngày đổi
@@ -119,7 +129,7 @@ loopback và blockchain test được tạo lại khi tiến trình Hardhat dừ
 
 ### Dùng thử AI Tutor
 
-Danh mục có năm khóa miễn phí với 16 video YouTube tiếng Anh. Mỗi bài có tên
+Danh mục có bốn khóa miễn phí và một khóa có phí với 16 video YouTube tiếng Anh. Mỗi bài có tên
 kênh, liên kết YouTube và nội dung hướng dẫn tiếng Việt trong
 `assets/bai_hoc_ai.json`. Tutor dựa vào nội dung và code của bài đang mở.
 

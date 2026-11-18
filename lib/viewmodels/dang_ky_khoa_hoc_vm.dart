@@ -10,9 +10,11 @@ class DangKyKhoaHocVM extends AsyncNotifier<Set<String>> {
     return ref.read(khoNguoiDungProvider).khoaDaDangKy();
   }
 
-  Future<void> dangKy(String maKhoaHoc) async {
+  Future<void> dangKy(String maKhoaHoc, {int? soTien}) async {
     final nguoiDung = ref.read(phienProvider).asData?.value;
-    await ref.read(khoNguoiDungProvider).dangKyKhoaHoc(maKhoaHoc);
+    await ref
+        .read(khoNguoiDungProvider)
+        .dangKyKhoaHoc(maKhoaHoc, soTien: soTien);
     if (!ref.mounted || ref.read(phienProvider).asData?.value != nguoiDung) {
       return;
     }

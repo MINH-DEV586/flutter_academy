@@ -80,4 +80,15 @@ test('chỉ lưu một đăng ký cho mỗi khóa và từng tài khoản', asyn
   assert.equal((await ghiDanh(a, 'python-co-ban')).status, 200);
   assert.deepEqual(await (await danhSach(a)).json(), { maKhoaHoc: ['python-co-ban'] });
   assert.deepEqual(await (await danhSach(b)).json(), { maKhoaHoc: [] });
+  const muaThu = (token, soTien) => fetch(`${base}/purchases/demo`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ maKhoaHoc: 'java-co-ban', soTien }),
+  });
+  assert.equal((await ghiDanh(a, 'java-co-ban')).status, 403);
+  assert.equal((await muaThu(a, 1)).status, 409);
+  assert.equal((await muaThu(a, 99000)).status, 200);
+  assert.equal((await muaThu(a, 99000)).status, 200);
+  assert.deepEqual(await (await danhSach(a)).json(), { maKhoaHoc: ['java-co-ban', 'python-co-ban'] });
+  assert.deepEqual(await (await danhSach(b)).json(), { maKhoaHoc: [] });
 });

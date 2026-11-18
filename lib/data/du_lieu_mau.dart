@@ -158,7 +158,7 @@ class DuLieuMau {
       mucDo: MucDo.coBan,
       diemDanhGia: 0,
       soLuotDanhGia: 0,
-      gia: 0,
+      gia: 99000,
       anhBia: 'bia_java_co_ban.png',
       noiBat: true,
       baiHoc: [
@@ -172,13 +172,11 @@ class DuLieuMau {
           ma: 'b2',
           tieuDe: 'Rẽ nhánh với if, else if và else',
           thoiLuongGiay: 809,
-          xemThu: true,
         ),
         BaiHoc(
           ma: 'b3',
           tieuDe: 'Viết và gọi phương thức trong Java',
           thoiLuongGiay: 664,
-          xemThu: true,
         ),
       ],
     ),

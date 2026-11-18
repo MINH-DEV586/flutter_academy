@@ -152,6 +152,9 @@ export function taoMayChu({
     if (request.headers.authorization && !email) {
       return tra(401, { loi: 'Phiên đã hết hạn. Vui lòng đăng nhập lại.' });
     }
+    if (!taiKhoan.coQuyenHoc(email, duLieu.baiHoc)) {
+      return tra(403, { loi: 'Cần mua khóa học để dùng AI Tutor cho bài này.' });
+    }
     const ngay = ngayVietNam(Date.now());
     if (luotKhach.ngay !== ngay) luotKhach = { ngay, daDung: 0 };
     const homNay = luotKhach;

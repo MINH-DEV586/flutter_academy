@@ -413,16 +413,46 @@ class _TheHanhDongState extends ConsumerState<_TheHanhDong> {
   bool _dangGui = false;
 
   Future<void> _dangKy() async {
-    final maKhoaHoc = widget.khoaHoc.ma;
+    final khoa = widget.khoaHoc;
+    final maKhoaHoc = khoa.ma;
     if (!ref.read(daDangNhapProvider)) {
       context.go(DuongDan.dangNhapRoiVe(DuongDan.chiTiet(maKhoaHoc)));
       return;
     }
+    if (!khoa.mienPhi) {
+      final dongY = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Thanh toán thử nghiệm'),
+          content: Text(
+            'Mở khóa ${khoa.tieuDe} · ${dd.tienVND(khoa.gia)}. '
+            'Giao dịch mô phỏng không thu tiền thật.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Hủy'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Xác nhận mua thử'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || dongY != true) return;
+    }
     setState(() => _dangGui = true);
     try {
-      await ref.read(dangKyKhoaHocProvider.notifier).dangKy(maKhoaHoc);
+      await ref
+          .read(dangKyKhoaHocProvider.notifier)
+          .dangKy(maKhoaHoc, soTien: khoa.mienPhi ? null : khoa.gia);
       if (!mounted) return;
-      _thongBao('Đã đăng ký khóa học. Hãy xem trong Khóa học của tôi.');
+      _thongBao(
+        khoa.mienPhi
+            ? 'Đã đăng ký khóa học. Hãy xem trong Khóa học của tôi.'
+            : 'Đã mua thử thành công. Khóa học đã được mở.',
+      );
     } catch (loi) {
       if (!mounted) return;
       _thongBao(
@@ -451,6 +481,9 @@ class _TheHanhDongState extends ConsumerState<_TheHanhDong> {
     final daDangKy =
         daDangNhap && (dangKy.asData?.value.contains(khoaHoc.ma) ?? false);
     final dangTai = daDangNhap && dangKy.isLoading;
+    final baiThu = khoaHoc.mienPhi
+        ? bai
+        : khoaHoc.baiHoc.where((b) => b.xemThu).firstOrNull;
 
     return Card(
       child: Padding(
@@ -494,11 +527,17 @@ class _TheHanhDongState extends ConsumerState<_TheHanhDong> {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: _dangGui || dangTai ? null : _dangKy,
-                  child: Text(_dangGui ? 'Đang đăng ký…' : 'Đăng ký khóa học'),
+                  child: Text(
+                    _dangGui
+                        ? 'Đang xử lý…'
+                        : khoaHoc.mienPhi
+                        ? 'Đăng ký khóa học'
+                        : 'Mua khóa học',
+                  ),
                 ),
               )
             else
-              const Text('Đã đăng ký khóa học'),
+              Text(khoaHoc.mienPhi ? 'Đã đăng ký khóa học' : 'Đã mở khóa'),
             if (bai != null) const SizedBox(height: 8),
             if (daDangKy)
               SizedBox(
@@ -510,12 +549,12 @@ class _TheHanhDongState extends ConsumerState<_TheHanhDong> {
                   child: Text(widget.daBatDau ? 'Học tiếp' : 'Bắt đầu học'),
                 ),
               )
-            else if (bai != null)
+            else if (baiThu != null)
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
                   onPressed: () =>
-                      context.go(DuongDan.baiHoc(khoaHoc.ma, bai.ma)),
+                      context.go(DuongDan.baiHoc(khoaHoc.ma, baiThu.ma)),
                   child: const Text('Xem bài học'),
                 ),
               ),
@@ -596,6 +635,10 @@ class _DanhSachBai extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mau = Theme.of(context).colorScheme;
+    final coQuyen =
+        khoaHoc.mienPhi ||
+        (ref.watch(dangKyKhoaHocProvider).asData?.value.contains(khoaHoc.ma) ??
+            false);
     return Card(
       child: Column(
         children: [
@@ -615,15 +658,16 @@ class _DanhSachBai extends ConsumerWidget {
                     bai: bai,
                     daXong: tienDo?.daXong(bai.ma) ?? false,
                     coVach: bai != muc.value.last,
+                    biKhoa: !coQuyen && !bai.xemThu,
                     mau: mau,
                     onMo: () => context.go(DuongDan.baiHoc(khoaHoc.ma, bai.ma)),
                     onDao: () async {
-                      final thongBao = await ref.read(tienDoProvider.notifier)
+                      final thongBao = await ref
+                          .read(tienDoProvider.notifier)
                           .daoTrangThaiBai(khoaHoc.ma, bai.ma);
                       if (context.mounted && thongBao != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(thongBao)),
-                        );
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(SnackBar(content: Text(thongBao)));
                       }
                     },
                   ),
@@ -640,6 +684,7 @@ class _MotBai extends StatelessWidget {
   final BaiHoc bai;
   final bool daXong;
   final bool coVach;
+  final bool biKhoa;
   final ColorScheme mau;
   final VoidCallback onMo;
   final VoidCallback onDao;
@@ -649,6 +694,7 @@ class _MotBai extends StatelessWidget {
     required this.bai,
     required this.daXong,
     required this.coVach,
+    required this.biKhoa,
     required this.mau,
     required this.onMo,
     required this.onDao,
@@ -662,9 +708,11 @@ class _MotBai extends StatelessWidget {
           onTap: onMo,
           leading: IconButton(
             tooltip: daXong ? 'Đánh dấu chưa xong' : 'Đánh dấu đã xong',
-            onPressed: onDao,
+            onPressed: biKhoa ? null : onDao,
             icon: Icon(
-              daXong
+              biKhoa
+                  ? Icons.lock_outline
+                  : daXong
                   ? Icons.check_circle_rounded
                   : Icons.radio_button_unchecked,
               color: daXong ? const Color(0xFF0E7C66) : mau.outline,

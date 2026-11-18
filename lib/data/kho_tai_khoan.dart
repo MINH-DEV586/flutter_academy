@@ -21,7 +21,7 @@ class KhoTaiKhoan implements KhoNguoiDung {
   Future<http.Response> _gui(
     String method,
     String path, {
-    Map<String, String>? duLieu,
+    Map<String, Object>? duLieu,
     String? token,
   }) async {
     final client = http.Client();
@@ -117,12 +117,12 @@ class KhoTaiKhoan implements KhoNguoiDung {
   }
 
   @override
-  Future<void> dangKyKhoaHoc(String maKhoaHoc) async {
+  Future<void> dangKyKhoaHoc(String maKhoaHoc, {int? soTien}) async {
     final response = await _gui(
       'POST',
-      'enrollments',
+      soTien == null ? 'enrollments' : 'purchases/demo',
       token: _docToken(),
-      duLieu: {'maKhoaHoc': maKhoaHoc},
+      duLieu: {'maKhoaHoc': maKhoaHoc, if (soTien != null) 'soTien': soTien},
     );
     _doc(response);
   }

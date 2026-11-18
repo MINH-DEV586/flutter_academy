@@ -12,6 +12,7 @@ import '../models/khoa_hoc.dart';
 import '../models/tien_do.dart';
 import '../viewmodels/providers.dart';
 import '../widgets/gia_su_ai.dart';
+import '../widgets/can_mua_khoa_hoc.dart';
 import '../widgets/trang_thai.dart';
 import '../widgets/video_bai_hoc.dart';
 
@@ -54,8 +55,25 @@ class _BaiHocScreenState extends ConsumerState<BaiHocScreen> {
   /// Ghi nhớ bài đang xem. Hoãn sang sau khung hình đầu vì sửa provider
   /// trong lúc dựng widget là lỗi.
   void _ghiNhoDangXem() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    final maKhoa = widget.maKhoaHoc;
+    final maBai = widget.maBaiHoc;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
+      try {
+        final ds = await ref.read(danhSachKhoaHocProvider.future);
+        final khoa = timKhoaHoc(ds, maKhoa);
+        final bai = khoa?.timBaiHoc(maBai);
+        if (!mounted || khoa == null || bai == null) return;
+        if (!khoa.mienPhi && !bai.xemThu) {
+          final dsMua = await ref.read(dangKyKhoaHocProvider.future);
+          if (!dsMua.contains(maKhoa)) return;
+        }
+      } catch (_) {
+        return;
+      }
+      if (!mounted || widget.maKhoaHoc != maKhoa || widget.maBaiHoc != maBai) {
+        return;
+      }
       ref
           .read(tienDoProvider.notifier)
           .danhDauDangXem(widget.maKhoaHoc, widget.maBaiHoc);
@@ -92,7 +110,10 @@ class _BaiHocScreenState extends ConsumerState<BaiHocScreen> {
               AsyncData(:final value) => value[k.ma],
               _ => null,
             };
-            return _NoiDung(khoaHoc: k, bai: b, tienDo: td);
+            final noiDung = _NoiDung(khoaHoc: k, bai: b, tienDo: td);
+            return k.mienPhi || b.xemThu
+                ? noiDung
+                : CanMuaKhoaHoc(maKhoaHoc: k.ma, child: noiDung);
           },
         ),
       ),
@@ -186,12 +207,12 @@ class _NoiDung extends ConsumerWidget {
           children: [
             FilledButton.icon(
               onPressed: () async {
-                final thongBao = await ref.read(tienDoProvider.notifier)
+                final thongBao = await ref
+                    .read(tienDoProvider.notifier)
                     .daoTrangThaiBai(khoaHoc.ma, bai.ma);
                 if (context.mounted && thongBao != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(thongBao)),
-                  );
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text(thongBao)));
                 }
               },
               icon: Icon(daXong ? Icons.undo : Icons.check),

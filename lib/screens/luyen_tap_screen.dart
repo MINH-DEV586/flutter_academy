@@ -6,6 +6,7 @@ import '../data/bai_luyen_tap.dart';
 import '../dinh_tuyen/duong_dan.dart';
 import '../viewmodels/providers.dart';
 import '../widgets/trang.dart';
+import '../widgets/can_mua_khoa_hoc.dart';
 import '../widgets/trang_thai.dart';
 
 class LuyenTapScreen extends ConsumerWidget {
@@ -37,12 +38,15 @@ class LuyenTapScreen extends ConsumerWidget {
             ],
           );
         }
-        return _NoiDungLuyenTap(
+        final noiDung = _NoiDungLuyenTap(
           key: ValueKey(maKhoaHoc),
           maKhoaHoc: maKhoaHoc,
           tenKhoaHoc: khoa.tieuDe,
           luyenTap: luyenTap,
         );
+        return khoa.mienPhi
+            ? noiDung
+            : CanMuaKhoaHoc(maKhoaHoc: khoa.ma, child: noiDung);
       },
     );
   }

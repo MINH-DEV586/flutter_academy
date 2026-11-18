@@ -59,7 +59,7 @@ abstract interface class KhoNguoiDung {
 
   Future<Set<String>> khoaDaDangKy();
 
-  Future<void> dangKyKhoaHoc(String maKhoaHoc);
+  Future<void> dangKyKhoaHoc(String maKhoaHoc, {int? soTien});
 
   Future<ThuongHoc> thuongHoc();
   Future<ThuongHoc> ghiNhanNgayHoc(String baiHoc);

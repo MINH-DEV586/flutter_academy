@@ -94,7 +94,7 @@ export function taoThuong(db, baiHoc, { gio = Date.now, rpc = hardhat } = {}) {
     return daDung ? () => traLuot.run(email, ngay) : null;
   }
 
-  async function xuLy(email, request, tra, docJson, conPhien) {
+  async function xuLy(email, request, tra, docJson, conPhien, coQuyenHoc) {
     if (request.method === 'GET' && request.url === '/api/account/rewards') {
       return tra(200, trangThai(email));
     }
@@ -108,6 +108,7 @@ export function taoThuong(db, baiHoc, { gio = Date.now, rpc = hardhat } = {}) {
       if (typeof duLieu?.baiHoc !== 'string' || !Object.hasOwn(baiHoc, duLieu.baiHoc)) {
         return tra(404, { loi: 'Không tìm thấy bài học.' });
       }
+      if (!coQuyenHoc(duLieu.baiHoc)) return tra(403, { loi: 'Cần mua khóa để hoàn thành bài này.' });
       const ngay = ngayVietNam(gio());
       const thuong = giaoDich(() => {
         const cu = docThuong.get(email);

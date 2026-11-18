@@ -22,7 +22,10 @@ void main() {
         'java-co-ban',
       ]),
     );
-    expect(khoaHoc.every((khoa) => khoa.mienPhi), isTrue);
+    expect(khoaHoc.where((khoa) => khoa.mienPhi), hasLength(4));
+    final java = khoaHoc.singleWhere((khoa) => khoa.ma == 'java-co-ban');
+    expect(java.gia, 99000);
+    expect(java.baiHoc.where((bai) => bai.xemThu).map((bai) => bai.ma), ['b1']);
     final cacBai = {
       for (final khoa in khoaHoc)
         for (final bai in khoa.baiHoc) '${khoa.ma}/${bai.ma}',

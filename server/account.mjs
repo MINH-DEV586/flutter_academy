@@ -2,6 +2,9 @@ import { createHash, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { promisify } from 'node:util';
 import { taoThuong } from './rewards.mjs';
+import { readFileSync } from 'node:fs';
+
+const khoaCoPhi = JSON.parse(readFileSync(new URL('./paid-courses.json', import.meta.url), 'utf8'));
 
 const bamMatKhau = promisify(scrypt);
 const saltGia = randomBytes(16);
@@ -38,6 +41,13 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe, baiHoc, rewardsOptions) {
       ma_khoa_hoc TEXT NOT NULL,
       PRIMARY KEY (email, ma_khoa_hoc)
     ) STRICT;
+    CREATE TABLE IF NOT EXISTS don_mua_khoa_hoc (
+      email TEXT NOT NULL REFERENCES tai_khoan(email),
+      ma_khoa_hoc TEXT NOT NULL,
+      so_tien INTEGER NOT NULL,
+      da_thanh_toan_luc INTEGER NOT NULL,
+      PRIMARY KEY (email, ma_khoa_hoc)
+    ) STRICT;
   `);
   const themTaiKhoan = db.prepare(
     'INSERT INTO tai_khoan VALUES (?, ?, ?, ?) ON CONFLICT(email) DO NOTHING',
@@ -57,6 +67,17 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe, baiHoc, rewardsOptions) {
   const themDangKy = db.prepare(
     'INSERT INTO dang_ky_khoa_hoc VALUES (?, ?) ON CONFLICT(email, ma_khoa_hoc) DO NOTHING',
   );
+  const docDangKy = db.prepare(
+    'SELECT 1 FROM dang_ky_khoa_hoc WHERE email = ? AND ma_khoa_hoc = ?',
+  );
+  const themDon = db.prepare('INSERT INTO don_mua_khoa_hoc VALUES (?, ?, ?, ?)');
+
+  function coQuyenHoc(email, bai) {
+    const [ma, maBai] = bai.split('/');
+    const khoa = Object.hasOwn(khoaCoPhi, ma) ? khoaCoPhi[ma] : null;
+    return !khoa || khoa.xemThu.includes(maBai) ||
+      Boolean(email && docDangKy.get(email, ma));
+  }
   const thuong = taoThuong(db, baiHoc, rewardsOptions);
   function emailPhien(request) {
     const match = /^Bearer ([a-f0-9]{64})$/.exec(request.headers.authorization ?? '');
@@ -79,13 +100,15 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe, baiHoc, rewardsOptions) {
     if (url === '/api/account/rewards' || url.startsWith('/api/account/rewards/')) {
       const email = emailPhien(request);
       if (!email) return tra(401, { loi: 'Vui lòng đăng nhập.' });
-      return thuong.xuLy(email, request, tra, docJson, () => emailPhien(request) === email);
+      return thuong.xuLy(email, request, tra, docJson, () => emailPhien(request) === email,
+        (bai) => coQuyenHoc(email, bai));
     }
-    if (url === '/api/account/enrollments') {
+    const muaThu = url === '/api/account/purchases/demo';
+    if (url === '/api/account/enrollments' || muaThu) {
       const match = /^Bearer ([a-f0-9]{64})$/.exec(request.headers.authorization ?? '');
       const nguoiDung = match && docPhien.get(bamToken(match[1]), Date.now());
       if (!nguoiDung) return tra(401, { loi: 'Vui lòng đăng nhập để đăng ký khóa học.' });
-      if (method === 'GET') {
+      if (method === 'GET' && !muaThu) {
         const maKhoaHoc = danhSachDangKy.all(nguoiDung.email).map((row) => row.ma_khoa_hoc);
         return tra(200, { maKhoaHoc });
       }
@@ -107,6 +130,26 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe, baiHoc, rewardsOptions) {
       if (!docPhien.get(bamToken(match[1]), Date.now())) {
         return tra(401, { loi: 'Phiên đã hết hạn. Vui lòng đăng nhập lại.' });
       }
+      const khoa = Object.hasOwn(khoaCoPhi, maKhoaHoc) ? khoaCoPhi[maKhoaHoc] : null;
+      if (muaThu) {
+        if (!khoa) return tra(400, { loi: 'Khóa này có thể đăng ký miễn phí.' });
+        if (duLieu.soTien !== khoa.gia) {
+          return tra(409, { loi: 'Giá khóa học đã thay đổi. Vui lòng tải lại trang.' });
+        }
+        db.exec('BEGIN IMMEDIATE');
+        try {
+          if (!docDangKy.get(nguoiDung.email, maKhoaHoc)) {
+            themDon.run(nguoiDung.email, maKhoaHoc, khoa.gia, Date.now());
+            themDangKy.run(nguoiDung.email, maKhoaHoc);
+          }
+          db.exec('COMMIT');
+        } catch (loi) {
+          db.exec('ROLLBACK');
+          throw loi;
+        }
+        return tra(200, { maKhoaHoc, phuongThuc: 'demo' });
+      }
+      if (khoa) return tra(403, { loi: 'Cần mua khóa học trước khi đăng ký.' });
       themDangKy.run(nguoiDung.email, maKhoaHoc);
       return tra(200, { maKhoaHoc });
     }
@@ -172,5 +215,5 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe, baiHoc, rewardsOptions) {
     }
   }
 
-  return { xuLy, emailPhien, dungLuotAi: thuong.dungLuotAi, dong: () => db.close() };
+  return { xuLy, emailPhien, coQuyenHoc, dungLuotAi: thuong.dungLuotAi, dong: () => db.close() };
 }

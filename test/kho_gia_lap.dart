@@ -106,7 +106,7 @@ class KhoNguoiDungGiaLap implements KhoNguoiDung {
   Future<Set<String>> khoaDaDangKy() async => {...?_dangKy[duLieu?.email]};
 
   @override
-  Future<void> dangKyKhoaHoc(String maKhoaHoc) async {
+  Future<void> dangKyKhoaHoc(String maKhoaHoc, {int? soTien}) async {
     final email = duLieu?.email;
     if (email == null) throw StateError('Chưa đăng nhập');
     _dangKy.putIfAbsent(email, () => {}).add(maKhoaHoc);
