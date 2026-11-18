@@ -617,9 +617,15 @@ class _DanhSachBai extends ConsumerWidget {
                     coVach: bai != muc.value.last,
                     mau: mau,
                     onMo: () => context.go(DuongDan.baiHoc(khoaHoc.ma, bai.ma)),
-                    onDao: () => ref
-                        .read(tienDoProvider.notifier)
-                        .daoTrangThaiBai(khoaHoc.ma, bai.ma),
+                    onDao: () async {
+                      final thongBao = await ref.read(tienDoProvider.notifier)
+                          .daoTrangThaiBai(khoaHoc.ma, bai.ma);
+                      if (context.mounted && thongBao != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(thongBao)),
+                        );
+                      }
+                    },
                   ),
               ],
             ),

@@ -4,7 +4,9 @@ import 'package:hive_ce/hive_ce.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/nguoi_dung.dart';
+import '../models/thuong_hoc.dart';
 import 'kho_du_lieu.dart';
+import 'kho_gia_su_ai.dart';
 
 class KhoTaiKhoan implements KhoNguoiDung {
   KhoTaiKhoan(this._phien);
@@ -124,4 +126,41 @@ class KhoTaiKhoan implements KhoNguoiDung {
     );
     _doc(response);
   }
+
+  Future<Map<String, dynamic>> _thuong(
+    String method,
+    String path, [
+    Map<String, String>? duLieu,
+  ]) async =>
+      _doc(await _gui(method, path, token: _docToken(), duLieu: duLieu));
+
+  @override
+  Future<ThuongHoc> thuongHoc() async =>
+      ThuongHoc.tuMap(await _thuong('GET', 'rewards'));
+
+  @override
+  Future<ThuongHoc> ghiNhanNgayHoc(String baiHoc) async => ThuongHoc.tuMap(
+    await _thuong('POST', 'rewards/complete', {'baiHoc': baiHoc}),
+  );
+
+  @override
+  Future<String> yeuCauDoiPro(String vi) async =>
+      (await _thuong('POST', 'rewards/redeem', {'vi': vi}))['payload']
+          as String;
+
+  @override
+  Future<ThuongHoc> xacNhanDoiPro(String hash) async =>
+      ThuongHoc.tuMap(await _thuong('POST', 'rewards/confirm', {'hash': hash}));
+
+  @override
+  Future<String> hoiAi({
+    required String baiHoc,
+    required String cauHoi,
+    required String mucDo,
+  }) => KhoGiaSuAi.hoi(
+    baiHoc: baiHoc,
+    cauHoi: cauHoi,
+    mucDo: mucDo,
+    token: _phien.get(_khoaToken),
+  );
 }

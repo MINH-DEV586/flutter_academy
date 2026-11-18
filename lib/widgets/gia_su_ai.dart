@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/kho_du_lieu.dart';
 import '../data/kho_gia_su_ai.dart';
+import '../viewmodels/providers.dart';
 
 enum _MucDo {
   coBan('Cơ bản'),
@@ -11,21 +14,21 @@ enum _MucDo {
   final String nhan;
 }
 
-class GiaSuAi extends StatefulWidget {
+class GiaSuAi extends ConsumerStatefulWidget {
   const GiaSuAi({super.key, required this.maBai, required this.tenBai});
 
   final String maBai;
   final String tenBai;
 
   @override
-  State<GiaSuAi> createState() => _GiaSuAiState();
+  ConsumerState<GiaSuAi> createState() => _GiaSuAiState();
 }
 
-class _GiaSuAiState extends State<GiaSuAi> {
+class _GiaSuAiState extends ConsumerState<GiaSuAi> {
   final _cauHoi = TextEditingController();
   var _mucDo = _MucDo.coBan;
   var _dangGui = false;
-  var _loi = false;
+  String? _loi;
   String? _cauTraLoi;
 
   @override
@@ -39,18 +42,24 @@ class _GiaSuAiState extends State<GiaSuAi> {
     if (_dangGui || noiDung.isEmpty) return;
     setState(() {
       _dangGui = true;
-      _loi = false;
+      _loi = null;
       _cauTraLoi = null;
     });
     try {
-      final traLoi = await KhoGiaSuAi.hoi(
-        baiHoc: widget.maBai,
-        cauHoi: noiDung,
-        mucDo: _mucDo.name,
-      );
-      if (mounted) setState(() => _cauTraLoi = traLoi);
-    } catch (_) {
-      if (mounted) setState(() => _loi = true);
+      final traLoi = await ref
+          .read(khoNguoiDungProvider)
+          .hoiAi(baiHoc: widget.maBai, cauHoi: noiDung, mucDo: _mucDo.name);
+      if (mounted) {
+        ref.invalidate(thuongHocProvider);
+        setState(() => _cauTraLoi = traLoi);
+      }
+    } catch (loi) {
+      if (mounted)
+        setState(
+          () => _loi = loi is LoiTaiKhoan
+              ? loi.thongBao
+              : 'Chưa nhận được câu trả lời. Bạn có thể gửi lại.',
+        );
     } finally {
       if (mounted) setState(() => _dangGui = false);
     }
@@ -125,13 +134,7 @@ class _GiaSuAiState extends State<GiaSuAi> {
                 const LinearProgressIndicator(
                   semanticsLabel: 'AI đang trả lời',
                 ),
-              if (_loi)
-                Semantics(
-                  liveRegion: true,
-                  child: const Text(
-                    'Chưa nhận được câu trả lời. Bạn có thể gửi lại.',
-                  ),
-                ),
+              if (_loi != null) Semantics(liveRegion: true, child: Text(_loi!)),
               if (traLoi != null) ...[
                 Text('Giải thích từ AI', style: chu.titleMedium),
                 SelectableText(traLoi),

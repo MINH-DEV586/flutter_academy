@@ -18,6 +18,7 @@ library;
 import '../models/khoa_hoc.dart';
 import '../models/nguoi_dung.dart';
 import '../models/tien_do.dart';
+import '../models/thuong_hoc.dart';
 
 
 
@@ -59,6 +60,16 @@ abstract interface class KhoNguoiDung {
   Future<Set<String>> khoaDaDangKy();
 
   Future<void> dangKyKhoaHoc(String maKhoaHoc);
+
+  Future<ThuongHoc> thuongHoc();
+  Future<ThuongHoc> ghiNhanNgayHoc(String baiHoc);
+  Future<String> yeuCauDoiPro(String vi);
+  Future<ThuongHoc> xacNhanDoiPro(String hash);
+  Future<String> hoiAi({
+    required String baiHoc,
+    required String cauHoi,
+    required String mucDo,
+  });
 }
 
 class LoiTaiKhoan implements Exception {

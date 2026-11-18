@@ -28,20 +28,21 @@ class TienDoVM extends AsyncNotifier<Map<String, TienDo>> {
   /// Dùng so khớp mẫu thay vì `state.value`: trình biên dịch bắt buộc xử lý
   /// nhánh chưa có dữ liệu, không quên được.
   Map<String, TienDo>? get _bang => switch (state) {
-        AsyncData(:final value) => value,
-        _ => null,
-      };
+    AsyncData(:final value) => value,
+    _ => null,
+  };
 
   /// Bật/tắt trạng thái hoàn thành của một bài học.
   ///
   /// Cập nhật trạng thái TRƯỚC rồi mới ghi xuống Hive ("cập nhật lạc quan"):
   /// dấu tích đổi ngay khi bấm chứ không chờ ổ đĩa. Ghi hỏng thì nạp lại từ
   /// kho để giao diện quay về đúng sự thật.
-  Future<void> daoTrangThaiBai(String maKhoaHoc, String maBai) async {
+  Future<String?> daoTrangThaiBai(String maKhoaHoc, String maBai) async {
     final bang = _bang;
-    if (bang == null) return;
+    if (bang == null) return null;
 
     final cu = bang[maKhoaHoc] ?? TienDo(maKhoaHoc: maKhoaHoc);
+    final nguoiDung = ref.read(phienProvider).asData?.value;
     final moi = cu.daoTrangThai(maBai);
     state = AsyncData({...bang, maKhoaHoc: moi});
 
@@ -49,6 +50,21 @@ class TienDoVM extends AsyncNotifier<Map<String, TienDo>> {
       await _kho.luu(moi);
     } catch (_) {
       ref.invalidateSelf();
+      return 'Chưa lưu được tiến độ.';
+    }
+    if (!ref.mounted ||
+        !moi.daXong(maBai) ||
+        nguoiDung == null ||
+        ref.read(phienProvider).asData?.value != nguoiDung)
+      return null;
+    try {
+      final thuong = await ref
+          .read(khoNguoiDungProvider)
+          .ghiNhanNgayHoc('$maKhoaHoc/$maBai');
+      if (ref.mounted) ref.invalidate(thuongHocProvider);
+      return thuong.thuong > 0 ? 'Bạn nhận được ${thuong.thuong} xu!' : null;
+    } catch (_) {
+      return 'Đã lưu tiến độ bài. Chưa ghi nhận được ngày học trên máy chủ.';
     }
   }
 

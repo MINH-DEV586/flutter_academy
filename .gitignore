@@ -12,3 +12,4 @@ windows/
 .vscode/
 /.env
 /server/.local/
+/node_modules/

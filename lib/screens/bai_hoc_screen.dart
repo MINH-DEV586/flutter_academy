@@ -185,9 +185,15 @@ class _NoiDung extends ConsumerWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             FilledButton.icon(
-              onPressed: () => ref
-                  .read(tienDoProvider.notifier)
-                  .daoTrangThaiBai(khoaHoc.ma, bai.ma),
+              onPressed: () async {
+                final thongBao = await ref.read(tienDoProvider.notifier)
+                    .daoTrangThaiBai(khoaHoc.ma, bai.ma);
+                if (context.mounted && thongBao != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(thongBao)),
+                  );
+                }
+              },
               icon: Icon(daXong ? Icons.undo : Icons.check),
               label: Text(daXong ? 'Bỏ đánh dấu' : 'Đánh dấu đã xong'),
             ),

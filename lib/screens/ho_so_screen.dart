@@ -9,6 +9,7 @@ import '../models/khoa_hoc.dart';
 import '../models/nguoi_dung.dart';
 import '../viewmodels/providers.dart';
 import '../widgets/trang.dart';
+import '../widgets/the_thuong_hoc.dart';
 import '../widgets/trang_thai.dart';
 
 /// Hồ sơ người học: thông tin, thống kê, chế độ giao diện, đăng xuất.
@@ -120,6 +121,8 @@ class _NoiDung extends ConsumerWidget {
             ),
           ),
         ),
+        const SizedBox(height: 24),
+        TheThuongHoc(key: ValueKey(nguoiDung.email)),
         const SizedBox(height: 24),
         Text('Thống kê học tập',
             style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700)),

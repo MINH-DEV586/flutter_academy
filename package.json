@@ -1,0 +1,10 @@
+{
+  "name": "flutter-academy-local",
+  "private": true,
+  "scripts": {
+    "chain": "hardhat node --hostname 127.0.0.1 --port 8545"
+  },
+  "devDependencies": {
+    "hardhat": "2.29.2"
+  }
+}

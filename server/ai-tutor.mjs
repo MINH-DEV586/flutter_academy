@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { taoTaiKhoan } from './account.mjs';
+import { ngayVietNam } from './rewards.mjs';
 
 const baiHoc = JSON.parse(
   readFileSync(new URL('../assets/bai_hoc_ai.json', import.meta.url), 'utf8'),
@@ -82,10 +83,11 @@ function layVanBan(nhaCungCap, ketQua) {
 }
 
 export function taoMayChu({
-  apiKey, model, nhaCungCap = 'openai', goiApi = fetch, accountDb = ':memory:',
+  apiKey, model, nhaCungCap = 'openai', goiApi = fetch, accountDb = ':memory:', rewardsOptions,
 } = {}) {
-  const taiKhoan = taoTaiKhoan(accountDb, maKhoaHoc);
+  const taiKhoan = taoTaiKhoan(accountDb, maKhoaHoc, baiHoc, rewardsOptions);
   let dangXuLy = 0;
+  let luotKhach = { ngay: -1, daDung: 0 };
   const server = createServer({ requestTimeout: 15_000 }, async (request, response) => {
     const tra = (status, body) => {
       response.writeHead(status, {
@@ -112,7 +114,7 @@ export function taoMayChu({
     if (request.method === 'OPTIONS') {
       response.writeHead(204, {
         'Access-Control-Allow-Methods': laTaiKhoan ? 'GET, POST, DELETE' : 'POST',
-        'Access-Control-Allow-Headers': laTaiKhoan ? 'Content-Type, Authorization' : 'Content-Type',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       });
       return response.end();
     }
@@ -146,9 +148,24 @@ export function taoMayChu({
     }
     if (!apiKey) return tra(503, { loi: 'Máy chủ chưa cấu hình khóa API.' });
     if (dangXuLy >= 4) return tra(429, { loi: 'Máy chủ đang bận.' });
+    const email = taiKhoan.emailPhien(request);
+    if (request.headers.authorization && !email) {
+      return tra(401, { loi: 'Phiên đã hết hạn. Vui lòng đăng nhập lại.' });
+    }
+    const ngay = ngayVietNam(Date.now());
+    if (luotKhach.ngay !== ngay) luotKhach = { ngay, daDung: 0 };
+    const homNay = luotKhach;
+    const traLuot = email ? taiKhoan.dungLuotAi(email) :
+      homNay.daDung < 5 ? (++homNay.daDung, () => homNay.daDung--) : null;
+    if (!traLuot) {
+      return tra(429, { loi: email
+        ? 'Bạn đã hết lượt AI hôm nay (giờ Việt Nam).'
+        : 'Đã hết lượt AI dùng thử. Hãy đăng nhập để tiếp tục.' });
+    }
 
     const taiLieu = baiHoc[duLieu.baiHoc];
     dangXuLy++;
+    let thanhCong = false;
     try {
       const instructions = [
         'Bạn là gia sư lập trình. Trả lời bằng tiếng Việt rõ ràng.',
@@ -175,6 +192,7 @@ export function taoMayChu({
       const ketQua = await upstream.json();
       const cauTraLoi = layVanBan(nhaCungCap, ketQua);
       if (!cauTraLoi) return tra(502, { loi: 'Phản hồi AI trống.' });
+      thanhCong = true;
       return tra(200, { cauTraLoi });
     } catch (loi) {
       const maLoi = loi.cause?.code ?? loi.name;
@@ -182,6 +200,7 @@ export function taoMayChu({
       return tra(502, { loi: 'Không kết nối được dịch vụ AI.' });
     } finally {
       dangXuLy--;
+      if (!thanhCong) traLuot();
     }
   });
   server.once('close', taiKhoan.dong);

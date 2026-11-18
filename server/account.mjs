@@ -1,6 +1,7 @@
 import { createHash, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { promisify } from 'node:util';
+import { taoThuong } from './rewards.mjs';
 
 const bamMatKhau = promisify(scrypt);
 const saltGia = randomBytes(16);
@@ -14,7 +15,7 @@ function bam(matKhau, salt) {
   });
 }
 
-export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
+export function taoTaiKhoan(duongDan, maKhoaHocHopLe, baiHoc, rewardsOptions) {
   const db = new DatabaseSync(duongDan);
   db.exec(`
     PRAGMA journal_mode = WAL;
@@ -56,6 +57,11 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
   const themDangKy = db.prepare(
     'INSERT INTO dang_ky_khoa_hoc VALUES (?, ?) ON CONFLICT(email, ma_khoa_hoc) DO NOTHING',
   );
+  const thuong = taoThuong(db, baiHoc, rewardsOptions);
+  function emailPhien(request) {
+    const match = /^Bearer ([a-f0-9]{64})$/.exec(request.headers.authorization ?? '');
+    return match ? docPhien.get(bamToken(match[1]), Date.now())?.email : null;
+  }
   let dangBam = 0;
   let soLuot = 0;
   let hetCuaSo = 0;
@@ -70,6 +76,11 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
 
   async function xuLy(request, tra, docJson) {
     const { url, method } = request;
+    if (url === '/api/account/rewards' || url.startsWith('/api/account/rewards/')) {
+      const email = emailPhien(request);
+      if (!email) return tra(401, { loi: 'Vui lòng đăng nhập.' });
+      return thuong.xuLy(email, request, tra, docJson, () => emailPhien(request) === email);
+    }
     if (url === '/api/account/enrollments') {
       const match = /^Bearer ([a-f0-9]{64})$/.exec(request.headers.authorization ?? '');
       const nguoiDung = match && docPhien.get(bamToken(match[1]), Date.now());
@@ -161,5 +172,5 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
     }
   }
 
-  return { xuLy, dong: () => db.close() };
+  return { xuLy, emailPhien, dungLuotAi: thuong.dungLuotAi, dong: () => db.close() };
 }

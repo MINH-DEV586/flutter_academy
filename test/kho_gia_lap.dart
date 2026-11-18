@@ -2,6 +2,7 @@ import 'package:flutter_academy/data/kho_du_lieu.dart';
 import 'package:flutter_academy/models/khoa_hoc.dart';
 import 'package:flutter_academy/models/nguoi_dung.dart';
 import 'package:flutter_academy/models/tien_do.dart';
+import 'package:flutter_academy/models/thuong_hoc.dart';
 
 /// Ba kho dữ liệu giả lập, giữ mọi thứ trong bộ nhớ.
 ///
@@ -110,4 +111,19 @@ class KhoNguoiDungGiaLap implements KhoNguoiDung {
     if (email == null) throw StateError('Chưa đăng nhập');
     _dangKy.putIfAbsent(email, () => {}).add(maKhoaHoc);
   }
+
+  @override
+  Future<ThuongHoc> thuongHoc() async => throw UnimplementedError();
+  @override
+  Future<ThuongHoc> ghiNhanNgayHoc(String baiHoc) async => throw UnimplementedError();
+  @override
+  Future<String> yeuCauDoiPro(String vi) async => throw UnimplementedError();
+  @override
+  Future<ThuongHoc> xacNhanDoiPro(String hash) async => throw UnimplementedError();
+  @override
+  Future<String> hoiAi({
+    required String baiHoc,
+    required String cauHoi,
+    required String mucDo,
+  }) async => throw UnimplementedError();
 }

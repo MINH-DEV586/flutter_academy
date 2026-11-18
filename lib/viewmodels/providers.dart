@@ -5,6 +5,7 @@ import '../models/che_do_giao_dien.dart';
 import '../models/khoa_hoc.dart';
 import '../models/nguoi_dung.dart';
 import '../models/tien_do.dart';
+import '../models/thuong_hoc.dart';
 import 'chu_de_vm.dart';
 import 'dang_ky_khoa_hoc_vm.dart';
 import 'phien_vm.dart';
@@ -108,6 +109,12 @@ final phienProvider = AsyncNotifierProvider<PhienVM, NguoiDung?>(
   PhienVM.new,
   retry: (_, _) => null,
 );
+
+final thuongHocProvider = FutureProvider<ThuongHoc?>((ref) async {
+  final nguoiDung = await ref.watch(phienProvider.future);
+  if (nguoiDung == null) return null;
+  return ref.read(khoNguoiDungProvider).thuongHoc();
+}, retry: (_, _) => null);
 
 final dangKyKhoaHocProvider = AsyncNotifierProvider<DangKyKhoaHocVM, Set<String>>(
   DangKyKhoaHocVM.new,

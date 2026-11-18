@@ -88,6 +88,35 @@ hoặc thiết bị và chưa đồng bộ theo tài khoản.
 Trước khi triển khai công khai, cần HTTPS, xác minh email và khôi phục
 mật khẩu.
 
+### Chuỗi ngày học và Pro
+
+Đăng nhập và đánh dấu hoàn thành một bài để ghi nhận ngày học. Ngày đổi
+lúc 00:00 giờ Việt Nam. Mỗi ngày chỉ tính một lần. Chuỗi bắt đầu lại từ 1
+nếu bỏ lỡ một ngày. Mốc 3 ngày nhận 10 xu, mốc 7 ngày nhận thêm 20 xu.
+Trong **Hồ sơ**, xem số xu, chuỗi hiện tại và hạn mức AI. Tài khoản thường
+có 10 lượt AI mỗi ngày và Pro có 50 lượt. Lượt dùng thử của khách là hạn mức
+chung cho phiên chạy backend cục bộ.
+
+1. Chạy `npm ci`, rồi chạy `npm run chain` trong cửa sổ riêng.
+2. Mở trang web bằng trình duyệt đã cài MetaMask. Chọn mạng Hardhat Local
+   (chain ID 31337, RPC `http://127.0.0.1:8545`).
+3. Nạp ETH test cho địa chỉ ví dùng trên mạng local để trả phí gas. Thay
+   `DIA_CHI_VI` bằng địa chỉ công khai của ví MetaMask trong PowerShell.
+
+   ```powershell
+   $payload = @{jsonrpc='2.0'; id=1; method='hardhat_setBalance'; params=@('DIA_CHI_VI','0xDE0B6B3A7640000')} | ConvertTo-Json -Compress
+   Invoke-RestMethod http://127.0.0.1:8545 -ContentType 'application/json' -Method Post -Body $payload
+   ```
+
+4. Khi đủ 30 xu, bấm **Đổi 7 ngày Pro** và xác nhận giao dịch 0 ETH gửi
+   về chính ví trên mạng thử nghiệm. Sau khi backend đối chiếu nonce, ví,
+   nội dung và biên nhận Hardhat, ứng dụng trừ 30 xu và cộng 7 ngày Pro.
+   Nếu chưa nhận được xác nhận, mở **Kiểm tra giao dịch đã gửi** để kiểm
+   tra lại mã giao dịch. Yêu cầu đổi còn hiệu lực trong 24 giờ.
+
+Chuỗi, xu và Pro lưu trong SQLite theo tài khoản. Hardhat chạy trên
+loopback và blockchain test được tạo lại khi tiến trình Hardhat dừng.
+
 ### Dùng thử AI Tutor
 
 Danh mục có năm khóa miễn phí với 16 video YouTube tiếng Anh. Mỗi bài có tên
