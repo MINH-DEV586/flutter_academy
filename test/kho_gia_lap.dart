@@ -1,6 +1,8 @@
 import 'package:flutter_academy/data/kho_du_lieu.dart';
+import 'package:flutter_academy/models/chuoi_hoc.dart';
 import 'package:flutter_academy/models/khoa_hoc.dart';
 import 'package:flutter_academy/models/nguoi_dung.dart';
+import 'package:flutter_academy/models/nhat_ky_ngay.dart';
 import 'package:flutter_academy/models/tien_do.dart';
 
 /// Ba kho dữ liệu giả lập, giữ mọi thứ trong bộ nhớ.
@@ -109,5 +111,52 @@ class KhoNguoiDungGiaLap implements KhoNguoiDung {
     final email = duLieu?.email;
     if (email == null) throw StateError('Chưa đăng nhập');
     _dangKy.putIfAbsent(email, () => {}).add(maKhoaHoc);
+  }
+}
+
+class KhoChuoiHocGiaLap implements KhoChuoiHoc {
+  ChuoiHoc chuoi;
+  final Map<String, NhatKyNgay> nhatKy;
+  bool gayLoi;
+
+  KhoChuoiHocGiaLap({
+    this.chuoi = const ChuoiHoc(),
+    Map<String, NhatKyNgay>? nhatKyBanDau,
+    this.gayLoi = false,
+  }) : nhatKy = {...?nhatKyBanDau};
+
+  @override
+  Future<ChuoiHoc> lay() async {
+    if (gayLoi) throw Exception('Hỏng kho chuỗi');
+    return chuoi;
+  }
+
+  @override
+  Future<void> luu(ChuoiHoc chuoiHoc) async {
+    if (gayLoi) throw Exception('Hỏng kho chuỗi');
+    chuoi = chuoiHoc;
+  }
+
+  @override
+  Future<NhatKyNgay> layNhatKy(String ngay) async {
+    if (gayLoi) throw Exception('Hỏng kho nhật ký');
+    return nhatKy[ngay] ?? NhatKyNgay(ngay: ngay);
+  }
+
+  @override
+  Future<Map<String, NhatKyNgay>> nhatKyTrongThang(int nam, int thang) async {
+    if (gayLoi) throw Exception('Hỏng kho nhật ký');
+    final prefix =
+        '${nam.toString().padLeft(4, '0')}-${thang.toString().padLeft(2, '0')}-';
+    return {
+      for (final e in nhatKy.entries)
+        if (e.key.startsWith(prefix)) e.key: e.value,
+    };
+  }
+
+  @override
+  Future<void> luuNhatKy(NhatKyNgay nk) async {
+    if (gayLoi) throw Exception('Hỏng kho nhật ký');
+    nhatKy[nk.ngay] = nk;
   }
 }

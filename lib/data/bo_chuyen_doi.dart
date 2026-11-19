@@ -1,8 +1,10 @@
 import 'package:hive_ce/hive_ce.dart';
 
 import '../models/bai_hoc.dart';
+import '../models/chuoi_hoc.dart';
 import '../models/khoa_hoc.dart';
 import '../models/nguoi_dung.dart';
+import '../models/nhat_ky_ngay.dart';
 import '../models/tien_do.dart';
 
 /// Bộ chuyển đổi (TypeAdapter) cho Hive — **viết tay, không dùng codegen**.
@@ -37,6 +39,8 @@ class MaKieu {
   static const int khoaHoc = 2;
   static const int tienDo = 3;
   static const int nguoiDung = 4;
+  static const int chuoiHoc = 5;
+  static const int nhatKyNgay = 6;
 }
 
 /// Đọc phần đầu chung: số trường + bảng trường.
@@ -190,6 +194,87 @@ class NguoiDungAdapter extends TypeAdapter<NguoiDung> {
   }
 }
 
+class ChuoiHocAdapter extends TypeAdapter<ChuoiHoc> {
+  @override
+  final int typeId = MaKieu.chuoiHoc;
+
+  @override
+  ChuoiHoc read(BinaryReader reader) {
+    final f = _docTruong(reader);
+    return ChuoiHoc(
+      chuoiHienTai: (f[0] as num?)?.toInt() ?? 0,
+      chuoiDaiNhat: (f[1] as num?)?.toInt() ?? 0,
+      ngayHocGanNhat: f[2] as String?,
+      soKhiensFreeze: (f[3] as num?)?.toInt() ?? 0,
+      tongXp: (f[4] as num?)?.toInt() ?? 0,
+      mucTieuPhutMoiNgay: (f[5] as num?)?.toInt() ?? 10,
+      danhSachHuyHieu: ((f[6] as List?) ?? const []).cast<String>().toSet(),
+      cacNgayFreezeDaDung: ((f[7] as List?) ?? const []).cast<String>().toSet(),
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, ChuoiHoc obj) {
+    writer
+      ..writeByte(8)
+      ..writeByte(0)
+      ..write(obj.chuoiHienTai)
+      ..writeByte(1)
+      ..write(obj.chuoiDaiNhat)
+      ..writeByte(2)
+      ..write(obj.ngayHocGanNhat)
+      ..writeByte(3)
+      ..write(obj.soKhiensFreeze)
+      ..writeByte(4)
+      ..write(obj.tongXp)
+      ..writeByte(5)
+      ..write(obj.mucTieuPhutMoiNgay)
+      ..writeByte(6)
+      ..write(obj.danhSachHuyHieu.toList())
+      ..writeByte(7)
+      ..write(obj.cacNgayFreezeDaDung.toList());
+  }
+}
+
+class NhatKyNgayAdapter extends TypeAdapter<NhatKyNgay> {
+  @override
+  final int typeId = MaKieu.nhatKyNgay;
+
+  @override
+  NhatKyNgay read(BinaryReader reader) {
+    final f = _docTruong(reader);
+    return NhatKyNgay(
+      ngay: f[0] as String,
+      thoiGianHocGiay: (f[1] as num?)?.toInt() ?? 0,
+      baiDaHoanThanh: ((f[2] as List?) ?? const []).cast<String>().toSet(),
+      khoaHocDaThamGia: ((f[3] as List?) ?? const []).cast<String>().toSet(),
+      xpNhanDuoc: (f[4] as num?)?.toInt() ?? 0,
+      dungFreeze: f[5] as bool? ?? false,
+      hoatDongDuyTri: f[6] as String?,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, NhatKyNgay obj) {
+    writer
+      ..writeByte(7)
+      ..writeByte(0)
+      ..write(obj.ngay)
+      ..writeByte(1)
+      ..write(obj.thoiGianHocGiay)
+      ..writeByte(2)
+      ..write(obj.baiDaHoanThanh.toList())
+      ..writeByte(3)
+      ..write(obj.khoaHocDaThamGia.toList())
+      ..writeByte(4)
+      ..write(obj.xpNhanDuoc)
+      ..writeByte(5)
+      ..write(obj.dungFreeze)
+      ..writeByte(6)
+      ..write(obj.hoatDongDuyTri);
+  }
+}
+
 /// Đăng ký tất cả bộ chuyển đổi. Gọi đúng một lần, trước khi mở hộp nào.
 ///
 /// `isAdapterRegistered` là chốt an toàn cho `flutter test`: mỗi bài kiểm
@@ -203,4 +288,6 @@ void dangKyBoChuyenDoi() {
   dangKy(MaKieu.khoaHoc, KhoaHocAdapter());
   dangKy(MaKieu.tienDo, TienDoAdapter());
   dangKy(MaKieu.nguoiDung, NguoiDungAdapter());
+  dangKy(MaKieu.chuoiHoc, ChuoiHocAdapter());
+  dangKy(MaKieu.nhatKyNgay, NhatKyNgayAdapter());
 }

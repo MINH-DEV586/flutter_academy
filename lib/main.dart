@@ -30,6 +30,12 @@ Future<void> main() async {
         khoKhoaHocProvider.overrideWithValue(HiveKhoKhoaHoc(hop.khoaHoc)),
         khoTienDoProvider.overrideWithValue(HiveKhoTienDo(hop.tienDo)),
         khoNguoiDungProvider.overrideWithValue(KhoTaiKhoan(hop.phien)),
+        khoChuoiHocProvider.overrideWithValue(
+          HiveKhoChuoiHoc(
+            hopChuoiHoc: hop.chuoiHoc,
+            hopNhatKy: hop.nhatKyHoc,
+          ),
+        ),
       ],
       child: const UngDung(),
     ),

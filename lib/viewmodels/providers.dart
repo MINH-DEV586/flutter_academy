@@ -35,6 +35,10 @@ final khoNguoiDungProvider = Provider<KhoNguoiDung>(
   (ref) => throw UnimplementedError('Chưa ghi đè khoNguoiDungProvider'),
 );
 
+final khoChuoiHocProvider = Provider<KhoChuoiHoc>(
+  (ref) => throw UnimplementedError('Chưa ghi đè khoChuoiHocProvider'),
+);
+
 // ---------------------------------------------------------------------------
 // Khoá học
 // ---------------------------------------------------------------------------

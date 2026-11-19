@@ -15,8 +15,10 @@
 /// khớp giao diện, và lúc đó phải sửa cả ứng dụng.
 library;
 
+import '../models/chuoi_hoc.dart';
 import '../models/khoa_hoc.dart';
 import '../models/nguoi_dung.dart';
+import '../models/nhat_ky_ngay.dart';
 import '../models/tien_do.dart';
 
 
@@ -59,6 +61,23 @@ abstract interface class KhoNguoiDung {
   Future<Set<String>> khoaDaDangKy();
 
   Future<void> dangKyKhoaHoc(String maKhoaHoc);
+}
+
+abstract interface class KhoChuoiHoc {
+  /// Lấy thông tin chuỗi học tập hiện tại. Trả về mặc định nếu chưa có.
+  Future<ChuoiHoc> lay();
+
+  /// Lưu trạng thái chuỗi học tập.
+  Future<void> luu(ChuoiHoc chuoiHoc);
+
+  /// Lấy nhật ký của một ngày cụ thể.
+  Future<NhatKyNgay> layNhatKy(String ngay);
+
+  /// Lấy danh sách nhật ký các ngày trong một tháng để vẽ lịch.
+  Future<Map<String, NhatKyNgay>> nhatKyTrongThang(int nam, int thang);
+
+  /// Lưu nhật ký một ngày.
+  Future<void> luuNhatKy(NhatKyNgay nhatKy);
 }
 
 class LoiTaiKhoan implements Exception {

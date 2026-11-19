@@ -1,6 +1,8 @@
 import 'package:hive_ce/hive_ce.dart';
 
+import '../models/chuoi_hoc.dart';
 import '../models/khoa_hoc.dart';
+import '../models/nhat_ky_ngay.dart';
 import '../models/tien_do.dart';
 import 'du_lieu_mau.dart';
 import 'kho_du_lieu.dart';
@@ -12,6 +14,8 @@ class TenHop {
   static const String khoaHoc = 'khoa_hoc_youtube_v2';
   static const String tienDo = 'tien_do';
   static const String phien = 'phien_tai_khoan';
+  static const String chuoiHoc = 'chuoi_hoc';
+  static const String nhatKyHoc = 'nhat_ky_hoc';
 }
 
 /// Kho khoá học đọc từ hộp Hive.
@@ -59,4 +63,46 @@ class HiveKhoTienDo implements KhoTienDo {
 
   @override
   Future<void> xoa(String maKhoaHoc) => hop.delete(maKhoaHoc);
+}
+
+/// Kho lưu trữ Chuỗi học tập và Nhật ký ngày bằng Hive.
+class HiveKhoChuoiHoc implements KhoChuoiHoc {
+  static const String _khoaMacDinh = 'hien_tai';
+  final Box<ChuoiHoc> hopChuoiHoc;
+  final Box<NhatKyNgay> hopNhatKy;
+
+  HiveKhoChuoiHoc({
+    required this.hopChuoiHoc,
+    required this.hopNhatKy,
+  });
+
+  @override
+  Future<ChuoiHoc> lay() async =>
+      hopChuoiHoc.get(_khoaMacDinh) ?? const ChuoiHoc();
+
+  @override
+  Future<void> luu(ChuoiHoc chuoiHoc) =>
+      hopChuoiHoc.put(_khoaMacDinh, chuoiHoc);
+
+  @override
+  Future<NhatKyNgay> layNhatKy(String ngay) async =>
+      hopNhatKy.get(ngay) ?? NhatKyNgay(ngay: ngay);
+
+  @override
+  Future<Map<String, NhatKyNgay>> nhatKyTrongThang(int nam, int thang) async {
+    final prefix =
+        '${nam.toString().padLeft(4, '0')}-${thang.toString().padLeft(2, '0')}-';
+    final ketQua = <String, NhatKyNgay>{};
+    for (final key in hopNhatKy.keys) {
+      if (key is String && key.startsWith(prefix)) {
+        final val = hopNhatKy.get(key);
+        if (val != null) ketQua[key] = val;
+      }
+    }
+    return ketQua;
+  }
+
+  @override
+  Future<void> luuNhatKy(NhatKyNgay nhatKy) =>
+      hopNhatKy.put(nhatKy.ngay, nhatKy);
 }
