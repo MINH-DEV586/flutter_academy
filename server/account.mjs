@@ -37,6 +37,16 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
       ma_khoa_hoc TEXT NOT NULL,
       PRIMARY KEY (email, ma_khoa_hoc)
     ) STRICT;
+    CREATE TABLE IF NOT EXISTS streak_nguoi_dung (
+      email TEXT PRIMARY KEY REFERENCES tai_khoan(email),
+      chuoi_hien_tai INTEGER NOT NULL DEFAULT 0,
+      chuoi_dai_nhat INTEGER NOT NULL DEFAULT 0,
+      so_khiens_freeze INTEGER NOT NULL DEFAULT 0,
+      tong_xp INTEGER NOT NULL DEFAULT 0,
+      ngay_hoc_gan_nhat TEXT,
+      cap_hien_tai INTEGER NOT NULL DEFAULT 1,
+      cap_nhat_luc INTEGER NOT NULL DEFAULT 0
+    ) STRICT;
   `);
   const themTaiKhoan = db.prepare(
     'INSERT INTO tai_khoan VALUES (?, ?, ?, ?) ON CONFLICT(email) DO NOTHING',
@@ -56,6 +66,20 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
   const themDangKy = db.prepare(
     'INSERT INTO dang_ky_khoa_hoc VALUES (?, ?) ON CONFLICT(email, ma_khoa_hoc) DO NOTHING',
   );
+  const docStreak = db.prepare('SELECT * FROM streak_nguoi_dung WHERE email = ?');
+  const luuStreak = db.prepare(
+    'INSERT INTO streak_nguoi_dung (email, chuoi_hien_tai, chuoi_dai_nhat, so_khiens_freeze, tong_xp, ngay_hoc_gan_nhat, cap_hien_tai, cap_nhat_luc) '
+    + 'VALUES (?, ?, ?, ?, ?, ?, ?, ?) '
+    + 'ON CONFLICT(email) DO UPDATE SET '
+    + 'chuoi_hien_tai = excluded.chuoi_hien_tai, '
+    + 'chuoi_dai_nhat = MAX(chuoi_dai_nhat, excluded.chuoi_dai_nhat), '
+    + 'so_khiens_freeze = excluded.so_khiens_freeze, '
+    + 'tong_xp = excluded.tong_xp, '
+    + 'ngay_hoc_gan_nhat = excluded.ngay_hoc_gan_nhat, '
+    + 'cap_hien_tai = excluded.cap_hien_tai, '
+    + 'cap_nhat_luc = excluded.cap_nhat_luc '
+    + 'WHERE excluded.cap_nhat_luc >= streak_nguoi_dung.cap_nhat_luc'
+  );
   let dangBam = 0;
   let soLuot = 0;
   let hetCuaSo = 0;
@@ -70,6 +94,31 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
 
   async function xuLy(request, tra, docJson) {
     const { url, method } = request;
+    if (url === '/api/account/streak') {
+      const match = /^Bearer ([a-f0-9]{64})$/.exec(request.headers.authorization ?? '');
+      const nguoiDung = match && docPhien.get(bamToken(match[1]), Date.now());
+      if (!nguoiDung) return tra(401, { loi: 'Vui long dang nhap.' });
+      if (method === 'GET') {
+        const streak = docStreak.get(nguoiDung.email);
+        return tra(200, streak ? {
+          chuoiHienTai: streak.chuoi_hien_tai,
+          chuoiDaiNhat: streak.chuoi_dai_nhat,
+          soKhiensFreeze: streak.so_khiens_freeze,
+          tongXp: streak.tong_xp,
+          ngayHocGanNhat: streak.ngay_hoc_gan_nhat,
+          capHienTai: streak.cap_hien_tai,
+        } : { chuoiHienTai: 0, chuoiDaiNhat: 0, soKhiensFreeze: 0, tongXp: 0, ngayHocGanNhat: null, capHienTai: 1 });
+      }
+      if (method !== 'POST') return tra(405, { loi: 'Chi ho tro GET va POST.' });
+      if (request.headers['content-type']?.split(';')[0] !== 'application/json') {
+        return tra(415, { loi: 'Yeu cau noi dung JSON.' });
+      }
+      let duLieu;
+      try { duLieu = await docJson(request); } catch { return tra(400, { loi: 'JSON khong hop le.' }); }
+      const { chuoiHienTai = 0, chuoiDaiNhat = 0, soKhiensFreeze = 0, tongXp = 0, ngayHocGanNhat = null, capHienTai = 1 } = duLieu ?? {};
+      luuStreak.run(nguoiDung.email, chuoiHienTai, chuoiDaiNhat, soKhiensFreeze, tongXp, ngayHocGanNhat, capHienTai, Date.now());
+      return tra(200, { ok: true });
+    }
     if (url === '/api/account/enrollments') {
       const match = /^Bearer ([a-f0-9]{64})$/.exec(request.headers.authorization ?? '');
       const nguoiDung = match && docPhien.get(bamToken(match[1]), Date.now());
