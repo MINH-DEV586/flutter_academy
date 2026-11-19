@@ -8,6 +8,7 @@ import '../dinh_tuyen/duong_dan.dart';
 import '../models/bo_loc.dart';
 import '../models/khoa_hoc.dart';
 import '../viewmodels/providers.dart';
+import '../widgets/banner_nhac_nho_streak.dart';
 import '../widgets/muc_noi_bat.dart';
 import '../widgets/trang.dart';
 import '../widgets/trang_thai.dart';
@@ -34,7 +35,8 @@ class TrangChuScreen extends ConsumerWidget {
     return Trang(
       con: [
         const _Mang(),
-        const SizedBox(height: 40),
+        const SizedBox(height: 32),
+        const BannerNhacNhoStreak(),
         if (dangHoc.isNotEmpty) ...[
           MucNoiBat(
             tieuDe: 'Tiếp tục học',
