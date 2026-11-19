@@ -64,11 +64,29 @@ class ChuoiHocVM extends AsyncNotifier<ChuoiHoc> {
 
     // 1. Cập nhật nhật ký chi tiết của ngày hôm nay
     final nhatKyCu = await _kho.layNhatKy(homNayStr);
+
+    // Tính toán XP thưởng tự động theo các tiêu chuẩn của hệ thống:
+    var xpTongCong = xpCongThem;
+
+    // Tự động thưởng 10 XP cho mỗi 5 phút (300 giây) tích lũy trong ngày
+    final moc5pCu = nhatKyCu.thoiGianHocGiay ~/ 300;
+    final moc5pMoi = (nhatKyCu.thoiGianHocGiay + giayHocThem) ~/ 300;
+    if (moc5pMoi > moc5pCu) {
+      xpTongCong += (moc5pMoi - moc5pCu) * 10;
+    }
+
+    // Tự động thưởng 20 XP khi hoàn thành mục tiêu hàng ngày (Daily Goal)
+    final mucTieuGiay = hienTai.mucTieuPhutMoiNgay * 60;
+    if (nhatKyCu.thoiGianHocGiay < mucTieuGiay &&
+        (nhatKyCu.thoiGianHocGiay + giayHocThem) >= mucTieuGiay) {
+      xpTongCong += 20;
+    }
+
     final nhatKyMoi = nhatKyCu.ghiNhanThem(
       giayCongThem: giayHocThem,
       maBaiMoi: maBaiHoc,
       maKhoaHocMoi: maKhoaHoc,
-      xpCongThem: xpCongThem,
+      xpCongThem: xpTongCong,
       moTaHoatDong: moTaHoatDong,
     );
     await _kho.luuNhatKy(nhatKyMoi);
@@ -77,10 +95,19 @@ class ChuoiHocVM extends AsyncNotifier<ChuoiHoc> {
     // Đủ 10 phút (600 giây) hoặc hoàn thành ít nhất 1 bài học/bài kiểm tra
     ChuoiHoc chuoiMoi;
     if (nhatKyMoi.datDieuKienStreak) {
-      chuoiMoi = hienTai.ghiNhanHocHopLe(bayGio, xpCongThem: xpCongThem);
+      chuoiMoi = hienTai.ghiNhanHocHopLe(bayGio, xpCongThem: xpTongCong);
     } else {
       // Chưa đủ điều kiện streak, chỉ tích luỹ XP
-      chuoiMoi = hienTai.congXp(xpCongThem);
+      chuoiMoi = hienTai.congXp(xpTongCong);
+    }
+
+    // Thưởng XP khi đạt các mốc Streak đặc biệt (7 ngày: +50 XP, 30 ngày: +200 XP)
+    if (chuoiMoi.chuoiHienTai > hienTai.chuoiHienTai) {
+      if (chuoiMoi.chuoiHienTai == 7) {
+        chuoiMoi = chuoiMoi.congXp(50);
+      } else if (chuoiMoi.chuoiHienTai == 30) {
+        chuoiMoi = chuoiMoi.congXp(200);
+      }
     }
 
     // 3. Tự động kiểm tra và trao các huy hiệu mốc Streak đạt được

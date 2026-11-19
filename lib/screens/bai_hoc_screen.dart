@@ -132,6 +132,14 @@ class _NoiDung extends ConsumerWidget {
             key: ValueKey(youtubeId),
             youtubeId: youtubeId,
             kenhYouTube: taiLieuBai?.kenhYouTube,
+            onThoiGianHoc: (giay) {
+              ref.read(chuoiHocProvider.notifier).ghiNhanHocTap(
+                    giayHocThem: giay,
+                    maKhoaHoc: khoaHoc.ma,
+                    maBaiHoc: bai.ma,
+                    moTaHoatDong: 'Học video: ${bai.tieuDe}',
+                  );
+            },
           )
         else
           AspectRatio(
@@ -244,6 +252,14 @@ class _NoiDung extends ConsumerWidget {
             key: ValueKey(maTaiLieu),
             maBai: maTaiLieu,
             tenBai: bai.tieuDe,
+            onHoiThanhCong: () {
+              ref.read(chuoiHocProvider.notifier).ghiNhanHocTap(
+                    maKhoaHoc: khoaHoc.ma,
+                    maBaiHoc: bai.ma,
+                    xpCongThem: 10,
+                    moTaHoatDong: 'Hỏi bài Gia sư AI: ${bai.tieuDe}',
+                  );
+            },
           ),
         ],
       ],

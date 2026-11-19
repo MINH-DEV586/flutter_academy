@@ -114,12 +114,18 @@ class _NoiDungLuyenTapState extends State<_NoiDungLuyenTap> {
                 Visibility(
                   visible: _muc == _Muc.quiz,
                   maintainState: true,
-                  child: _Quiz(luyenTap: widget.luyenTap),
+                  child: _Quiz(
+                    luyenTap: widget.luyenTap,
+                    maKhoaHoc: widget.maKhoaHoc,
+                  ),
                 ),
                 Visibility(
                   visible: _muc == _Muc.baiTap,
                   maintainState: true,
-                  child: _BaiTap(bai: widget.luyenTap.baiTap),
+                  child: _BaiTap(
+                    bai: widget.luyenTap.baiTap,
+                    maKhoaHoc: widget.maKhoaHoc,
+                  ),
                 ),
               ],
             ),
@@ -130,16 +136,17 @@ class _NoiDungLuyenTapState extends State<_NoiDungLuyenTap> {
   }
 }
 
-class _Quiz extends StatefulWidget {
-  const _Quiz({required this.luyenTap});
+class _Quiz extends ConsumerStatefulWidget {
+  const _Quiz({required this.luyenTap, required this.maKhoaHoc});
 
   final BaiLuyenTap luyenTap;
+  final String maKhoaHoc;
 
   @override
-  State<_Quiz> createState() => _QuizState();
+  ConsumerState<_Quiz> createState() => _QuizState();
 }
 
-class _QuizState extends State<_Quiz> {
+class _QuizState extends ConsumerState<_Quiz> {
   final _luaChon = <int, int>{};
   bool _daNop = false;
 
@@ -206,7 +213,15 @@ class _QuizState extends State<_Quiz> {
                 )
               : FilledButton(
                   onPressed: _luaChon.length == quiz.length
-                      ? () => setState(() => _daNop = true)
+                      ? () {
+                          setState(() => _daNop = true);
+                          ref.read(chuoiHocProvider.notifier).ghiNhanHocTap(
+                                maKhoaHoc: widget.maKhoaHoc,
+                                maBaiHoc: 'quiz_${widget.maKhoaHoc}',
+                                xpCongThem: 30,
+                                moTaHoatDong: 'Hoàn thành bài kiểm tra trắc nghiệm',
+                              );
+                        }
                       : null,
                   child: const Text('Nộp quiz'),
                 ),
@@ -216,16 +231,17 @@ class _QuizState extends State<_Quiz> {
   }
 }
 
-class _BaiTap extends StatefulWidget {
-  const _BaiTap({required this.bai});
+class _BaiTap extends ConsumerStatefulWidget {
+  const _BaiTap({required this.bai, required this.maKhoaHoc});
 
   final BaiTapCode bai;
+  final String maKhoaHoc;
 
   @override
-  State<_BaiTap> createState() => _BaiTapState();
+  ConsumerState<_BaiTap> createState() => _BaiTapState();
 }
 
-class _BaiTapState extends State<_BaiTap> {
+class _BaiTapState extends ConsumerState<_BaiTap> {
   late final _ma = TextEditingController(text: widget.bai.maKhoiDau);
   bool _hienLoiGiai = false;
 
@@ -277,7 +293,18 @@ class _BaiTapState extends State<_BaiTap> {
         Align(
           alignment: AlignmentDirectional.centerStart,
           child: OutlinedButton(
-            onPressed: () => setState(() => _hienLoiGiai = !_hienLoiGiai),
+            onPressed: () {
+              final hienMoi = !_hienLoiGiai;
+              if (hienMoi && _ma.text.trim().isNotEmpty) {
+                ref.read(chuoiHocProvider.notifier).ghiNhanHocTap(
+                      maKhoaHoc: widget.maKhoaHoc,
+                      maBaiHoc: 'code_${widget.maKhoaHoc}',
+                      xpCongThem: 30,
+                      moTaHoatDong: 'Hoàn thành bài tập lập trình',
+                    );
+              }
+              setState(() => _hienLoiGiai = hienMoi);
+            },
             child: Text(
               _hienLoiGiai ? 'Ẩn lời giải mẫu' : 'Đối chiếu lời giải',
             ),

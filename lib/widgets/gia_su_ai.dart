@@ -12,10 +12,16 @@ enum _MucDo {
 }
 
 class GiaSuAi extends StatefulWidget {
-  const GiaSuAi({super.key, required this.maBai, required this.tenBai});
+  const GiaSuAi({
+    super.key,
+    required this.maBai,
+    required this.tenBai,
+    this.onHoiThanhCong,
+  });
 
   final String maBai;
   final String tenBai;
+  final VoidCallback? onHoiThanhCong;
 
   @override
   State<GiaSuAi> createState() => _GiaSuAiState();
@@ -48,7 +54,10 @@ class _GiaSuAiState extends State<GiaSuAi> {
         cauHoi: noiDung,
         mucDo: _mucDo.name,
       );
-      if (mounted) setState(() => _cauTraLoi = traLoi);
+      if (mounted) {
+        setState(() => _cauTraLoi = traLoi);
+        widget.onHoiThanhCong?.call();
+      }
     } catch (_) {
       if (mounted) setState(() => _loi = true);
     } finally {

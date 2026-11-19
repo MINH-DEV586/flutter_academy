@@ -1,13 +1,22 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 class VideoBaiHoc extends StatefulWidget {
-  const VideoBaiHoc({super.key, required this.youtubeId, this.kenhYouTube});
+  const VideoBaiHoc({
+    super.key,
+    required this.youtubeId,
+    this.kenhYouTube,
+    this.onThoiGianHoc,
+  });
 
   final String youtubeId;
   final String? kenhYouTube;
+
+  /// Gọi định kỳ khi video đang phát thực tế để tích lũy thời gian học
+  final void Function(int giay)? onThoiGianHoc;
 
   @override
   State<VideoBaiHoc> createState() => _VideoBaiHocState();
@@ -15,6 +24,8 @@ class VideoBaiHoc extends StatefulWidget {
 
 class _VideoBaiHocState extends State<VideoBaiHoc> {
   YoutubePlayerController? _trinhPhat;
+  Timer? _boDemGio;
+  StreamSubscription? _dangKyTrangThai;
 
   @override
   void initState() {
@@ -28,11 +39,35 @@ class _VideoBaiHocState extends State<VideoBaiHoc> {
         autoPlay: false,
         params: const YoutubePlayerParams(showFullscreenButton: true),
       );
+
+      _dangKyTrangThai = _trinhPhat?.stream.listen((value) {
+        if (value.playerState == PlayerState.playing) {
+          _batDauDemGio();
+        } else {
+          _dungDemGio();
+        }
+      });
     }
+  }
+
+  void _batDauDemGio() {
+    _boDemGio?.cancel();
+    _boDemGio = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (mounted) {
+        widget.onThoiGianHoc?.call(10);
+      }
+    });
+  }
+
+  void _dungDemGio() {
+    _boDemGio?.cancel();
+    _boDemGio = null;
   }
 
   @override
   void dispose() {
+    _dungDemGio();
+    _dangKyTrangThai?.cancel();
     _trinhPhat?.close();
     super.dispose();
   }

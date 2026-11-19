@@ -45,6 +45,15 @@ class TienDoVM extends AsyncNotifier<Map<String, TienDo>> {
     final moi = cu.daoTrangThai(maBai);
     state = AsyncData({...bang, maKhoaHoc: moi});
 
+    if (moi.daXong(maBai) && !cu.daXong(maBai)) {
+      ref.read(chuoiHocProvider.notifier).ghiNhanHocTap(
+            maKhoaHoc: maKhoaHoc,
+            maBaiHoc: maBai,
+            xpCongThem: 20,
+            moTaHoatDong: 'Hoàn thành bài học',
+          );
+    }
+
     try {
       await _kho.luu(moi);
     } catch (_) {
