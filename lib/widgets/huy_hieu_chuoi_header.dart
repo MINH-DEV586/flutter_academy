@@ -72,12 +72,12 @@ class _NoiDungHuyHieu extends StatelessWidget {
                   _CotThongSo(
                     nhan: 'Chuỗi hiện tại',
                     giaTri: '${chuoiHoc.chuoiHienTai} ngày',
-                    icon: '🔥',
+                    icon: '',
                   ),
                   _CotThongSo(
                     nhan: 'Kỷ lục dài nhất',
                     giaTri: '${chuoiHoc.chuoiDaiNhat} ngày',
-                    icon: '🏆',
+                    icon: '',
                   ),
                 ],
               ),
@@ -173,10 +173,7 @@ class _NoiDungHuyHieu extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                daHoc ? '🔥' : '⏳',
-                style: const TextStyle(fontSize: 16),
-              ),
+              Text(daHoc ? '🔥' : '⏳', style: const TextStyle(fontSize: 16)),
               const SizedBox(width: 4),
               Text(
                 '${chuoiHoc.chuoiHienTai}',
@@ -186,11 +183,7 @@ class _NoiDungHuyHieu extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Container(
-                width: 1,
-                height: 14,
-                color: mau.outlineVariant,
-              ),
+              Container(width: 1, height: 14, color: mau.outlineVariant),
               const SizedBox(width: 8),
               Text(
                 'Lv.${capDo.capHienTai}',
@@ -231,7 +224,9 @@ class _CotThongSo extends StatelessWidget {
         ),
         Text(
           nhan,
-          style: text.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline),
+          style: text.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.outline,
+          ),
         ),
       ],
     );

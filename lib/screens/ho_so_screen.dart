@@ -96,25 +96,37 @@ class _NoiDung extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(nguoiDung.hoTen,
-                          style: t.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w700)),
+                      Text(
+                        nguoiDung.hoTen,
+                        style: t.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      Text(nguoiDung.email,
-                          style: t.bodyMedium
-                              ?.copyWith(color: mau.onSurfaceVariant)),
+                      Text(
+                        nguoiDung.email,
+                        style: t.bodyMedium?.copyWith(
+                          color: mau.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 OutlinedButton.icon(
                   onPressed: () async {
-                    final daXuat = await ref.read(phienProvider.notifier).dangXuat();
+                    final daXuat = await ref
+                        .read(phienProvider.notifier)
+                        .dangXuat();
                     if (!context.mounted) return;
                     if (daXuat) {
                       context.go(DuongDan.trangChu);
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Chưa đăng xuất được. Vui lòng thử lại.')),
+                        const SnackBar(
+                          content: Text(
+                            'Chưa đăng xuất được. Vui lòng thử lại.',
+                          ),
+                        ),
                       );
                     }
                   },
@@ -128,24 +140,31 @@ class _NoiDung extends ConsumerWidget {
         const SizedBox(height: 16),
         _TheCapDoVaStreak(chuoiHoc: chuoiHoc),
         const SizedBox(height: 24),
-        Text('Thống kê học tập',
-            style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+        Text(
+          'Thống kê học tập',
+          style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 12),
         Wrap(
           spacing: 16,
           runSpacing: 16,
           children: [
-            _O(so: '${chuoiHoc.chuoiHienTai} ngày', nhan: 'Chuỗi hiện tại 🔥'),
-            _O(so: '${chuoiHoc.chuoiDaiNhat} ngày', nhan: 'Kỷ lục chuỗi dài nhất 🏆'),
-            _O(so: '${chuoiHoc.tongXp} XP', nhan: 'Tổng điểm kinh nghiệm ⭐'),
+            _O(so: '${chuoiHoc.chuoiHienTai} ngày', nhan: 'Chuỗi hiện tại '),
+            _O(
+              so: '${chuoiHoc.chuoiDaiNhat} ngày',
+              nhan: 'Kỷ lục chuỗi dài nhất ',
+            ),
+            _O(so: '${chuoiHoc.tongXp} XP', nhan: 'Tổng điểm kinh nghiệm '),
             _O(so: '$daBatDau', nhan: 'Khoá đã bắt đầu'),
             _O(so: '$daXong', nhan: 'Khoá đã hoàn thành'),
             _O(so: dd.thoiLuong(giayDaHoc), nhan: 'Thời lượng đã học'),
           ],
         ),
         const SizedBox(height: 32),
-        Text('Bộ sưu tập huy hiệu Streak',
-            style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+        Text(
+          'Bộ sưu tập huy hiệu Streak',
+          style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 12),
         _BoSuuTapHuyHieu(chuoiHoc: chuoiHoc),
         const SizedBox(height: 16),
@@ -155,13 +174,17 @@ class _NoiDung extends ConsumerWidget {
           label: const Text('Xem thống kê chi tiết'),
         ),
         const SizedBox(height: 32),
-        Text('Lịch sử học tập',
-            style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+        Text(
+          'Lịch sử học tập',
+          style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 12),
         const LichHocThang(),
         const SizedBox(height: 32),
-        Text('Giao diện',
-            style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+        Text(
+          'Giao diện',
+          style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 12),
         SegmentedButton<CheDoGiaoDien>(
           segments: const [
@@ -234,14 +257,15 @@ class _O extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(so,
-              style: t.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: mau.primary,
-              )),
+          Text(
+            so,
+            style: t.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: mau.primary,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(nhan,
-              style: t.bodySmall?.copyWith(color: mau.onSurfaceVariant)),
+          Text(nhan, style: t.bodySmall?.copyWith(color: mau.onSurfaceVariant)),
         ],
       ),
     );
@@ -254,8 +278,9 @@ class _TheCapDoVaStreak extends ConsumerWidget {
   final ChuoiHoc chuoiHoc;
 
   void _muaFreeze(BuildContext context, WidgetRef ref) async {
-    final thanhCong =
-        await ref.read(chuoiHocProvider.notifier).muaFreeze(giaXp: 100, toiDa: 3);
+    final thanhCong = await ref
+        .read(chuoiHocProvider.notifier)
+        .muaFreeze(giaXp: 100, toiDa: 3);
     if (!context.mounted) return;
     if (thanhCong) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -266,7 +291,9 @@ class _TheCapDoVaStreak extends ConsumerWidget {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Không thể đổi: Bạn cần tối thiểu 100 XP hoặc đã đạt tối đa 3 Khiên.'),
+          content: Text(
+            'Không thể đổi: Bạn cần tối thiểu 100 XP hoặc đã đạt tối đa 3 Khiên.',
+          ),
         ),
       );
     }
@@ -330,8 +357,10 @@ class _TheCapDoVaStreak extends ConsumerWidget {
             Row(
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: mau.primary,
                     borderRadius: BorderRadius.circular(8),
