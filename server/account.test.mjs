@@ -81,3 +81,62 @@ test('chỉ lưu một đăng ký cho mỗi khóa và từng tài khoản', asyn
   assert.deepEqual(await (await danhSach(a)).json(), { maKhoaHoc: ['python-co-ban'] });
   assert.deepEqual(await (await danhSach(b)).json(), { maKhoaHoc: [] });
 });
+
+test('lưu streak riêng theo từng tài khoản', async (t) => {
+  const server = taoMayChu().listen(0, '127.0.0.1');
+  t.after(() => server.close());
+  await once(server, 'listening');
+  const base = `http://127.0.0.1:${server.address().port}/api/account`;
+  const dangKy = async (email) => {
+    const response = await fetch(`${base}/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        hoTen: 'Người học',
+        matKhau: 'mat-khau-kiem-thu',
+      }),
+    });
+    assert.equal(response.status, 201);
+    return (await response.json()).token;
+  };
+  const streak = (token, method = 'GET', body) => fetch(`${base}/streak`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+    },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+
+  const tokenA = await dangKy(`streak-a-${Date.now()}@example.test`);
+  const tokenB = await dangKy(`streak-b-${Date.now()}@example.test`);
+  assert.equal((await streak('')).status, 401);
+  assert.equal((await (await streak(tokenA)).json()).tonTai, false);
+
+  const saved = await streak(tokenA, 'POST', {
+    chuoiHienTai: 8,
+    chuoiDaiNhat: 12,
+    soKhiensFreeze: 2,
+    tongXp: 480,
+    ngayHocGanNhat: '2026-11-20',
+    capHienTai: 4,
+    mucTieuPhutMoiNgay: 20,
+    danhSachHuyHieu: ['streak_7'],
+    cacNgayFreezeDaDung: ['2026-11-19'],
+  });
+  assert.equal(saved.status, 200);
+  assert.deepEqual(await (await streak(tokenA)).json(), {
+    tonTai: true,
+    chuoiHienTai: 8,
+    chuoiDaiNhat: 12,
+    soKhiensFreeze: 2,
+    tongXp: 480,
+    ngayHocGanNhat: '2026-11-20',
+    capHienTai: 4,
+    mucTieuPhutMoiNgay: 20,
+    danhSachHuyHieu: ['streak_7'],
+    cacNgayFreezeDaDung: ['2026-11-19'],
+  });
+  assert.equal((await (await streak(tokenB)).json()).tonTai, false);
+});

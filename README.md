@@ -80,6 +80,8 @@ mục này. Mật khẩu được băm bằng scrypt với salt riêng. Phiên h
 ngày và được thu hồi khi đăng xuất. Ứng dụng lưu token phiên trong Hive.
 `ACCOUNT_API_URL` mặc định là `http://127.0.0.1:8787/api/account`. Android
 debug có thể dùng `adb reverse tcp:8787 tcp:8787` như với AI Tutor.
+Trạng thái streak, XP, Freeze, mục tiêu và huy hiệu được đồng bộ theo tài
+khoản sau khi đăng nhập; nhật ký từng ngày vẫn lưu cục bộ trong Hive.
 
 Bản này chạy trên máy cục bộ. Chọn **Đăng ký khóa học** tại trang giới thiệu
 để thêm khóa vào **Khóa học của tôi**. Backend lưu đăng ký theo tài khoản.

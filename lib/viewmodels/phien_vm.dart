@@ -26,6 +26,7 @@ class PhienVM extends AsyncNotifier<NguoiDung?> {
           ? await _kho.dangNhap(email: e, matKhau: matKhau)
           : await _kho.dangKy(email: e, hoTen: t, matKhau: matKhau);
       state = AsyncData(nd);
+      ref.invalidate(chuoiHocProvider);
       return null;
     } on LoiTaiKhoan catch (loi) {
       return loi.thongBao;
@@ -38,6 +39,7 @@ class PhienVM extends AsyncNotifier<NguoiDung?> {
     try {
       await _kho.dangXuat();
       state = const AsyncData(null);
+      ref.invalidate(chuoiHocProvider);
       return true;
     } catch (_) {
       return false;

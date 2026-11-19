@@ -15,7 +15,16 @@ class ChuoiHocVM extends AsyncNotifier<ChuoiHoc> {
 
   @override
   Future<ChuoiHoc> build() async {
-    final duLieu = await _kho.lay();
+    final nguoiDung = await ref.read(phienProvider.future);
+    var duLieu = await _kho.lay();
+    final khoDongBo = ref.read(khoDongBoChuoiHocProvider);
+    if (nguoiDung != null && khoDongBo != null) {
+      duLieu = await khoDongBo.layChuoiHoc(
+        nguoiDung.email,
+        duLieuCucBo: duLieu,
+      );
+    }
+
     final bayGio = DateTime.now();
 
     // Tự động kiểm tra dùng Khiên Freeze hoặc phát hiện đứt chuỗi khi sang ngày mới
@@ -31,7 +40,7 @@ class ChuoiHocVM extends AsyncNotifier<ChuoiHoc> {
           }
         }
       }
-      await _kho.luu(sauKiemTra);
+      await _luuChuoiHoc(sauKiemTra);
     }
 
     return sauKiemTra;
@@ -126,7 +135,7 @@ class ChuoiHocVM extends AsyncNotifier<ChuoiHoc> {
     state = AsyncData(chuoiMoi);
 
     try {
-      await _kho.luu(chuoiMoi);
+      await _luuChuoiHoc(chuoiMoi);
     } catch (_) {
       ref.invalidateSelf();
     }
@@ -142,7 +151,7 @@ class ChuoiHocVM extends AsyncNotifier<ChuoiHoc> {
 
     state = AsyncData(moi);
     try {
-      await _kho.luu(moi);
+      await _luuChuoiHoc(moi);
       return true;
     } catch (_) {
       ref.invalidateSelf();
@@ -158,7 +167,7 @@ class ChuoiHocVM extends AsyncNotifier<ChuoiHoc> {
     final moi = hienTai.datMucTieu(soPhut);
     state = AsyncData(moi);
     try {
-      await _kho.luu(moi);
+      await _luuChuoiHoc(moi);
     } catch (_) {
       ref.invalidateSelf();
     }
@@ -170,4 +179,14 @@ class ChuoiHocVM extends AsyncNotifier<ChuoiHoc> {
 
   /// Lấy nhật ký của một ngày cụ thể (YYYY-MM-DD).
   Future<NhatKyNgay> layNhatKyNgay(String ngay) => _kho.layNhatKy(ngay);
+
+  Future<void> _luuChuoiHoc(ChuoiHoc chuoiHoc) async {
+    final nguoiDung = ref.read(phienProvider).asData?.value;
+    final khoDongBo = ref.read(khoDongBoChuoiHocProvider);
+    if (nguoiDung != null && khoDongBo != null) {
+      await khoDongBo.luuChuoiHoc(nguoiDung.email, chuoiHoc);
+      return;
+    }
+    await _kho.luu(chuoiHoc);
+  }
 }

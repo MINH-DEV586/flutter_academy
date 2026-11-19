@@ -3,10 +3,11 @@ import 'dart:convert';
 import 'package:hive_ce/hive_ce.dart';
 import 'package:http/http.dart' as http;
 
+import '../models/chuoi_hoc.dart';
 import '../models/nguoi_dung.dart';
 import 'kho_du_lieu.dart';
 
-class KhoTaiKhoan implements KhoNguoiDung {
+class KhoTaiKhoan implements KhoNguoiDung, KhoDongBoChuoiHoc {
   KhoTaiKhoan(this._phien);
 
   static const _diaChi = String.fromEnvironment(
@@ -14,12 +15,13 @@ class KhoTaiKhoan implements KhoNguoiDung {
     defaultValue: 'http://127.0.0.1:8787/api/account',
   );
   static const _khoaToken = 'token';
+  static const _khoaTaiKhoanStreak = 'tai_khoan_streak';
   final Box<String> _phien;
 
   Future<http.Response> _gui(
     String method,
     String path, {
-    Map<String, String>? duLieu,
+    Map<String, dynamic>? duLieu,
     String? token,
   }) async {
     final client = http.Client();
@@ -123,5 +125,39 @@ class KhoTaiKhoan implements KhoNguoiDung {
       duLieu: {'maKhoaHoc': maKhoaHoc},
     );
     _doc(response);
+  }
+
+  @override
+  Future<ChuoiHoc> layChuoiHoc(
+    String email, {
+    required ChuoiHoc duLieuCucBo,
+  }) async {
+    final response = await _gui('GET', 'streak', token: _docToken());
+    final duLieu = _doc(response);
+    if (duLieu['tonTai'] == true) {
+      await _phien.put(_khoaTaiKhoanStreak, email);
+      return ChuoiHoc.tuMap(duLieu);
+    }
+
+    final taiKhoanTruoc = _phien.get(_khoaTaiKhoanStreak);
+    final duLieuNhap = taiKhoanTruoc == null || taiKhoanTruoc == email
+        ? duLieuCucBo
+        : const ChuoiHoc();
+    await luuChuoiHoc(email, duLieuNhap);
+    return duLieuNhap;
+  }
+
+  @override
+  Future<void> luuChuoiHoc(String email, ChuoiHoc chuoiHoc) async {
+    final duLieu = chuoiHoc.sangMap()
+      ..['capHienTai'] = chuoiHoc.capDo.capHienTai;
+    final response = await _gui(
+      'POST',
+      'streak',
+      token: _docToken(),
+      duLieu: duLieu,
+    );
+    _doc(response);
+    await _phien.put(_khoaTaiKhoanStreak, email);
   }
 }

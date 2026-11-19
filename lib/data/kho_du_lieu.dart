@@ -21,8 +21,6 @@ import '../models/nguoi_dung.dart';
 import '../models/nhat_ky_ngay.dart';
 import '../models/tien_do.dart';
 
-
-
 abstract interface class KhoKhoaHoc {
   Future<List<KhoaHoc>> tatCa();
 
@@ -78,6 +76,17 @@ abstract interface class KhoChuoiHoc {
 
   /// Lưu nhật ký một ngày.
   Future<void> luuNhatKy(NhatKyNgay nhatKy);
+}
+
+/// Kho đồng bộ trạng thái streak theo tài khoản đã đăng nhập.
+abstract interface class KhoDongBoChuoiHoc {
+  /// Nạp trạng thái tài khoản; lần đầu có thể nhập dữ liệu cục bộ.
+  Future<ChuoiHoc> layChuoiHoc(
+    String email, {
+    required ChuoiHoc duLieuCucBo,
+  });
+
+  Future<void> luuChuoiHoc(String email, ChuoiHoc chuoiHoc);
 }
 
 class LoiTaiKhoan implements Exception {

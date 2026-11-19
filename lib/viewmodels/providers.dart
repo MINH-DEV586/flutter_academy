@@ -42,6 +42,9 @@ final khoChuoiHocProvider = Provider<KhoChuoiHoc>(
   (ref) => throw UnimplementedError('Chưa ghi đè khoChuoiHocProvider'),
 );
 
+/// Kho đồng bộ streak qua tài khoản. Có thể không được cấu hình trong kiểm thử.
+final khoDongBoChuoiHocProvider = Provider<KhoDongBoChuoiHoc?>((ref) => null);
+
 // ---------------------------------------------------------------------------
 // Khoá học
 // ---------------------------------------------------------------------------

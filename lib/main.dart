@@ -23,13 +23,15 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final hop = await khoiTaoHive();
+  final khoTaiKhoan = KhoTaiKhoan(hop.phien);
 
   runApp(
     ProviderScope(
       overrides: [
         khoKhoaHocProvider.overrideWithValue(HiveKhoKhoaHoc(hop.khoaHoc)),
         khoTienDoProvider.overrideWithValue(HiveKhoTienDo(hop.tienDo)),
-        khoNguoiDungProvider.overrideWithValue(KhoTaiKhoan(hop.phien)),
+        khoNguoiDungProvider.overrideWithValue(khoTaiKhoan),
+        khoDongBoChuoiHocProvider.overrideWithValue(khoTaiKhoan),
         khoChuoiHocProvider.overrideWithValue(
           HiveKhoChuoiHoc(
             hopChuoiHoc: hop.chuoiHoc,

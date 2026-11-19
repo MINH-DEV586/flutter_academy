@@ -45,9 +45,24 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
       tong_xp INTEGER NOT NULL DEFAULT 0,
       ngay_hoc_gan_nhat TEXT,
       cap_hien_tai INTEGER NOT NULL DEFAULT 1,
+      muc_tieu_phut_moi_ngay INTEGER NOT NULL DEFAULT 10,
+      danh_sach_huy_hieu TEXT NOT NULL DEFAULT '[]',
+      cac_ngay_freeze_da_dung TEXT NOT NULL DEFAULT '[]',
       cap_nhat_luc INTEGER NOT NULL DEFAULT 0
     ) STRICT;
   `);
+  const cotStreak = new Set(
+    db.prepare('PRAGMA table_info(streak_nguoi_dung)').all().map((cot) => cot.name),
+  );
+  if (!cotStreak.has('muc_tieu_phut_moi_ngay')) {
+    db.exec('ALTER TABLE streak_nguoi_dung ADD COLUMN muc_tieu_phut_moi_ngay INTEGER NOT NULL DEFAULT 10');
+  }
+  if (!cotStreak.has('danh_sach_huy_hieu')) {
+    db.exec("ALTER TABLE streak_nguoi_dung ADD COLUMN danh_sach_huy_hieu TEXT NOT NULL DEFAULT '[]'");
+  }
+  if (!cotStreak.has('cac_ngay_freeze_da_dung')) {
+    db.exec("ALTER TABLE streak_nguoi_dung ADD COLUMN cac_ngay_freeze_da_dung TEXT NOT NULL DEFAULT '[]'");
+  }
   const themTaiKhoan = db.prepare(
     'INSERT INTO tai_khoan VALUES (?, ?, ?, ?) ON CONFLICT(email) DO NOTHING',
   );
@@ -68,8 +83,8 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
   );
   const docStreak = db.prepare('SELECT * FROM streak_nguoi_dung WHERE email = ?');
   const luuStreak = db.prepare(
-    'INSERT INTO streak_nguoi_dung (email, chuoi_hien_tai, chuoi_dai_nhat, so_khiens_freeze, tong_xp, ngay_hoc_gan_nhat, cap_hien_tai, cap_nhat_luc) '
-    + 'VALUES (?, ?, ?, ?, ?, ?, ?, ?) '
+    'INSERT INTO streak_nguoi_dung (email, chuoi_hien_tai, chuoi_dai_nhat, so_khiens_freeze, tong_xp, ngay_hoc_gan_nhat, cap_hien_tai, muc_tieu_phut_moi_ngay, danh_sach_huy_hieu, cac_ngay_freeze_da_dung, cap_nhat_luc) '
+    + 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) '
     + 'ON CONFLICT(email) DO UPDATE SET '
     + 'chuoi_hien_tai = excluded.chuoi_hien_tai, '
     + 'chuoi_dai_nhat = MAX(chuoi_dai_nhat, excluded.chuoi_dai_nhat), '
@@ -77,6 +92,9 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
     + 'tong_xp = excluded.tong_xp, '
     + 'ngay_hoc_gan_nhat = excluded.ngay_hoc_gan_nhat, '
     + 'cap_hien_tai = excluded.cap_hien_tai, '
+    + 'muc_tieu_phut_moi_ngay = excluded.muc_tieu_phut_moi_ngay, '
+    + 'danh_sach_huy_hieu = excluded.danh_sach_huy_hieu, '
+    + 'cac_ngay_freeze_da_dung = excluded.cac_ngay_freeze_da_dung, '
     + 'cap_nhat_luc = excluded.cap_nhat_luc '
     + 'WHERE excluded.cap_nhat_luc >= streak_nguoi_dung.cap_nhat_luc'
   );
@@ -101,13 +119,28 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
       if (method === 'GET') {
         const streak = docStreak.get(nguoiDung.email);
         return tra(200, streak ? {
+          tonTai: true,
           chuoiHienTai: streak.chuoi_hien_tai,
           chuoiDaiNhat: streak.chuoi_dai_nhat,
           soKhiensFreeze: streak.so_khiens_freeze,
           tongXp: streak.tong_xp,
           ngayHocGanNhat: streak.ngay_hoc_gan_nhat,
           capHienTai: streak.cap_hien_tai,
-        } : { chuoiHienTai: 0, chuoiDaiNhat: 0, soKhiensFreeze: 0, tongXp: 0, ngayHocGanNhat: null, capHienTai: 1 });
+          mucTieuPhutMoiNgay: streak.muc_tieu_phut_moi_ngay,
+          danhSachHuyHieu: JSON.parse(streak.danh_sach_huy_hieu),
+          cacNgayFreezeDaDung: JSON.parse(streak.cac_ngay_freeze_da_dung),
+        } : {
+          tonTai: false,
+          chuoiHienTai: 0,
+          chuoiDaiNhat: 0,
+          soKhiensFreeze: 0,
+          tongXp: 0,
+          ngayHocGanNhat: null,
+          capHienTai: 1,
+          mucTieuPhutMoiNgay: 10,
+          danhSachHuyHieu: [],
+          cacNgayFreezeDaDung: [],
+        });
       }
       if (method !== 'POST') return tra(405, { loi: 'Chi ho tro GET va POST.' });
       if (request.headers['content-type']?.split(';')[0] !== 'application/json') {
@@ -115,8 +148,45 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
       }
       let duLieu;
       try { duLieu = await docJson(request); } catch { return tra(400, { loi: 'JSON khong hop le.' }); }
-      const { chuoiHienTai = 0, chuoiDaiNhat = 0, soKhiensFreeze = 0, tongXp = 0, ngayHocGanNhat = null, capHienTai = 1 } = duLieu ?? {};
-      luuStreak.run(nguoiDung.email, chuoiHienTai, chuoiDaiNhat, soKhiensFreeze, tongXp, ngayHocGanNhat, capHienTai, Date.now());
+      const {
+        chuoiHienTai = 0,
+        chuoiDaiNhat = 0,
+        soKhiensFreeze = 0,
+        tongXp = 0,
+        ngayHocGanNhat = null,
+        capHienTai = 1,
+        mucTieuPhutMoiNgay = 10,
+        danhSachHuyHieu = [],
+        cacNgayFreezeDaDung = [],
+      } = duLieu ?? {};
+      if (
+        !Number.isSafeInteger(chuoiHienTai) || chuoiHienTai < 0 ||
+        !Number.isSafeInteger(chuoiDaiNhat) || chuoiDaiNhat < chuoiHienTai ||
+        !Number.isSafeInteger(soKhiensFreeze) || soKhiensFreeze < 0 ||
+        !Number.isSafeInteger(tongXp) || tongXp < 0 ||
+        !Number.isSafeInteger(capHienTai) || capHienTai < 1 ||
+        !Number.isSafeInteger(mucTieuPhutMoiNgay) || mucTieuPhutMoiNgay < 1 ||
+        (ngayHocGanNhat !== null && (typeof ngayHocGanNhat !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(ngayHocGanNhat))) ||
+        !Array.isArray(danhSachHuyHieu) ||
+        !danhSachHuyHieu.every((ma) => typeof ma === 'string') ||
+        !Array.isArray(cacNgayFreezeDaDung) ||
+        !cacNgayFreezeDaDung.every((ngay) => typeof ngay === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ngay))
+      ) {
+        return tra(400, { loi: 'Du lieu streak khong hop le.' });
+      }
+      luuStreak.run(
+        nguoiDung.email,
+        chuoiHienTai,
+        chuoiDaiNhat,
+        soKhiensFreeze,
+        tongXp,
+        ngayHocGanNhat,
+        capHienTai,
+        mucTieuPhutMoiNgay,
+        JSON.stringify(danhSachHuyHieu),
+        JSON.stringify(cacNgayFreezeDaDung),
+        Date.now(),
+      );
       return tra(200, { ok: true });
     }
     if (url === '/api/account/enrollments') {
