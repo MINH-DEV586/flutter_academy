@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../cau_hinh/diem_ngat.dart';
 import '../dinh_tuyen/duong_dan.dart';
+import '../models/cap_do.dart';
 import '../viewmodels/providers.dart';
+import 'hop_thoai_len_cap.dart';
 import 'huy_hieu_chuoi_header.dart';
 
 /// Khung bao quanh mọi trang: thanh trên, thanh điều hướng, vùng nội dung.
@@ -63,12 +65,14 @@ class KhungUngDung extends ConsumerWidget {
     final kho = context.kho;
     final chiSo = DuongDan.chiSoTab(diaChiHienTai);
 
-    final noiDung = Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(
-        constraints:
-            const BoxConstraints(maxWidth: DiemNgat.rongToiDaNoiDung),
-        child: child,
+    final noiDung = _GiamSatLenCap(
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints:
+              const BoxConstraints(maxWidth: DiemNgat.rongToiDaNoiDung),
+          child: child,
+        ),
       ),
     );
 
@@ -184,5 +188,51 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
           ),
       ],
     );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Widget giám sát thăng cấp — đặt ở đây để bao phủ toàn bộ ứng dụng.
+// ---------------------------------------------------------------------------
+
+/// Widget lắng nghe sự kiện thăng cấp từ [chuoiHocProvider] và tự động
+/// hiển thị [HopThoaiLenCap] mỗi khi học viên lên cấp.
+///
+/// Dùng [ConsumerStatefulWidget] để [ref.listen] không bị gọi lại vô hạn:
+/// [initState] chỉ đăng ký listener một lần, [build] chỉ dựng widget con.
+class _GiamSatLenCap extends ConsumerStatefulWidget {
+  final Widget child;
+  const _GiamSatLenCap({required this.child});
+
+  @override
+  ConsumerState<_GiamSatLenCap> createState() => _GiamSatLenCapState();
+}
+
+class _GiamSatLenCapState extends ConsumerState<_GiamSatLenCap> {
+  int? _capTruoc;
+
+  @override
+  Widget build(BuildContext context) {
+    // Lắng nghe thay đổi chuỗi học để phát hiện thăng cấp
+    ref.listen(chuoiHocProvider, (truoc, sau) {
+      final capMoiObj = sau.valueOrNull?.capDo;
+      final capTruocObj = truoc?.valueOrNull?.capDo;
+      if (capMoiObj == null) return;
+
+      final capMoi = capMoiObj.capHienTai;
+      final capTruocVal = capTruocObj?.capHienTai ?? _capTruoc;
+
+      if (capTruocVal != null && capMoi > capTruocVal) {
+        // Thăng cấp! Hiển thị hộp thoại sau 1 frame để build xong
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && context.mounted) {
+            HopThoaiLenCap.hienThi(context, capMoi: capMoiObj);
+          }
+        });
+      }
+      _capTruoc = capMoi;
+    });
+
+    return widget.child;
   }
 }
