@@ -148,6 +148,12 @@ class _NoiDung extends ConsumerWidget {
             style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
         _BoSuuTapHuyHieu(chuoiHoc: chuoiHoc),
+        const SizedBox(height: 16),
+        FilledButton.tonalIcon(
+          onPressed: () => context.go(DuongDan.thongKe),
+          icon: const Icon(Icons.bar_chart_rounded, size: 18),
+          label: const Text('Xem thống kê chi tiết'),
+        ),
         const SizedBox(height: 32),
         Text('Lịch sử học tập',
             style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700)),

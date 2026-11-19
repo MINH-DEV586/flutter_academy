@@ -10,6 +10,7 @@ import '../screens/danh_sach_screen.dart';
 import '../screens/ho_so_screen.dart';
 import '../screens/khong_tim_thay_screen.dart';
 import '../screens/luyen_tap_screen.dart';
+import '../screens/thong_ke_screen.dart';
 import '../screens/trang_chu_screen.dart';
 import '../viewmodels/providers.dart';
 import '../widgets/khung_ung_dung.dart';
@@ -110,6 +111,10 @@ final boDinhTuyenProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: DuongDan.hoSo,
             builder: (context, state) => const HoSoScreen(),
+          ),
+          GoRoute(
+            path: DuongDan.thongKe,
+            builder: (context, state) => const ThongKeScreen(),
           ),
           GoRoute(
             path: DuongDan.dangNhap,

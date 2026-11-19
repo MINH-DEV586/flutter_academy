@@ -19,6 +19,8 @@ class DuongDan {
   static const String cuaToi = '/cua-toi';
   static const String hoSo = '/ho-so';
   static const String dangNhap = '/dang-nhap';
+  static const String thongKe = '/thong-ke';
+  static const String bangXepHang = '/bang-xep-hang';
 
   /// Đoạn con trong cấu hình go_router. Không có dấu `/` đầu vì là route con.
   static const String doanMaKhoaHoc = ':ma';

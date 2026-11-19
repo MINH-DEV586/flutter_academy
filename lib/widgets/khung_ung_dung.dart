@@ -34,31 +34,30 @@ class KhungUngDung extends ConsumerWidget {
   });
 
   static const List<({IconData bieuTuong, IconData bieuTuongDac, String nhan})>
-      _muc = [
+  _muc = [
     (
       bieuTuong: Icons.home_outlined,
       bieuTuongDac: Icons.home,
-      nhan: 'Trang chủ'
+      nhan: 'Trang chủ',
     ),
     (
       bieuTuong: Icons.grid_view_outlined,
       bieuTuongDac: Icons.grid_view,
-      nhan: 'Khoá học'
+      nhan: 'Khoá học',
     ),
     (
       bieuTuong: Icons.bookmark_outline,
       bieuTuongDac: Icons.bookmark,
-      nhan: 'Của tôi'
+      nhan: 'Của tôi',
     ),
     (
       bieuTuong: Icons.person_outline,
       bieuTuongDac: Icons.person,
-      nhan: 'Hồ sơ'
+      nhan: 'Hồ sơ',
     ),
   ];
 
-  void _chon(BuildContext context, int i) =>
-      context.go(DuongDan.tabChinh[i]);
+  void _chon(BuildContext context, int i) => context.go(DuongDan.tabChinh[i]);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -69,8 +68,9 @@ class KhungUngDung extends ConsumerWidget {
       child: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
-          constraints:
-              const BoxConstraints(maxWidth: DiemNgat.rongToiDaNoiDung),
+          constraints: const BoxConstraints(
+            maxWidth: DiemNgat.rongToiDaNoiDung,
+          ),
           child: child,
         ),
       ),
@@ -157,9 +157,8 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
               const SizedBox(width: 10),
               Text(
                 'Flutter Academy',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                style: Theme.of(context).textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
               ),
             ],
           ),
@@ -215,8 +214,8 @@ class _GiamSatLenCapState extends ConsumerState<_GiamSatLenCap> {
   Widget build(BuildContext context) {
     // Lắng nghe thay đổi chuỗi học để phát hiện thăng cấp
     ref.listen(chuoiHocProvider, (truoc, sau) {
-      final capMoiObj = sau.valueOrNull?.capDo;
-      final capTruocObj = truoc?.valueOrNull?.capDo;
+      final capMoiObj = sau.asData?.value.capDo;
+      final capTruocObj = truoc?.asData?.value.capDo;
       if (capMoiObj == null) return;
 
       final capMoi = capMoiObj.capHienTai;
