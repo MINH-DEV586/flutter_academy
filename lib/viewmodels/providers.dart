@@ -2,10 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/kho_du_lieu.dart';
 import '../models/che_do_giao_dien.dart';
+import '../models/chuoi_hoc.dart';
 import '../models/khoa_hoc.dart';
 import '../models/nguoi_dung.dart';
+import '../models/nhat_ky_ngay.dart';
 import '../models/tien_do.dart';
 import 'chu_de_vm.dart';
+import 'chuoi_hoc_vm.dart';
 import 'dang_ky_khoa_hoc_vm.dart';
 import 'phien_vm.dart';
 import 'tien_do_vm.dart';
@@ -220,3 +223,19 @@ List<KhoaHoc> locDangHoc(List<KhoaHoc> danhSach, Map<String, int> phanTram) {
 /// Chế độ sáng/tối. Ví dụ cho `Notifier` đồng bộ.
 final chuDeProvider =
     NotifierProvider<ChuDeVM, CheDoGiaoDien>(ChuDeVM.new);
+
+// ---------------------------------------------------------------------------
+// Chuỗi học tập & Gamification
+// ---------------------------------------------------------------------------
+
+/// Toàn bộ trạng thái Chuỗi học tập, Khiên Freeze, XP và Cấp độ.
+final chuoiHocProvider =
+    AsyncNotifierProvider<ChuoiHocVM, ChuoiHoc>(ChuoiHocVM.new);
+
+/// Nhật ký học tập của ngày hôm nay.
+final nhatKyHomNayProvider = FutureProvider<NhatKyNgay>((ref) async {
+  ref.watch(chuoiHocProvider);
+  final kho = ref.watch(khoChuoiHocProvider);
+  final homNayStr = ChuoiHoc.dinhDangNgay(DateTime.now());
+  return kho.layNhatKy(homNayStr);
+});
