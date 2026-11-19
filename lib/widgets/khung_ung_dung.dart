@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../cau_hinh/diem_ngat.dart';
 import '../dinh_tuyen/duong_dan.dart';
 import '../viewmodels/providers.dart';
+import 'huy_hieu_chuoi_header.dart';
 
 /// Khung bao quanh mọi trang: thanh trên, thanh điều hướng, vùng nội dung.
 ///
@@ -161,6 +162,7 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
+        const HuyHieuChuoiHeader(),
         if (daDangNhap)
           Padding(
             padding: const EdgeInsets.only(right: 8),
