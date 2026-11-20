@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Bảng màu và chủ đề của toàn ứng dụng.
 ///

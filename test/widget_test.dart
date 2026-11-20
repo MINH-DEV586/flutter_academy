@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_academy/models/bo_loc.dart';
 import 'package:flutter_academy/models/khoa_hoc.dart';
 import 'package:flutter_academy/widgets/thanh_loc.dart';

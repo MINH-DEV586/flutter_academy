@@ -1,7 +1,7 @@
 /// Chế độ giao diện do người dùng chọn.
 ///
 /// Vì sao khai báo enum riêng thay vì dùng thẳng `ThemeMode` của Flutter:
-/// `ThemeMode` nằm trong `package:flutter/material.dart`. Dùng nó ở tầng
+/// `ThemeMode` nằm trong `package:material_ui/material_ui.dart`. Dùng nó ở tầng
 /// ViewModel là phá vỡ luật "viewmodels không import material.dart" — luật
 /// mà cả dự án dựa vào để phân tầng.
 ///

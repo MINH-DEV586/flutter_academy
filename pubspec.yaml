@@ -12,6 +12,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  material_ui: ^1.11.0
 
   # Điều hướng khai báo theo URL. Sách dùng Navigator 2.0 thô
   # (RouterDelegate + RouteInformationParser tự viết) — xem
