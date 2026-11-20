@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../cau_hinh/diem_ngat.dart';
 import '../dinh_tuyen/duong_dan.dart';
-import '../models/cap_do.dart';
 import '../viewmodels/providers.dart';
 import 'hop_thoai_len_cap.dart';
 import 'huy_hieu_chuoi_header.dart';

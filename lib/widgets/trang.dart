@@ -60,7 +60,7 @@ class TieuDeMuc extends StatelessWidget {
               ],
             ),
           ),
-          if (hanhDong != null) hanhDong!,
+          ?hanhDong,
         ],
       ),
     );

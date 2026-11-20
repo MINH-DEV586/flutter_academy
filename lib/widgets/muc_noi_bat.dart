@@ -87,7 +87,7 @@ class _MucNoiBatState extends State<MucNoiBat> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.only(bottom: 14),
               itemCount: widget.danhSach.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 16),
+              separatorBuilder: (_, _) => const SizedBox(width: 16),
               itemBuilder: (context, i) {
                 final k = widget.danhSach[i];
                 return SizedBox(

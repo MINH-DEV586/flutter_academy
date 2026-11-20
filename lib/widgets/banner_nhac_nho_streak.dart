@@ -22,7 +22,7 @@ class BannerNhacNhoStreak extends ConsumerWidget {
     return nhatKyAsync.when(
       data: (nhatKy) => _NoiDungBanner(chuoi: chuoi, nhatKy: nhatKy),
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }

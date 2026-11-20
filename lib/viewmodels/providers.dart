@@ -52,6 +52,7 @@ final khoDongBoChuoiHocProvider = Provider<KhoDongBoChuoiHoc?>((ref) => null);
 /// Toàn bộ khoá học, đọc một lần từ kho.
 final danhSachKhoaHocProvider = FutureProvider<List<KhoaHoc>>(
   (ref) => ref.watch(khoKhoaHocProvider).tatCa(),
+  retry: (_, _) => null,
 );
 
 // KHÔNG có provider nào giữ bộ lọc.

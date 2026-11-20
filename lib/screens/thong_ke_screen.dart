@@ -68,7 +68,7 @@ class _ThongKeScreenState extends ConsumerState<ThongKeScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 // ── Tổng quan 4 ô ──
-                _TieuDeMuc(title: ' Tổng quan'),
+                const _TieuDeMuc(title: ' Tổng quan'),
                 const SizedBox(height: 12),
                 GridView.count(
                   crossAxisCount: 2,
@@ -108,14 +108,14 @@ class _ThongKeScreenState extends ConsumerState<ThongKeScreen> {
                 const SizedBox(height: 20),
 
                 // ── Cấp độ & thanh tiến trình XP ──
-                _TieuDeMuc(title: ' Cấp độ hiện tại'),
+                const _TieuDeMuc(title: ' Cấp độ hiện tại'),
                 const SizedBox(height: 12),
                 _TheCapDoXp(cap: cap),
 
                 const SizedBox(height: 20),
 
                 // ── Phân tích hành vi học tập ──
-                _TieuDeMuc(title: ' Phân tích'),
+                const _TieuDeMuc(title: ' Phân tích'),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -142,7 +142,7 @@ class _ThongKeScreenState extends ConsumerState<ThongKeScreen> {
                 const SizedBox(height: 20),
 
                 // ── Lịch học tháng ──
-                _TieuDeMuc(title: ' Lịch học tháng này'),
+                const _TieuDeMuc(title: ' Lịch học tháng này'),
                 const SizedBox(height: 12),
                 if (_dangTai)
                   const Center(
@@ -164,7 +164,7 @@ class _ThongKeScreenState extends ConsumerState<ThongKeScreen> {
 
                 // ── Huy hiệu đã đạt ──
                 if (chuoi.danhSachHuyHieu.isNotEmpty) ...[
-                  _TieuDeMuc(title: ' Thành tích đã đạt'),
+                  const _TieuDeMuc(title: ' Thành tích đã đạt'),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,

@@ -95,7 +95,7 @@ class GioiThieuKhoaHoc {
     for (final muc in chuong.entries) {
       final bai = [
         for (final ma in muc.value)
-          if (conLai.remove(ma) case final bai?) bai,
+          ?conLai.remove(ma),
       ];
       if (bai.isNotEmpty) ketQua[muc.key] = bai;
     }

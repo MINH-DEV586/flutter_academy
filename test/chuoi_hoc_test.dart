@@ -109,7 +109,7 @@ void main() {
     });
 
     test('Đổi điểm XP lấy Khiên Freeze', () {
-      var streak = const ChuoiHoc(tongXp: 250, soKhiensFreeze: 0);
+      final streak = const ChuoiHoc(tongXp: 250, soKhiensFreeze: 0);
       final muaThanhCong = streak.muaFreeze(giaXp: 100, toiDa: 3);
 
       expect(muaThanhCong, isNotNull);
@@ -122,7 +122,7 @@ void main() {
     });
 
     test('Tự động dùng Freeze khi mở app kiểm tra', () {
-      var streak = const ChuoiHoc(
+      final streak = const ChuoiHoc(
         chuoiHienTai: 5,
         ngayHocGanNhat: '2026-11-10',
         soKhiensFreeze: 1,

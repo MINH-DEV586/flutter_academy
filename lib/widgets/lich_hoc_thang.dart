@@ -232,8 +232,8 @@ class _LichHocThangState extends ConsumerState<LichHocThang> {
             const SizedBox(height: 12),
 
             // Hàng thứ trong tuần
-            Row(
-              children: const [
+            const Row(
+              children: [
                 _TieuDeThu('T2'),
                 _TieuDeThu('T3'),
                 _TieuDeThu('T4'),
@@ -335,11 +335,11 @@ class _LichHocThangState extends ConsumerState<LichHocThang> {
             const SizedBox(height: 16),
 
             // Chú thích màu sắc
-            Wrap(
+            const Wrap(
               spacing: 16,
               runSpacing: 8,
               alignment: WrapAlignment.center,
-              children: const [
+              children: [
                 _ChuThichMau(mau: Colors.green, nhan: 'Đã học (Đạt streak)'),
                 _ChuThichMau(mau: Colors.cyan, nhan: 'Khiên Freeze bảo vệ'),
                 _ChuThichMau(mau: Colors.grey, nhan: 'Chưa học'),

@@ -17,7 +17,7 @@ class HuyHieuChuoiHeader extends ConsumerWidget {
     return chuoiAsync.when(
       data: (chuoiHoc) => _NoiDungHuyHieu(chuoiHoc: chuoiHoc),
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }
