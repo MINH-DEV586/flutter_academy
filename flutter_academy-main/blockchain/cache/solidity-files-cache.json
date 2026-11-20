@@ -1,0 +1,41 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "C:\\Users\\Admin\\flutter_academy-main\\flutter_academy-main\\blockchain\\contracts\\FlutterAcademyDeposit.sol": {
+      "lastModificationDate": 1795151699998,
+      "contentHash": "4ed4f36fe1fc7300c470989757996635",
+      "sourceName": "contracts/FlutterAcademyDeposit.sol",
+      "solcConfig": {
+        "version": "0.8.26",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "FlutterAcademyDeposit"
+      ]
+    }
+  }
+}

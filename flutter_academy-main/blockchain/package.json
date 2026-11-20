@@ -1,0 +1,16 @@
+{
+  "name": "flutter-academy-blockchain",
+  "version": "1.0.0",
+  "description": "Smart Contract cho Flutter Academy - Nạp Coin qua MetaMask",
+  "scripts": {
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "deploy:local": "npx hardhat run scripts/deploy.js",
+    "deploy:sepolia": "npx hardhat run scripts/deploy.js --network sepolia"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "dotenv": "^16.4.0",
+    "hardhat": "^2.22.0"
+  }
+}
