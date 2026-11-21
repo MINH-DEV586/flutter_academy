@@ -12,3 +12,9 @@ windows/
 .vscode/
 /.env
 /server/.local/
+node_modules/
+/blockchain/node_modules/
+/blockchain/cache/
+/blockchain/artifacts/
+/blockchain/.env
+.flutter-plugins-dependencies

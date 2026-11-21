@@ -41,6 +41,9 @@ class KhoaHoc {
   /// Khoá học nổi bật, hiện ở đầu trang chủ (mục `FeaturedSection` của sách).
   final bool noiBat;
 
+  /// Khóa học dành riêng cho hội viên Pro.
+  final bool laPro;
+
   final List<BaiHoc> baiHoc;
 
   const KhoaHoc({
@@ -57,9 +60,10 @@ class KhoaHoc {
     required this.anhBia,
     required this.baiHoc,
     this.noiBat = false,
+    this.laPro = false,
   });
 
-  bool get mienPhi => gia == 0;
+  bool get mienPhi => !laPro && gia == 0;
 
   int get soBaiHoc => baiHoc.length;
 
@@ -92,6 +96,7 @@ class KhoaHoc {
         'gia': gia,
         'anhBia': anhBia,
         'noiBat': noiBat,
+        'laPro': laPro,
         'baiHoc': baiHoc.map((b) => b.sangMap()).toList(),
       };
 
@@ -108,6 +113,7 @@ class KhoaHoc {
         gia: m['gia'] as int,
         anhBia: m['anhBia'] as String,
         noiBat: m['noiBat'] as bool? ?? false,
+        laPro: m['laPro'] as bool? ?? false,
         baiHoc: (m['baiHoc'] as List)
             .map((e) => BaiHoc.tuMap(e as Map))
             .toList(growable: false),

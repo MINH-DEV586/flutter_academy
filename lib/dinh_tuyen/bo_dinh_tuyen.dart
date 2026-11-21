@@ -9,9 +9,13 @@ import '../screens/dang_nhap_screen.dart';
 import '../screens/danh_sach_screen.dart';
 import '../screens/ho_so_screen.dart';
 import '../screens/khong_tim_thay_screen.dart';
+import '../screens/lich_su_giao_dich_screen.dart';
 import '../screens/luyen_tap_screen.dart';
+import '../screens/nang_cap_pro_screen.dart';
+import '../screens/nap_coin_screen.dart';
 import '../screens/thong_ke_screen.dart';
 import '../screens/trang_chu_screen.dart';
+import '../screens/vi_coin_screen.dart';
 import '../viewmodels/providers.dart';
 import '../widgets/khung_ung_dung.dart';
 import 'duong_dan.dart';
@@ -115,6 +119,22 @@ final boDinhTuyenProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: DuongDan.thongKe,
             builder: (context, state) => const ThongKeScreen(),
+          ),
+          GoRoute(
+            path: DuongDan.viCoin,
+            builder: (context, state) => const ViCoinScreen(),
+          ),
+          GoRoute(
+            path: DuongDan.napCoin,
+            builder: (context, state) => const NapCoinScreen(),
+          ),
+          GoRoute(
+            path: DuongDan.nangCapPro,
+            builder: (context, state) => const NangCapProScreen(),
+          ),
+          GoRoute(
+            path: DuongDan.lichSuGiaoDich,
+            builder: (context, state) => const LichSuGiaoDichScreen(),
           ),
           GoRoute(
             path: DuongDan.dangNhap,

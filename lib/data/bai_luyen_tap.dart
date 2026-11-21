@@ -299,4 +299,353 @@ print(xep_loai(4))''',
 }''',
     ),
   ),
+  'dart-co-ban': BaiLuyenTap(
+    [
+      CauHoiQuiz(
+        'Trong Dart với Sound Null Safety, biến kiểu int có thể gán null không?',
+        ['Có thể gán bất cứ lúc nào', 'Không thể gán trừ khi khai báo int?', 'Chỉ gán được khi dùng var'],
+        1,
+        'int không chấp nhận null; chỉ int? mới có thể chứa giá trị null.',
+      ),
+      CauHoiQuiz(
+        'Từ khóa nào trong Dart dùng để tích hợp một mixin vào class?',
+        ['extends', 'implements', 'with'],
+        2,
+        'Từ khóa with được sử dụng để ghép một hoặc nhiều mixin vào lớp.',
+      ),
+      CauHoiQuiz(
+        'Hàm trả về dữ liệu liên tục theo thời gian trong Dart có kiểu trả về là gì?',
+        ['Future', 'Stream', 'Iterable'],
+        1,
+        'Stream biểu diễn chuỗi dữ liệu bất đồng bộ phát ra liên tục theo thời gian.',
+      ),
+    ],
+    BaiTapCode(
+      tieuDe: 'Kiểm tra chuỗi an toàn null',
+      deBai: 'Viết hàm dinhDangTen(String? hoTen). Nếu hoTen là null hoặc rỗng, trả về "Khách", ngược lại trả về tên viết hoa.',
+      maKhoiDau: '''String dinhDangTen(String? hoTen) {
+  return '';
+}''',
+      ketQua: 'dinhDangTen(null) -> "Khách", dinhDangTen("lan") -> "LAN"',
+      goiY: 'Sử dụng toán tử null-aware hoặc kiểm tra null/isEmpty.',
+      loiGiai: '''String dinhDangTen(String? hoTen) {
+  if (hoTen == null || hoTen.trim().isEmpty) return 'Khách';
+  return hoTen.trim().toUpperCase();
+}''',
+    ),
+  ),
+  'flutter-animation': BaiLuyenTap(
+    [
+      CauHoiQuiz(
+        'AnimatedContainer thuộc nhóm animation nào trong Flutter?',
+        ['Implicit Animations', 'Explicit Animations', 'Physics-based Animations'],
+        0,
+        'AnimatedContainer là widget chuyển động ngầm định (Implicit Animation), tự động nội suy.',
+      ),
+      CauHoiQuiz(
+        'Thuộc tính nào của Hero widget bắt buộc phải giống nhau giữa hai màn hình?',
+        ['child', 'tag', 'flightShuttleBuilder'],
+        1,
+        'tag là định danh duy nhất giúp Flutter liên kết hai phần tử Hero với nhau.',
+      ),
+      CauHoiQuiz(
+        'Để dọn dẹp bộ nhớ của AnimationController, ta gọi hàm nào trong dispose()?',
+        ['controller.stop()', 'controller.reset()', 'controller.dispose()'],
+        2,
+        'Phải gọi controller.dispose() trong dispose của State để tránh rò rỉ bộ nhớ (memory leak).',
+      ),
+    ],
+    BaiTapCode(
+      tieuDe: 'Tính toán tỷ lệ hoàn thành chuyển động',
+      deBai: 'Viết hàm tinhTienDo(double batDau, double ketThuc, double t). Trả về giá trị nội suy tuyến tính giữa batDau và ketThuc theo tỉ lệ t (0.0 đến 1.0).',
+      maKhoiDau: '''double tinhTienDo(double batDau, double ketThuc, double t) {
+  return 0.0;
+}''',
+      ketQua: 'tinhTienDo(10, 20, 0.5) -> 15.0',
+      goiY: 'Công thức lerp: batDau + (ketThuc - batDau) * t.',
+      loiGiai: '''double tinhTienDo(double batDau, double ketThuc, double t) {
+  return batDau + (ketThuc - batDau) * t;
+}''',
+    ),
+  ),
+  'flutter-responsive-web': BaiLuyenTap(
+    [
+      CauHoiQuiz(
+        'LayoutBuilder cung cấp thông tin gì qua tham số constraints?',
+        ['Kích thước toàn bộ màn hình', 'Kích thước tối đa và tối thiểu của widget cha', 'Độ phân giải DPI'],
+        1,
+        'LayoutBuilder cung cấp BoxConstraints áp đặt từ widget cha trực tiếp.',
+      ),
+      CauHoiQuiz(
+        'Cách nào lấy chiều rộng cửa sổ trình duyệt tối ưu trong Flutter 3.x?',
+        ['MediaQuery.sizeOf(context).width', 'MediaQuery.of(context).size.width', 'window.physicalSize.width'],
+        0,
+        'MediaQuery.sizeOf(context) chỉ lắng nghe thay đổi kích thước, không rebuild thừa khi đổi độ sáng/inset.',
+      ),
+      CauHoiQuiz(
+        'Widget nào bắt sự kiện di chuyển con trỏ chuột trên Web?',
+        ['GestureDetector', 'MouseRegion', 'InkWell'],
+        1,
+        'MouseRegion chuyên dụng cho Web/Desktop để theo dõi hover, enter, exit của chuột.',
+      ),
+    ],
+    BaiTapCode(
+      tieuDe: 'Tính số cột theo độ rộng màn hình',
+      deBai: 'Viết hàm tinhSoCot(double width). Nếu width >= 1200 trả về 4, >= 800 trả về 3, >= 600 trả về 2, còn lại trả về 1.',
+      maKhoiDau: '''int tinhSoCot(double width) {
+  return 1;
+}''',
+      ketQua: 'width 1024 -> 3, width 400 -> 1',
+      goiY: 'Sử dụng if/else kiểm tra giảm dần từ 1200 xuống.',
+      loiGiai: '''int tinhSoCot(double width) {
+  if (width >= 1200) return 4;
+  if (width >= 800) return 3;
+  if (width >= 600) return 2;
+  return 1;
+}''',
+    ),
+  ),
+  'flutter-riverpod-3': BaiLuyenTap(
+    [
+      CauHoiQuiz(
+        'Phương thức nào của WidgetRef dùng để đọc giá trị một lần mà không đăng ký rebuild?',
+        ['ref.watch', 'ref.listen', 'ref.read'],
+        2,
+        'ref.read chỉ lấy giá trị hiện tại một lần, thường dùng trong callback sự kiện onTap/onPressed.',
+      ),
+      CauHoiQuiz(
+        'Lợi ích của ref.select so với ref.watch thông thường là gì?',
+        ['Tăng tốc biên dịch', 'Chỉ rebuild widget khi trường dữ liệu được chọn thay đổi', 'Tự động gọi dispose'],
+        1,
+        'ref.select lọc thay đổi và chỉ rebuild widget khi giá trị biểu thức con thay đổi.',
+      ),
+      CauHoiQuiz(
+        'Để hủy cache và tải lại dữ liệu trong một FutureProvider/AsyncNotifier, ta dùng:',
+        ['ref.invalidate(provider)', 'ref.refresh(provider)', 'ref.reset(provider)'],
+        0,
+        'ref.invalidate đánh dấu provider hết hạn và lên lịch tính toán lại khi có người nghe.',
+      ),
+    ],
+    BaiTapCode(
+      tieuDe: 'Đếm số lượng mục chưa hoàn thành',
+      deBai: 'Viết hàm demMucChuaXong(List<bool> ds). Đếm và trả về số lượng giá trị false trong danh sách.',
+      maKhoiDau: '''int demMucChuaXong(List<bool> ds) {
+  return 0;
+}''',
+      ketQua: 'demMucChuaXong([true, false, true, false]) -> 2',
+      goiY: 'Dùng where((x) => !x).length hoặc vòng lặp for.',
+      loiGiai: '''int demMucChuaXong(List<bool> ds) {
+  return ds.where((daXong) => !daXong).length;
+}''',
+    ),
+  ),
+  'flutter-luu-tru-hive': BaiLuyenTap(
+    [
+      CauHoiQuiz(
+        'Trên nền tảng Web, Hive CE lưu trữ dữ liệu vào đâu?',
+        ['IndexedDB của trình duyệt', 'LocalStorage dạng text', 'Cookies trình duyệt'],
+        0,
+        'Hive CE tận dụng IndexedDB nhị phân của trình duyệt để lưu trữ tốc độ cao trên Web.',
+      ),
+      CauHoiQuiz(
+        'Mỗi TypeAdapter tùy chỉnh của Hive bắt buộc phải có thuộc tính gì duy nhất?',
+        ['typeId', 'boxName', 'adapterKey'],
+        0,
+        'typeId là số hiệu nguyên duy nhất xác định kiểu dữ liệu khi giải mã nhị phân.',
+      ),
+      CauHoiQuiz(
+        'Trong chiến lược Offline-first, thao tác nào nên diễn ra trước?',
+        ['Gửi request lên API', 'Ghi vào database cục bộ và cập nhật UI ngay', 'Chờ người dùng xác nhận'],
+        1,
+        'Ghi cục bộ trước giúp giao diện phản hồi tức thì (Optimistic UI) không cần chờ mạng.',
+      ),
+    ],
+    BaiTapCode(
+      tieuDe: 'Tạo khóa định danh cho bài học',
+      deBai: 'Viết hàm taoKhoaBai(String maKhoa, String maBai). Nối hai chuỗi bằng dấu gạch chéo "/".',
+      maKhoiDau: '''String taoKhoaBai(String maKhoa, String maBai) {
+  return '';
+}''',
+      ketQua: 'taoKhoaBai("dart", "b1") -> "dart/b1"',
+      goiY: 'Dùng chuỗi nội suy "\$maKhoa/\$maBai".',
+      loiGiai: '''String taoKhoaBai(String maKhoa, String maBai) {
+  return '\$maKhoa/\$maBai';
+}''',
+    ),
+  ),
+  'flutter-web3-blockchain': BaiLuyenTap(
+    [
+      CauHoiQuiz(
+        'Đối tượng JavaScript nào được MetaMask tiêm vào trình duyệt để dApp giao tiếp?',
+        ['window.web3', 'window.ethereum', 'window.metamask'],
+        1,
+        'MetaMask tiêm provider chuẩn EIP-1193 vào đối tượng window.ethereum.',
+      ),
+      CauHoiQuiz(
+        'Để nạp tiền vào Smart Contract, ta gọi hàm RPC nào của MetaMask?',
+        ['eth_accounts', 'eth_call', 'eth_sendTransaction'],
+        2,
+        'eth_sendTransaction được sử dụng để gửi giao dịch kèm giá trị (value) và dữ liệu thực thi (data).',
+      ),
+      CauHoiQuiz(
+        'Lý do cần xác thực giao dịch on-chain trên máy chủ backend là gì?',
+        ['Tránh gian lận client-side và tấn công Replay Attack', 'Để tăng tốc độ giao dịch', 'MetaMask không cho phép kiểm tra từ app'],
+        0,
+        'Client có thể bị can thiệp; backend phải tự gọi JSON-RPC đối chiếu orderId để đảm bảo tính an toàn tài chính.',
+      ),
+    ],
+    BaiTapCode(
+      tieuDe: 'Quy đổi ETH sang Wei',
+      deBai: 'Viết hàm ethSangWei(double eth). Biết 1 ETH = 10^18 Wei. Trả về số lượng Wei dưới dạng BigInt.',
+      maKhoiDau: '''BigInt ethSangWei(double eth) {
+  return BigInt.zero;
+}''',
+      ketQua: 'ethSangWei(0.01) -> BigInt.from(10000000000000000)',
+      goiY: '1 ETH = 1,000,000,000,000,000,000 Wei.',
+      loiGiai: '''BigInt ethSangWei(double eth) {
+  final weiPerEth = BigInt.from(10).pow(18);
+  return BigInt.from((eth * 1e6).round()) * (weiPerEth ~/ BigInt.from(1e6));
+}''',
+    ),
+  ),
+  'flutter-clean-architecture': BaiLuyenTap(
+    [
+      CauHoiQuiz(
+        'Theo Clean Architecture, tầng nào nằm ở trung tâm và không phụ thuộc vào bất kỳ tầng nào khác?',
+        ['Presentation', 'Data', 'Domain'],
+        2,
+        'Tầng Domain chứa Enterprise Business Rules và Entities, là lõi độc lập hoàn toàn.',
+      ),
+      CauHoiQuiz(
+        'Lợi ích chính của việc phân chia Micro-packages độc lập là gì?',
+        ['Tăng dung lượng file tải về', 'Cô lập dependencies và tăng tốc độ biên dịch song song', 'Không cần viết unit test'],
+        1,
+        'Micro-packages giúp mã nguồn module hóa cao, kiểm thử độc lập và tăng tốc build đáng kể.',
+      ),
+      CauHoiQuiz(
+        'Nguyên tắc Dependency Inversion (D trong SOLID) phát biểu điều gì?',
+        ['Module cấp cao không nên phụ thuộc module cấp thấp; cả hai nên phụ thuộc vào abstractions', 'Tất cả hàm phải private', 'Không được dùng kế thừa'],
+        0,
+        'Nguyên tắc Đảo ngược phụ thuộc yêu cầu cả hai tầng cùng dựa trên abstraction (interface/abstract class).',
+      ),
+    ],
+    BaiTapCode(
+      tieuDe: 'Kiểm tra đường dẫn Feature module hợp lệ',
+      deBai: 'Viết hàm laModuleHopLe(String duongDan). Trả về true nếu đường dẫn bắt đầu bằng "packages/features/".',
+      maKhoiDau: '''bool laModuleHopLe(String duongDan) {
+  return false;
+}''',
+      ketQua: 'laModuleHopLe("packages/features/auth") -> true',
+      goiY: 'Dùng startsWith("packages/features/").',
+      loiGiai: '''bool laModuleHopLe(String duongDan) {
+  return duongDan.startsWith('packages/features/');
+}''',
+    ),
+  ),
+  'flutter-ai-agent-pro': BaiLuyenTap(
+    [
+      CauHoiQuiz(
+        'Ưu điểm lớn nhất của Streaming SSE so với phản hồi một lần trong AI chat là gì?',
+        ['Giảm dung lượng token', 'Người dùng thấy ký tự gõ theo thời gian thực, giảm cảm giác chờ đợi', 'Không cần internet'],
+        1,
+        'Streaming gửi dữ liệu từng chunk giúp giao diện sống động và phản hồi tức thì.',
+      ),
+      CauHoiQuiz(
+        'Cơ chế Tool / Function Calling cho phép LLM làm gì?',
+        ['Chạy trực tiếp code mã độc', 'Trả về cấu trúc JSON yêu cầu ứng dụng client gọi hàm tương ứng', 'Tự động sửa database'],
+        1,
+        'LLM phân tích câu hỏi và sinh ra lời gọi hàm có cấu trúc JSON để ứng dụng thực thi.',
+      ),
+      CauHoiQuiz(
+        'Kỹ thuật Sliding Window Context dùng để giải quyết vấn đề gì?',
+        ['Giới hạn cửa sổ ngữ cảnh (Context Window) và tiết kiệm chi phí Token', 'Tăng độ phân giải hình ảnh', 'Bảo mật mật khẩu'],
+        0,
+        'Cắt tỉa lịch sử hội thoại chỉ giữ lại các lượt gần nhất giúp không vượt ngưỡng giới hạn token của model.',
+      ),
+    ],
+    BaiTapCode(
+      tieuDe: 'Lọc tin nhắn theo vai trò',
+      deBai: 'Viết hàm locTinNhanUser(List<Map<String, String>> ds). Lọc và trả về danh sách nội dung của role "user".',
+      maKhoiDau: '''List<String> locTinNhanUser(List<Map<String, String>> ds) {
+  return [];
+}''',
+      ketQua: '[{"role": "user", "text": "Hi"}] -> ["Hi"]',
+      goiY: 'Lọc m["role"] == "user" rồi lấy m["text"].',
+      loiGiai: '''List<String> locTinNhanUser(List<Map<String, String>> ds) {
+  return ds
+      .where((m) => m['role'] == 'user')
+      .map((m) => m['text'] ?? '')
+      .toList();
+}''',
+    ),
+  ),
+  'flutter-security-pro': BaiLuyenTap(
+    [
+      CauHoiQuiz(
+        'Tại sao không nên lưu Token JWT trong SharedPreferences hoặc LocalStorage?',
+        ['Dữ liệu được lưu dạng văn bản thuần (plaintext) và dễ bị trích xuất trái phép', 'Dung lượng tối đa chỉ 100 byte', 'Không đọc được trên Web'],
+        0,
+        'SharedPreferences/LocalStorage không mã hóa, rất nguy hiểm khi thiết bị bị can thiệp vật lý.',
+      ),
+      CauHoiQuiz(
+        'Mục đích của kỹ thuật SSL Certificate Pinning là gì?',
+        ['Tăng tốc độ tải trang web', 'Ngăn chặn tấn công Man-in-the-Middle bằng chứng chỉ giả mạo', 'Nén dữ liệu JSON'],
+        1,
+        'SSL Pinning chỉ tin cậy chứng chỉ số được ghim cứng trong app, từ chối mọi chứng chỉ giả mạo từ proxy can thiệp.',
+      ),
+      CauHoiQuiz(
+        'Thuật toán mã hóa đối xứng nào được khuyến nghị chuẩn hiện đại nhất?',
+        ['DES', 'MD5', 'AES-256-GCM'],
+        2,
+        'AES-256-GCM cung cấp cả tính bảo mật (confidentiality) và xác thực tính toàn vẹn (integrity).',
+      ),
+    ],
+    BaiTapCode(
+      tieuDe: 'Ẩn bớt ký tự nhạy cảm của địa chỉ ví',
+      deBai: 'Viết hàm cheDiaChiVi(String vi). Nếu độ dài < 10 trả về vi, ngược lại giữ 6 ký tự đầu, 4 ký tự cuối và thay giữa bằng "...".',
+      maKhoiDau: '''String cheDiaChiVi(String vi) {
+  return vi;
+}''',
+      ketQua: '"0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC" -> "0x3C44...93BC"',
+      goiY: 'Dùng substring(0, 6) + "..." + substring(vi.length - 4).',
+      loiGiai: '''String cheDiaChiVi(String vi) {
+  if (vi.length < 10) return vi;
+  return '\${vi.substring(0, 6)}...\${vi.substring(vi.length - 4)}';
+}''',
+    ),
+  ),
+  'flutter-cicd-devops': BaiLuyenTap(
+    [
+      CauHoiQuiz(
+        'Ưu điểm của Multi-stage Docker build cho Flutter Web là gì?',
+        ['Image cuối cùng cực kỳ nhỏ gọn chỉ chứa Nginx và static files (< 25MB)', 'Tự động chạy flutter doctor', 'Không cần cài Git'],
+        0,
+        'Giai đoạn build Flutter SDK nặng hàng GB bị loại bỏ, chỉ giữ lại web bundle siêu nhẹ chạy trên Nginx alpine.',
+      ),
+      CauHoiQuiz(
+        'Lệnh nào trong Flutter dùng để kiểm tra tĩnh toàn bộ mã nguồn theo chuẩn linter?',
+        ['flutter check', 'flutter analyze', 'flutter verify'],
+        1,
+        'flutter analyze phân tích cú pháp tĩnh và cảnh báo vi phạm quy tắc quy ước mã nguồn.',
+      ),
+      CauHoiQuiz(
+        'Trong GitHub Actions, file workflow định nghĩa quy trình tự động được lưu ở thư mục nào?',
+        ['.github/workflows/', 'configs/actions/', '.ci/pipelines/'],
+        0,
+        'GitHub Actions tự động nhận diện các tệp cấu hình YAML đặt trong thư mục .github/workflows/.',
+      ),
+    ],
+    BaiTapCode(
+      tieuDe: 'Kiểm tra mã trạng thái HTTP thành công',
+      deBai: 'Viết hàm laKetQuaThanhCong(int statusCode). Trả về true nếu statusCode thuộc dải 200 đến 299.',
+      maKhoiDau: '''bool laKetQuaThanhCong(int statusCode) {
+  return false;
+}''',
+      ketQua: 'laKetQuaThanhCong(200) -> true, laKetQuaThanhCong(404) -> false',
+      goiY: 'Kiểm tra statusCode >= 200 && statusCode < 300.',
+      loiGiai: '''bool laKetQuaThanhCong(int statusCode) {
+  return statusCode >= 200 && statusCode < 300;
+}''',
+    ),
+  ),
 };

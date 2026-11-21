@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
 import 'data/kho_hive.dart';
+import 'data/kho_thanh_vien.dart';
+import 'data/kho_vi_coin.dart';
 import 'data/khoi_tao_hive.dart';
 import 'data/kho_tai_khoan.dart';
 import 'viewmodels/providers.dart';
@@ -38,6 +40,8 @@ Future<void> main() async {
             hopNhatKy: hop.nhatKyHoc,
           ),
         ),
+        khoViCoinProvider.overrideWithValue(HttpKhoViCoin(hop.phien)),
+        khoThanhVienProvider.overrideWithValue(HttpKhoThanhVien(hop.phien)),
       ],
       child: const UngDung(),
     ),

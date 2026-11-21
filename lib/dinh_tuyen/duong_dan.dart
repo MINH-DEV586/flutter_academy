@@ -21,6 +21,10 @@ class DuongDan {
   static const String dangNhap = '/dang-nhap';
   static const String thongKe = '/thong-ke';
   static const String bangXepHang = '/bang-xep-hang';
+  static const String viCoin = '/vi-coin';
+  static const String napCoin = '/vi-coin/nap';
+  static const String lichSuGiaoDich = '/vi-coin/lich-su';
+  static const String nangCapPro = '/nang-cap-pro';
 
   /// Đoạn con trong cấu hình go_router. Không có dấu `/` đầu vì là route con.
   static const String doanMaKhoaHoc = ':ma';
@@ -73,7 +77,14 @@ class DuongDan {
   /// So khớp cả đường dẫn con: `/ho-so/doi-mat-khau` cũng phải được bảo vệ.
   /// Dùng `==` hoặc `startsWith('$goc/')` chứ không dùng `startsWith(goc)`
   /// trơn, nếu không thì `/ho-so-cong-khai` cũng bị chặn oan.
-  static const List<String> canDangNhap = [cuaToi, hoSo];
+  static const List<String> canDangNhap = [
+    cuaToi,
+    hoSo,
+    viCoin,
+    napCoin,
+    lichSuGiaoDich,
+    nangCapPro,
+  ];
 
   /// Bốn mục của thanh điều hướng, theo đúng thứ tự hiển thị.
   static const List<String> tabChinh = [trangChu, danhSach, cuaToi, hoSo];

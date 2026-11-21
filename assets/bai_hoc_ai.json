@@ -110,5 +110,215 @@
     "kenhYouTube": "Bro Code",
     "noiDung": "Một phương thức khai báo kiểu trả về, tên và các tham số. Phương thức static trong ví dụ gọi được trực tiếp từ main. return trả về một giá trị phù hợp với kiểu đã khai báo.",
     "code": "class Main {\n    static int dienTich(int rong, int cao) {\n        return rong * cao;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(dienTich(4, 3)); // 12\n    }\n}"
+  },
+  "dart-co-ban/b1": {
+    "tieuDe": "Cơ bản về biến, kiểu dữ liệu và Null Safety",
+    "youtubeId": "5F-6n_2Xrx8",
+    "kenhYouTube": "FreeCodeCamp",
+    "noiDung": "Dart là ngôn ngữ tĩnh hướng đối tượng với Sound Null Safety. Mặc định mọi biến không thể null trừ khi dùng dấu ? sau kiểu dữ liệu. Sử dụng var, final, const phù hợp để đảm bảo tính bất biến.",
+    "code": "String ten = 'Flutter';\nString? coTheNull = null;\nfinal int nam = 2026;\nprint('$ten - $nam: ${coTheNull ?? \"Không có giá trị\"}');"
+  },
+  "dart-co-ban/b2": {
+    "tieuDe": "Lập trình hướng đối tượng OOP và Mixin",
+    "youtubeId": "1ukSR1SX82U",
+    "kenhYouTube": "Dart Team",
+    "noiDung": "Dart hỗ trợ lập trình hướng đối tượng với class, abstract class và mixin. Mixin cho phép tái sử dụng mã nguồn trên nhiều cây phân cấp lớp mà không cần đa kế thừa.",
+    "code": "mixin CoTheBay {\n  void bay() => print('Đang bay lượn...');\n}\n\nclass Chim with CoTheBay {}\n\nvoid main() => Chim().bay();"
+  },
+  "dart-co-ban/b3": {
+    "tieuDe": "Bất đồng bộ với Future, Stream và async/await",
+    "youtubeId": "OTS-ap9_aXc",
+    "kenhYouTube": "Flutter",
+    "noiDung": "Xử lý tác vụ tốn thời gian bằng Future và async/await. Stream xử lý chuỗi sự kiện liên tục theo thời gian, thích hợp cho WebSocket và phản ứng giao diện theo luồng dữ liệu.",
+    "code": "Future<String> layDuLieu() async {\n  await Future.delayed(const Duration(seconds: 1));\n  return 'Dữ liệu thành công';\n}\n\nvoid main() async => print(await layDuLieu());"
+  },
+  "flutter-animation/b1": {
+    "tieuDe": "Chuyển động ngầm định với AnimatedContainer",
+    "youtubeId": "yI-8QHpG84E",
+    "kenhYouTube": "Flutter",
+    "noiDung": "Implicit Animations giúp tạo hiệu ứng chuyển động dễ dàng chỉ bằng cách thay đổi giá trị thuộc tính. Flutter tự động nội suy giữa trạng thái cũ và mới trong thời gian quy định.",
+    "code": "AnimatedContainer(\n  duration: const Duration(milliseconds: 300),\n  curve: Curves.easeInOut,\n  width: isSelected ? 200 : 100,\n  height: 60,\n  color: isSelected ? Colors.blue : Colors.grey,\n)"
+  },
+  "flutter-animation/b2": {
+    "tieuDe": "Điều khiển chuyển động với AnimationController",
+    "youtubeId": "CNypsn3-sF8",
+    "kenhYouTube": "Flutter",
+    "noiDung": "Explicit Animations cung cấp toàn quyền điều khiển tiến trình chuyển động: phát tới, lùi lại, lặp vô tận (repeat) hoặc dừng lại bất cứ lúc nào qua AnimationController.",
+    "code": "late final _controller = AnimationController(\n  vsync: this,\n  duration: const Duration(seconds: 2),\n)..repeat(reverse: true);"
+  },
+  "flutter-animation/b3": {
+    "tieuDe": "Hiệu ứng chuyển cảnh trang với Hero Animation",
+    "youtubeId": "Be9v8--h0KQ",
+    "kenhYouTube": "Flutter",
+    "noiDung": "Hero widget tạo hiệu ứng phóng to hoặc bay mượt mà từ màn hình danh sách sang màn hình chi tiết, kết nối thị giác giữa hai màn hình với cùng một thẻ tag duy nhất.",
+    "code": "Hero(\n  tag: 'anh-bia-${khoaHoc.ma}',\n  child: Image.asset(khoaHoc.anhBia),\n)"
+  },
+  "flutter-responsive-web/b1": {
+    "tieuDe": "Bố cục thích ứng với LayoutBuilder và Constraints",
+    "youtubeId": "oxcbk_h3w_A",
+    "kenhYouTube": "Flutter",
+    "noiDung": "LayoutBuilder cung cấp BoxConstraints của widget cha trong quá trình build, giúp ứng dụng tự động quyết định hiển thị dạng 1 cột trên điện thoại hay 2-3 cột trên Desktop.",
+    "code": "LayoutBuilder(\n  builder: (context, constraints) {\n    if (constraints.maxWidth > 720) return const HangNgang();\n    return const CotDoc();\n  },\n)"
+  },
+  "flutter-responsive-web/b2": {
+    "tieuDe": "Quản lý Breakpoints màn hình với MediaQuery",
+    "youtubeId": "A3LtggG2GvI",
+    "kenhYouTube": "Google Developers",
+    "noiDung": "Xác định các ngưỡng kích thước chuẩn (Mobile < 600px, Tablet < 900px, Desktop >= 1200px) bằng MediaQuery để tối ưu mật độ thông tin và căn lề phù hợp từng thiết bị.",
+    "code": "final rong = MediaQuery.sizeOf(context).width;\nfinal soCot = rong > 1200 ? 4 : (rong > 800 ? 3 : 2);"
+  },
+  "flutter-responsive-web/b3": {
+    "tieuDe": "Tối ưu trải nghiệm chuột, bàn phím trên Web",
+    "youtubeId": "2a_UsmO7lTc",
+    "kenhYouTube": "Flutter",
+    "noiDung": "Web và Desktop đòi hỏi tương tác trỏ chuột Hover, con lăn chuột cuộn mượt và phím tắt Shortcuts / Intent. Sử dụng MouseRegion và CallbackShortcuts để hoàn thiện trải nghiệm.",
+    "code": "MouseRegion(\n  cursor: SystemMouseCursors.click,\n  onEnter: (_) => setState(() => _hover = true),\n  child: WidgetHienThi(),\n)"
+  },
+  "flutter-riverpod-3/b1": {
+    "tieuDe": "Làm quen với Provider, Notifier và ConsumerWidget",
+    "youtubeId": "bj_UfCknPms",
+    "kenhYouTube": "Code With Andrea",
+    "noiDung": "Riverpod giải quyết hoàn toàn hạn chế của Provider cũ: compile-time safe, không phụ thuộc BuildContext, dễ dàng đọc và lắng nghe trạng thái mọi nơi trong cây widget.",
+    "code": "class DemNotifier extends Notifier<int> {\n  @override\n  int build() => 0;\n  void tang() => state++;\n}\nfinal demProvider = NotifierProvider<DemNotifier, int>(DemNotifier.new);"
+  },
+  "flutter-riverpod-3/b2": {
+    "tieuDe": "Xử lý tải dữ liệu bất đồng bộ với AsyncNotifier",
+    "youtubeId": "8YQZ3x64j7E",
+    "kenhYouTube": "Code With Andrea",
+    "noiDung": "AsyncNotifier gói gọn cả 3 trạng thái Loading, Data và Error trong AsyncValue. Hỗ trợ tự động cache dữ liệu và làm mới với ref.invalidate.",
+    "code": "class KhoaHocVM extends AsyncNotifier<List<KhoaHoc>> {\n  @override\n  Future<List<KhoaHoc>> build() async => ref.read(repoProvider).layTatCa();\n}"
+  },
+  "flutter-riverpod-3/b3": {
+    "tieuDe": "Tối ưu hóa hiệu năng render với ref.select",
+    "youtubeId": "aY_21r88e_M",
+    "kenhYouTube": "Code With Andrea",
+    "noiDung": "Dùng ref.watch((s) => s.thuocTinh) kết hợp ref.select để chỉ kích hoạt hàm build khi trường dữ liệu cụ thể thay đổi, tránh rebuild lãng phí toàn bộ widget lớn.",
+    "code": "final ten = ref.watch(nguoiDungProvider.select((u) => u?.hoTen));\nreturn Text('Xin chào, ${ten ?? \"khách\"}');"
+  },
+  "flutter-luu-tru-hive/b1": {
+    "tieuDe": "Khởi tạo Box và lưu trữ nhị phân với Hive CE",
+    "youtubeId": "R11p48k5sfc",
+    "kenhYouTube": "Flutter Vietnam",
+    "noiDung": "Hive CE là cơ sở dữ liệu khóa-giá trị siêu nhanh viết thuần Dart. Trên Web, Hive sử dụng IndexedDB, hỗ trợ mở nhiều box đồng thời với độ trễ cực thấp.",
+    "code": "await Hive.initFlutter();\nfinal box = await Hive.openBox<String>('cai_dat');\nawait box.put('chu_de', 'dark');"
+  },
+  "flutter-luu-tru-hive/b2": {
+    "tieuDe": "Viết TypeAdapter tay tối ưu tốc độ đọc ghi",
+    "youtubeId": "epnZ_dOqJ6E",
+    "kenhYouTube": "Flutter Vietnam",
+    "noiDung": "Tự viết TypeAdapter với BinaryReader và BinaryWriter giúp ứng dụng không cần chạy build_runner, kiểm soát chính xác cấu trúc byte và tương thích tiến hóa dữ liệu.",
+    "code": "class UserAdapter extends TypeAdapter<User> {\n  @override\n  final int typeId = 1;\n  @override\n  void write(BinaryWriter w, User o) => w..writeByte(o.id)..write(o.name);\n  @override\n  User read(BinaryReader r) => User(id: r.readByte(), name: r.read());\n}"
+  },
+  "flutter-luu-tru-hive/b3": {
+    "tieuDe": "Đồng bộ dữ liệu Offline-first với máy chủ API",
+    "youtubeId": "9kdZkZ3b9aU",
+    "kenhYouTube": "Flutter Devs",
+    "noiDung": "Chiến lược Offline-first: ghi dữ liệu vào Hive trước để UI phản hồi tức thì (Optimistic UI), sau đó đồng bộ ngầm với REST API và giải quyết xung đột dữ liệu.",
+    "code": "Future<void> luuGhiChu(GhiChu note) async {\n  await localBox.put(note.id, note);\n  syncQueue.enqueue(note);\n  unawaited(dongBoLenServer(note));\n}"
+  },
+  "flutter-web3-blockchain/b1": {
+    "tieuDe": "Tổng quan kiến trúc dApp và kết nối ví MetaMask",
+    "youtubeId": "M576WGiDBdQ",
+    "kenhYouTube": "Web3 Academy",
+    "noiDung": "Hiểu cách ví tiền số (MetaMask) tương tác với dApp thông qua window.ethereum. Sử dụng Dart JS Interop chuẩn để gửi yêu cầu eth_requestAccounts lấy địa chỉ ví người dùng.",
+    "code": "final accounts = await promiseToFuture(ethereum.request(RequestArguments(method: 'eth_requestAccounts')));\nprint('Ví đã kết nối: ${accounts[0]}');"
+  },
+  "flutter-web3-blockchain/b2": {
+    "tieuDe": "Ký giao dịch nạp tiền EIP-712 và Smart Contract Sepolia",
+    "youtubeId": "Wn_Kb3MR_cU",
+    "kenhYouTube": "Web3 Academy",
+    "noiDung": "Sử dụng Smart Contract FlutterAcademyDeposit trên testnet Sepolia. Mã hóa hàm depositCoin bằng Function Selector 0x1de26e16, tính toán Wei và gửi eth_sendTransaction.",
+    "code": "final txHash = await promiseToFuture(ethereum.request(RequestArguments(\n  method: 'eth_sendTransaction',\n  params: [{'to': contractAddress, 'data': calldata, 'value': '0x11c37937e08000'}]\n)));"
+  },
+  "flutter-web3-blockchain/b3": {
+    "tieuDe": "Xác thực giao dịch On-chain JSON-RPC trên backend Node.js",
+    "youtubeId": "7K_Hh8Y4D5Q",
+    "kenhYouTube": "Blockchain Master",
+    "noiDung": "Backend xác thực giao dịch an toàn bằng cách kiểm tra receipt và block qua JSON-RPC (eth_getTransactionReceipt), đối chiếu orderId tránh tấn công Replay Attack trước khi cộng Coin.",
+    "code": "const receipt = await rpcCall('eth_getTransactionReceipt', [txHash]);\nif (receipt && receipt.status === '0x1') {\n  await congCoin(userId, amount);\n}"
+  },
+  "flutter-clean-architecture/b1": {
+    "tieuDe": "Phân tầng kiến trúc Clean Architecture: Domain, Data & UI",
+    "youtubeId": "KjE2IDphA_U",
+    "kenhYouTube": "Reso Coder",
+    "noiDung": "Phân tách ứng dụng thành 3 tầng ranh giới nghiêm ngặt: Domain (Entities, Use Cases, Repositories giao diện), Data (Models, Data Sources, Repositories hiện thực), Presentation (Screens, ViewModels).",
+    "code": "abstract class CourseRepository {\n  Future<Either<Failure, List<Course>>> getCourses();\n}"
+  },
+  "flutter-clean-architecture/b2": {
+    "tieuDe": "Xây dựng Repository Pattern và Data Sources độc lập",
+    "youtubeId": "l3_G25n89sY",
+    "kenhYouTube": "Reso Coder",
+    "noiDung": "Tách biệt Data Source cục bộ (Hive) và từ xa (Remote REST API). Repository chịu trách nhiệm điều phối nguồn dữ liệu theo chính sách Cache-First hoặc Network-First.",
+    "code": "class CourseRepositoryImpl implements CourseRepository {\n  final RemoteDataSource remote;\n  final LocalDataSource local;\n  CourseRepositoryImpl(this.remote, this.local);\n}"
+  },
+  "flutter-clean-architecture/b3": {
+    "tieuDe": "Tách module ứng dụng thành Micro-packages độc lập",
+    "youtubeId": "vPsmj8z3-gE",
+    "kenhYouTube": "Reso Coder",
+    "noiDung": "Sử dụng Melos hoặc Dart Workspace để chia dự án thành nhiều package nội bộ (core, auth_feature, course_feature, ui_kit), cô lập dependencies và tăng tốc độ biên dịch.",
+    "code": "packages:\n  - core/*\n  - features/*\n  - shared/*"
+  },
+  "flutter-ai-agent-pro/b1": {
+    "tieuDe": "Kết nối Gemini API và xử lý Streaming câu trả lời theo thời gian thực",
+    "youtubeId": "tDacjrSCwqY",
+    "kenhYouTube": "Google AI",
+    "noiDung": "Kết nối Gemini Flash 2.0 hoặc Pro qua SSE (Server-Sent Events) để phản hồi từng token ký tự gõ phím mượt mà, giúp người học không phải chờ cả đoạn văn dài.",
+    "code": "final responseStream = model.generateContentStream([Content.text(prompt)]);\nawait for (final chunk in responseStream) {\n  yield chunk.text;\n}"
+  },
+  "flutter-ai-agent-pro/b2": {
+    "tieuDe": "Xây dựng Tool/Function Calling cho phép AI gọi hàm Flutter",
+    "youtubeId": "4kLviTwgDpk",
+    "kenhYouTube": "Google AI",
+    "noiDung": "Khai báo Function Declarations chuẩn JSON Schema để Model AI có thể tự động quyết định gọi API tra cứu tiến độ học tập, nạp Coin hoặc điều hướng màn hình.",
+    "code": "final tools = [Tool(functionDeclarations: [\n  FunctionDeclaration('kiemTraCoin', 'Tra cứu số dư Coin của học viên', Schema(SchemaType.object))\n])];"
+  },
+  "flutter-ai-agent-pro/b3": {
+    "tieuDe": "Quản lý bộ nhớ ngữ cảnh và tối ưu chi phí token LLM",
+    "youtubeId": "xP_98cTzK5M",
+    "kenhYouTube": "AI Engineer",
+    "noiDung": "Tối ưu chi phí bằng phương pháp trượt ngữ cảnh (Sliding Window Context), tóm tắt hội thoại cũ và lưu cache vector embedding cho tài liệu bài học lớn.",
+    "code": "List<Content> catGonNguCanh(List<Content> lichSu, int maxTokens) {\n  return lichSu.takeLast(10).toList();\n}"
+  },
+  "flutter-security-pro/b1": {
+    "tieuDe": "Mã hóa dữ liệu nhạy cảm với AES-256-GCM và Secure Storage",
+    "youtubeId": "dK8s7V1u2Aw",
+    "kenhYouTube": "CyberSecurity Lab",
+    "noiDung": "Không lưu token hay private key dạng plaintext trong SharedPreferences hay LocalStorage. Sử dụng flutter_secure_storage kết hợp mã hóa AES-256 GCM chuẩn quân đội.",
+    "code": "const storage = FlutterSecureStorage();\nawait storage.write(key: 'jwt_token', value: token, aOptions: getAndroidOptions());"
+  },
+  "flutter-security-pro/b2": {
+    "tieuDe": "Kỹ thuật SSL Pinning và bảo vệ đường truyền HTTPS",
+    "youtubeId": "N_87kGjO9mQ",
+    "kenhYouTube": "CyberSecurity Lab",
+    "noiDung": "Ngăn chặn kẻ tấn công trung gian (Man-in-the-Middle) bắt trộm gói tin bằng cách ghim chứng chỉ số SSL Certificate / Public Key Fingerprint trong SecurityContext của HttpClient.",
+    "code": "SecurityContext context = SecurityContext(withTrustedRoots: false);\ncontext.setTrustedCertificatesBytes(pinnedCertBytes);\nfinal client = HttpClient(context: context);"
+  },
+  "flutter-security-pro/b3": {
+    "tieuDe": "Phát hiện can thiệp mã nguồn, Root và Jailbreak",
+    "youtubeId": "hP_q6R3zN8A",
+    "kenhYouTube": "CyberSecurity Lab",
+    "noiDung": "Kiểm tra tính toàn vẹn của ứng dụng trên thiết bị đã Root, bẻ khóa Jailbreak hoặc chạy qua trình giả lập có hook Frdia nhằm bảo vệ cơ chế nạp Coin và phần thưởng Streak.",
+    "code": "final isCompromised = await FlutterJailbreakDetection.jailbroken;\nif (isCompromised) tatTinhNangNapTien();"
+  },
+  "flutter-cicd-devops/b1": {
+    "tieuDe": "Thiết lập GitHub Actions pipeline tự động chạy kiểm thử",
+    "youtubeId": "mS_9kQ7aB2C",
+    "kenhYouTube": "DevOps Pro",
+    "noiDung": "Viết workflow YAML trong .github/workflows tự động kích hoạt khi có Pull Request: kiểm tra flutter analyze, chạy toàn bộ unit/widget tests và đo lường độ phủ code (coverage).",
+    "code": "- name: Run Flutter Tests\n  run: flutter test --coverage\n- name: Check Analyzer\n  run: flutter analyze"
+  },
+  "flutter-cicd-devops/b2": {
+    "tieuDe": "Đóng gói Flutter Web đa tầng với Docker và Nginx",
+    "youtubeId": "pT_6gW8xL3E",
+    "kenhYouTube": "Cloud Native Devs",
+    "noiDung": "Sử dụng Multi-stage Docker build: Stage 1 build bundle tĩnh bằng Flutter SDK, Stage 2 copy artifact sang nginx:alpine siêu nhẹ (< 25MB) với gzip và Brotli nén tối ưu.",
+    "code": "FROM ghcr.io/cirruslabs/flutter:stable AS build\nRUN flutter build web --release\nFROM nginx:alpine\nCOPY --from=build /app/build/web /usr/share/nginx/html"
+  },
+  "flutter-cicd-devops/b3": {
+    "tieuDe": "Triển khai tự động lên Firebase Hosting và Cloud Run",
+    "youtubeId": "rK_2bV9mP5D",
+    "kenhYouTube": "DevOps Pro",
+    "noiDung": "Tự động phân phối phiên bản phát hành production lên Firebase Hosting hoặc Google Cloud Run khi merge vào nhánh main, hỗ trợ rollback tức thì khi xảy ra sự cố.",
+    "code": "- name: Deploy to Firebase Hosting\n  uses: FirebaseExtended/action-hosting-deploy@v0\n  with:\n    repoToken: '${{ secrets.GITHUB_TOKEN }}'\n    firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'"
   }
 }

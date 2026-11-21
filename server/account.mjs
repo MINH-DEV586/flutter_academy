@@ -14,8 +14,14 @@ function bam(matKhau, salt) {
   });
 }
 
-export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
-  const db = new DatabaseSync(duongDan);
+export function taoTaiKhoan(duongDan, maKhoaHocHopLe, { khoaHocPro = new Set(), kiemTraPro = null } = {}) {
+  let hamKiemTraPro = kiemTraPro;
+  let tapKhoaHocPro = khoaHocPro;
+  function datKiemTraPro(fn, tapPro) {
+    hamKiemTraPro = fn;
+    if (tapPro) tapKhoaHocPro = tapPro;
+  }
+  const db = typeof duongDan === 'object' && duongDan !== null && duongDan.prepare ? duongDan : new DatabaseSync(duongDan);
   db.exec(`
     PRAGMA journal_mode = WAL;
     PRAGMA foreign_keys = ON;
@@ -215,6 +221,12 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
       if (!docPhien.get(bamToken(match[1]), Date.now())) {
         return tra(401, { loi: 'Phiên đã hết hạn. Vui lòng đăng nhập lại.' });
       }
+      if (tapKhoaHocPro.has(maKhoaHoc)) {
+        const pro = hamKiemTraPro ? hamKiemTraPro(nguoiDung.email) : { isPro: false };
+        if (!pro?.isPro) {
+          return tra(403, { loi: 'Khóa học này chỉ dành cho tài khoản PRO. Vui lòng nâng cấp gói Pro.' });
+        }
+      }
       themDangKy.run(nguoiDung.email, maKhoaHoc);
       return tra(200, { maKhoaHoc });
     }
@@ -280,5 +292,11 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
     }
   }
 
-  return { xuLy, dong: () => db.close() };
+  function xacThucToken(authorization) {
+    const match = /^Bearer ([a-f0-9]{64})$/.exec(authorization ?? '');
+    if (!match) return null;
+    return docPhien.get(bamToken(match[1]), Date.now()) ?? null;
+  }
+
+  return { xuLy, dong: () => db.close(), xacThucToken, db, datKiemTraPro };
 }

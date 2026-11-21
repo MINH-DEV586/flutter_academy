@@ -1,17 +1,25 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/kho_du_lieu.dart';
+import '../data/kho_thanh_vien.dart';
+import '../data/kho_vi_coin.dart';
 import '../models/che_do_giao_dien.dart';
 import '../models/chuoi_hoc.dart';
+import '../models/don_nap_coin.dart';
+import '../models/giao_dich_coin.dart';
+import '../models/goi_pro.dart';
 import '../models/khoa_hoc.dart';
 import '../models/nguoi_dung.dart';
 import '../models/nhat_ky_ngay.dart';
 import '../models/tien_do.dart';
+import '../models/vi_coin.dart';
 import 'chu_de_vm.dart';
 import 'chuoi_hoc_vm.dart';
 import 'dang_ky_khoa_hoc_vm.dart';
 import 'phien_vm.dart';
+import 'thanh_vien_vm.dart';
 import 'tien_do_vm.dart';
+import 'vi_coin_vm.dart';
 
 // ---------------------------------------------------------------------------
 // Tầng kho dữ liệu
@@ -40,6 +48,14 @@ final khoNguoiDungProvider = Provider<KhoNguoiDung>(
 
 final khoChuoiHocProvider = Provider<KhoChuoiHoc>(
   (ref) => throw UnimplementedError('Chưa ghi đè khoChuoiHocProvider'),
+);
+
+final khoViCoinProvider = Provider<KhoViCoin>(
+  (ref) => throw UnimplementedError('Chưa ghi đè khoViCoinProvider'),
+);
+
+final khoThanhVienProvider = Provider<KhoThanhVien>(
+  (ref) => throw UnimplementedError('Chưa ghi đè khoThanhVienProvider'),
 );
 
 /// Kho đồng bộ streak qua tài khoản. Có thể không được cấu hình trong kiểm thử.
@@ -242,4 +258,44 @@ final nhatKyHomNayProvider = FutureProvider<NhatKyNgay>((ref) async {
   final kho = ref.watch(khoChuoiHocProvider);
   final homNayStr = ChuoiHoc.dinhDangNgay(DateTime.now());
   return kho.layNhatKy(homNayStr);
+});
+
+// ---------------------------------------------------------------------------
+// Ví Coin, Blockchain & Thành viên Pro
+// ---------------------------------------------------------------------------
+
+/// Provider thông tin Ví Coin.
+final viCoinProvider =
+    AsyncNotifierProvider<ViCoinVM, ViCoin?>(ViCoinVM.new);
+
+/// Provider trạng thái thành viên Pro.
+final thanhVienProvider =
+    AsyncNotifierProvider<ThanhVienVM, TrangThaiThanhVien>(ThanhVienVM.new);
+
+/// Người học có quyền Pro hay không.
+final laThanhVienProProvider = Provider<bool>((ref) {
+  final tv = ref.watch(thanhVienProvider);
+  return switch (tv) {
+    AsyncData(:final value) => value.isPro && !value.daHetHan,
+    _ => false,
+  };
+});
+
+/// Danh sách gói Pro từ backend.
+final danhSachGoiProProvider = FutureProvider<List<GoiPro>>((ref) async {
+  final kho = ref.watch(khoThanhVienProvider);
+  return kho.layDanhSachGoiPro();
+});
+
+/// Danh sách gói nạp Coin từ backend.
+final danhSachGoiNapProvider = FutureProvider<List<GoiNapCoin>>((ref) async {
+  final kho = ref.watch(khoViCoinProvider);
+  return kho.layGoiNap();
+});
+
+/// Lịch sử giao dịch Coin gần nhất.
+final lichSuGiaoDichProvider = FutureProvider<List<GiaoDichCoin>>((ref) async {
+  ref.watch(viCoinProvider);
+  final kho = ref.watch(khoViCoinProvider);
+  return kho.layLichSuGiaoDich();
 });

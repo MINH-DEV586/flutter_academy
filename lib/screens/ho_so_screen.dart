@@ -6,10 +6,12 @@ import '../dinh_tuyen/duong_dan.dart';
 import '../models/che_do_giao_dien.dart';
 import '../models/chuoi_hoc.dart';
 import '../models/dinh_dang.dart' as dd;
+import '../models/goi_pro.dart';
 import '../models/huy_hieu.dart';
 import '../models/khoa_hoc.dart';
 import '../models/nguoi_dung.dart';
 import '../viewmodels/providers.dart';
+import '../widgets/huy_hieu_pro_badge.dart';
 import '../widgets/lich_hoc_thang.dart';
 import '../widgets/trang.dart';
 import '../widgets/trang_thai.dart';
@@ -71,6 +73,8 @@ class _NoiDung extends ConsumerWidget {
     final giayDaHoc = _giayDaHoc(danhSach, phanTram);
     final chuoiHoc =
         ref.watch(chuoiHocProvider).asData?.value ?? const ChuoiHoc();
+    final pro = ref.watch(thanhVienProvider).asData?.value;
+    final laPro = pro != null && pro.isPro && !pro.daHetHan;
 
     return Trang(
       con: [
@@ -80,27 +84,61 @@ class _NoiDung extends ConsumerWidget {
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 32,
-                  backgroundColor: mau.primaryContainer,
-                  child: Text(
-                    nguoiDung.chuVietTat,
-                    style: t.titleLarge?.copyWith(
-                      color: mau.onPrimaryContainer,
-                      fontWeight: FontWeight.w700,
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(laPro ? 3 : 0),
+                      decoration: laPro
+                          ? const BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [Color(0xFFFFD700), Color(0xFFFFA000)],
+                              ),
+                            )
+                          : null,
+                      child: CircleAvatar(
+                        radius: 32,
+                        backgroundColor: mau.primaryContainer,
+                        child: Text(
+                          nguoiDung.chuVietTat,
+                          style: t.titleLarge?.copyWith(
+                            color: mau.onPrimaryContainer,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    if (laPro)
+                      const Positioned(
+                        right: -4,
+                        bottom: -4,
+                        child: Icon(Icons.workspace_premium,
+                            color: Color(0xFFFFD700), size: 22),
+                      ),
+                  ],
                 ),
                 const SizedBox(width: 18),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        nguoiDung.hoTen,
-                        style: t.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              nguoiDung.hoTen,
+                              style: t.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (laPro) ...[
+                            const SizedBox(width: 8),
+                            const HuyHieuProBadge(fontSize: 11),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -137,6 +175,10 @@ class _NoiDung extends ConsumerWidget {
             ),
           ),
         ),
+        const SizedBox(height: 16),
+        _TheThanhVienProHoSo(pro: pro, laPro: laPro),
+        const SizedBox(height: 16),
+        const _TheViCoinHoSo(),
         const SizedBox(height: 16),
         _TheCapDoVaStreak(chuoiHoc: chuoiHoc),
         const SizedBox(height: 24),
@@ -220,16 +262,11 @@ class _NoiDung extends ConsumerWidget {
   }
 
   /// Ước lượng thời lượng đã học: cộng thời lượng các bài đã đánh dấu xong.
-  ///
-  /// Dùng phần trăm nhân tổng thời lượng thì nhanh hơn nhưng sai, vì các bài
-  /// dài ngắn khác nhau. Ở đây cộng đúng từng bài.
   int _giayDaHoc(List<KhoaHoc> danhSach, Map<String, int> phanTram) {
     var tong = 0;
     for (final k in danhSach) {
       final p = phanTram[k.ma];
       if (p == null) continue;
-      // Không có bảng tiến độ chi tiết ở đây, nên xấp xỉ theo số bài đã xong
-      // nhân thời lượng trung bình của khoá. Đủ dùng cho một con số thống kê.
       final soXong = (k.soBaiHoc * p / 100).round();
       if (k.soBaiHoc == 0) continue;
       tong += (k.tongThoiLuongGiay * soXong / k.soBaiHoc).round();
@@ -524,6 +561,399 @@ class _TheHuyHieu extends StatelessWidget {
             style: t.labelSmall?.copyWith(
               color: mau.onSurfaceVariant.withValues(alpha: 0.8),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TheViCoinHoSo extends ConsumerWidget {
+  const _TheViCoinHoSo();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final vi = ref.watch(viCoinProvider).asData?.value;
+    final pro = ref.watch(thanhVienProvider).asData?.value;
+    final mau = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
+
+    return Card(
+      elevation: 0,
+      color: mau.primaryContainer.withValues(alpha: 0.25),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: mau.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.account_balance_wallet, color: Colors.amber, size: 28),
+                const SizedBox(width: 10),
+                Text(
+                  'Ví Coin & Blockchain',
+                  style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                if (pro != null && pro.isPro && !pro.daHetHan)
+                  const HuyHieuProBadge(fontSize: 11),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Số dư: ${vi?.coinBalance ?? 0} Coin',
+                        style: t.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: mau.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        vi?.daLienKetVi == true
+                            ? 'MetaMask: ${vi!.diaChiRutGon}'
+                            : 'Chưa liên kết ví MetaMask',
+                        style: t.bodySmall?.copyWith(color: mau.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FilledButton.tonal(
+                      onPressed: () => context.go(DuongDan.viCoin),
+                      child: const Text('Mở Ví Coin'),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: () => context.go(DuongDan.nangCapPro),
+                      child: const Text('Nâng cấp Pro'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TheThanhVienProHoSo extends StatelessWidget {
+  final TrangThaiThanhVien? pro;
+  final bool laPro;
+
+  const _TheThanhVienProHoSo({required this.pro, required this.laPro});
+
+  void _hienThiLichSu(BuildContext context) {
+    final lichSu = pro?.history ?? [];
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.history, color: Color(0xFFFFD700)),
+            SizedBox(width: 8),
+            Text('Lịch sử đăng ký PRO'),
+          ],
+        ),
+        content: SizedBox(
+          width: 480,
+          child: lichSu.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text(
+                    'Chưa có lịch sử giao dịch gói Pro nào.',
+                    textAlign: TextAlign.center,
+                  ),
+                )
+              : ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: lichSu.length,
+                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  itemBuilder: (_, i) {
+                    final item = lichSu[i];
+                    final startStr = item.startedAt.toString().split(' ')[0];
+                    final endStr = item.expiresAt.toString().split(' ')[0];
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const CircleAvatar(
+                        backgroundColor: Color(0x20FFD700),
+                        child: Icon(Icons.workspace_premium,
+                            color: Color(0xFFFFD700), size: 20),
+                      ),
+                      title: Text(item.packageName,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 14)),
+                      subtitle: Text('$startStr → $endStr',
+                          style: const TextStyle(fontSize: 12)),
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: item.laHieuLuc
+                              ? Colors.green.withValues(alpha: 0.15)
+                              : Colors.grey.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          item.laHieuLuc ? 'Hiệu lực' : 'Đã qua',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: item.laHieuLuc
+                                ? Colors.green.shade800
+                                : Colors.grey.shade700,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Đóng'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!laPro) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: const LinearGradient(
+            colors: [Color(0xFF1A0533), Color(0xFF2C1654)],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF1A0533).withValues(alpha: 0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFFD700), Color(0xFFFFA000)],
+                ),
+              ),
+              child: const Icon(Icons.workspace_premium,
+                  color: Colors.black87, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Trải nghiệm tài khoản PRO VIP',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Color(0xFFFFD700),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Mở khóa toàn bộ 5+ khóa học cao cấp, AI Tutor chuyên sâu và tài liệu mã nguồn.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFFFD700),
+                foregroundColor: Colors.black87,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              onPressed: () => context.go(DuongDan.nangCapPro),
+              child: const Text('Nâng cấp ngay',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final hetHanStr = pro?.expiresAt?.toString().split(' ')[0] ?? '';
+    final soNgay = pro?.soNgayConLai ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF16082F),
+            Color(0xFF240E48),
+            Color(0xFF120326),
+          ],
+        ),
+        border: Border.all(
+            color: const Color(0xFFFFD700).withValues(alpha: 0.6), width: 1.5),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x33FFD700),
+            blurRadius: 16,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.workspace_premium,
+                  color: Color(0xFFFFD700), size: 28),
+              const SizedBox(width: 10),
+              const Text(
+                'THẺ THÀNH VIÊN PRO VIP',
+                style: TextStyle(
+                  color: Color(0xFFFFD700),
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.greenAccent),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.check_circle,
+                        size: 14, color: Colors.greenAccent),
+                    SizedBox(width: 4),
+                    Text(
+                      'ĐANG HOẠT ĐỘNG',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.greenAccent,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Thời hạn còn lại',
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontSize: 12),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$soNgay ngày',
+                        style: const TextStyle(
+                          color: Color(0xFFFFD700),
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(width: 1, height: 36, color: Colors.white24),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Hết hạn vào',
+                        style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontSize: 12),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        hetHanStr,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              TextButton.icon(
+                style: TextButton.styleFrom(foregroundColor: Colors.white70),
+                onPressed: () => _hienThiLichSu(context),
+                icon: const Icon(Icons.history, size: 18),
+                label: const Text('Lịch sử gia hạn PRO'),
+              ),
+              const Spacer(),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFD700),
+                  foregroundColor: Colors.black87,
+                ),
+                onPressed: () => context.go(DuongDan.nangCapPro),
+                icon: const Icon(Icons.add_circle_outline, size: 18),
+                label: const Text('Gia hạn thêm gói PRO',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
         ],
       ),

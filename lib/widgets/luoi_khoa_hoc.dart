@@ -40,10 +40,8 @@ class LuoiKhoaHoc extends StatelessWidget {
             crossAxisCount: soCot,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            // Chiều cao cố định thay vì tỉ lệ: nội dung thẻ (2 dòng tiêu đề,
-            // sao, ba mẩu tin, giá) luôn cao xấp xỉ nhau, mà tỉ lệ thì ở cột
-            // hẹp sẽ ra thẻ lùn và chữ bị cắt.
-            mainAxisExtent: 320,
+            // Chiều cao cố định đảm bảo không bị tràn (overflow) trên mọi kích thước màn hình và mức zoom.
+            mainAxisExtent: 400,
           ),
           itemCount: danhSach.length,
           itemBuilder: (context, i) {

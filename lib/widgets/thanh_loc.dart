@@ -98,7 +98,18 @@ class _ThanhLocState extends State<ThanhLoc> {
             FilterChip(
               label: const Text('Miễn phí'),
               selected: loc.chiMienPhi,
-              onSelected: (v) => widget.khiDoi(loc.copyVoi(chiMienPhi: v)),
+              onSelected: (v) => widget.khiDoi(
+                loc.copyVoi(chiMienPhi: v, chiPro: v ? false : loc.chiPro),
+              ),
+            ),
+            FilterChip(
+              avatar: const Icon(Icons.workspace_premium,
+                  size: 16, color: Color(0xFFE65100)),
+              label: const Text('Gói PRO ⭐'),
+              selected: loc.chiPro,
+              onSelected: (v) => widget.khiDoi(
+                loc.copyVoi(chiPro: v, chiMienPhi: v ? false : loc.chiMienPhi),
+              ),
             ),
             for (final m in MucDo.values)
               FilterChip(

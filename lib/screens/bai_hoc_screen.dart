@@ -123,11 +123,63 @@ class _NoiDung extends ConsumerWidget {
     final taiLieu = ref.watch(taiLieuBaiHocProvider);
     final taiLieuBai = taiLieu.asData?.value[maTaiLieu];
     final youtubeId = taiLieuBai?.youtubeId;
+    final laPro = ref.watch(laThanhVienProProvider);
+    final biKhoaPro = khoaHoc.laPro && !laPro && !bai.xemThu;
 
     final khungPhat = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (youtubeId != null)
+        if (biKhoaPro)
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E1E2C),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFFE65100).withValues(alpha: 0.6),
+                ),
+              ),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.lock, size: 48, color: Color(0xFFFFB74D)),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Bài học này dành riêng cho hội viên Pro',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Vui lòng nâng cấp gói Pro để xem toàn bộ video và tài liệu của khóa học này.',
+                        style: TextStyle(color: Colors.white70, fontSize: 13),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFFE65100),
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () => context.go(DuongDan.nangCapPro),
+                        icon: const Icon(Icons.workspace_premium, size: 20),
+                        label: const Text('Nâng cấp Pro ngay'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          )
+        else if (youtubeId != null)
           VideoBaiHoc(
             key: ValueKey(youtubeId),
             youtubeId: youtubeId,
@@ -193,9 +245,19 @@ class _NoiDung extends ConsumerWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             FilledButton.icon(
-              onPressed: () => ref
-                  .read(tienDoProvider.notifier)
-                  .daoTrangThaiBai(khoaHoc.ma, bai.ma),
+              onPressed: () {
+                final seXong = !daXong;
+                ref
+                    .read(tienDoProvider.notifier)
+                    .daoTrangThaiBai(khoaHoc.ma, bai.ma);
+                if (seXong) {
+                  ref.read(viCoinProvider.notifier).nhanThuong(
+                        loai: 'lesson_complete',
+                        referenceId: '${khoaHoc.ma}_${bai.ma}',
+                        moTa: 'Hoàn thành bài: ${bai.tieuDe}',
+                      );
+                }
+              },
               icon: Icon(daXong ? Icons.undo : Icons.check),
               label: Text(daXong ? 'Bỏ đánh dấu' : 'Đánh dấu đã xong'),
             ),

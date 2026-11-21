@@ -109,9 +109,16 @@ void main() {
         danhMuc: 'Web',
         mucDo: MucDo.nangCao,
         chiMienPhi: true,
+        chiPro: true,
         thuTu: ThuTuSapXep.danhGiaCao,
       );
       expect(BoLoc.tuThamSo(goc.sangThamSo()), goc);
+    });
+
+    test('đồng bộ URL cho chiPro', () {
+      const loc = BoLoc(chiPro: true);
+      expect(loc.sangThamSo(), {'pro': '1'});
+      expect(BoLoc.tuThamSo(const {'pro': '1'}).chiPro, isTrue);
     });
 
     test('tham số lạ thì lùi về mặc định, không ném lỗi', () {

@@ -20,9 +20,20 @@ void main() {
         'dieu-huong-url',
         'python-co-ban',
         'java-co-ban',
+        'dart-co-ban',
+        'flutter-animation',
+        'flutter-responsive-web',
+        'flutter-riverpod-3',
+        'flutter-luu-tru-hive',
+        'flutter-web3-blockchain',
+        'flutter-clean-architecture',
+        'flutter-ai-agent-pro',
+        'flutter-security-pro',
+        'flutter-cicd-devops',
       ]),
     );
-    expect(khoaHoc.every((khoa) => khoa.mienPhi), isTrue);
+    expect(khoaHoc.where((khoa) => khoa.mienPhi).length, 10);
+    expect(khoaHoc.where((khoa) => khoa.laPro).length, 5);
     final cacBai = {
       for (final khoa in khoaHoc)
         for (final bai in khoa.baiHoc) '${khoa.ma}/${bai.ma}',

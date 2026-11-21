@@ -11,7 +11,7 @@ import 'kho_du_lieu.dart';
 class TenHop {
   TenHop._();
   // Danh mục YouTube dùng hộp riêng để trình duyệt tự nhận dữ liệu mới.
-  static const String khoaHoc = 'khoa_hoc_youtube_v2';
+  static const String khoaHoc = 'khoa_hoc_youtube_v3';
   static const String tienDo = 'tien_do';
   static const String phien = 'phien_tai_khoan';
   static const String chuoiHoc = 'chuoi_hoc';
@@ -28,14 +28,17 @@ class HiveKhoKhoaHoc implements KhoKhoaHoc {
 
   HiveKhoKhoaHoc(this.hop);
 
-  /// Nạp dữ liệu mẫu nếu hộp còn trống.
+  /// Nạp dữ liệu mẫu nếu hộp còn trống hoặc cập nhật danh mục mới.
   ///
   /// Mỗi phiên bản danh mục có hộp riêng, độc lập với tiến độ và phiên học.
   static Future<void> gieoNeuTrong(Box<KhoaHoc> hop) async {
-    if (hop.isNotEmpty) return;
-    await hop.putAll({
-      for (final k in DuLieuMau.khoaHoc()) k.ma: k,
-    });
+    final danhSach = DuLieuMau.khoaHoc();
+    for (final k in danhSach) {
+      final hienTai = hop.get(k.ma);
+      if (hienTai == null || hienTai.laPro != k.laPro || hienTai.baiHoc.length != k.baiHoc.length) {
+        await hop.put(k.ma, k);
+      }
+    }
   }
 
   @override

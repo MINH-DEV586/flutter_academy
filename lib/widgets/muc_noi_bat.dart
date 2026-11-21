@@ -77,8 +77,8 @@ class _MucNoiBatState extends State<MucNoiBat> {
         ),
         const SizedBox(height: 16),
         SizedBox(
-          // 320 cho thẻ + 14 cho thanh cuộn nằm dưới.
-          height: 334,
+          // 400 cho thẻ + 14 cho thanh cuộn nằm dưới.
+          height: 414,
           child: Scrollbar(
             controller: _cuon,
             thumbVisibility: true,

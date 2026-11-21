@@ -46,14 +46,38 @@ class CuaToiScreen extends ConsumerWidget {
                 );
               }
               final xong = ds.where((k) => (phanTram[k.ma] ?? 0) >= 100).length;
+              final proCount = ds.where((k) => k.laPro).length;
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Đã đăng ký ${ds.length} khóa · Đã hoàn thành $xong khóa',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        'Đã đăng ký ${ds.length} khóa · Đã hoàn thành $xong khóa',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      if (proCount > 0) ...[
+                        const SizedBox(width: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF3E0),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFFFB74D)),
+                          ),
+                          child: Text(
+                            '$proCount khóa PRO ⭐',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFE65100),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 16),
                   LuoiKhoaHoc(danhSach: ds, tienDo: phanTram),

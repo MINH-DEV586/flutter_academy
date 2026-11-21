@@ -2,6 +2,8 @@ import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { taoTaiKhoan } from './account.mjs';
+import { taoViCoin } from './wallet.mjs';
+import { taoThanhVien } from './subscription.mjs';
 
 const baiHoc = JSON.parse(
   readFileSync(new URL('../assets/bai_hoc_ai.json', import.meta.url), 'utf8'),
@@ -83,8 +85,19 @@ function layVanBan(nhaCungCap, ketQua) {
 
 export function taoMayChu({
   apiKey, model, nhaCungCap = 'openai', goiApi = fetch, accountDb = ':memory:',
+  cauHinhBlockchain = {},
 } = {}) {
   const taiKhoan = taoTaiKhoan(accountDb, maKhoaHoc);
+  const viCoin = taoViCoin(taiKhoan.db, cauHinhBlockchain);
+  const thanhVien = taoThanhVien(taiKhoan.db);
+  const khoaHocProMacDinh = new Set([
+    'flutter-web3-blockchain',
+    'flutter-clean-architecture',
+    'flutter-ai-agent-pro',
+    'flutter-security-pro',
+    'flutter-cicd-devops',
+  ]);
+  taiKhoan.datKiemTraPro(thanhVien.kiemTraPro, khoaHocProMacDinh);
   let dangXuLy = 0;
   const server = createServer({ requestTimeout: 15_000 }, async (request, response) => {
     const tra = (status, body) => {
@@ -106,13 +119,17 @@ export function taoMayChu({
       response.setHeader('Vary', 'Origin');
     }
     const laTaiKhoan = request.url?.startsWith('/api/account/');
-    if (request.url !== '/api/ai-tutor' && !laTaiKhoan) {
+    const laViCoin = request.url === '/api/wallet' || request.url?.startsWith('/api/wallet/');
+    const laThanhVien = request.url === '/api/subscriptions' || request.url?.startsWith('/api/subscriptions/');
+
+    if (request.url !== '/api/ai-tutor' && !laTaiKhoan && !laViCoin && !laThanhVien) {
       return tra(404, { loi: 'Sai địa chỉ.' });
     }
     if (request.method === 'OPTIONS') {
+      const canAuth = laTaiKhoan || laViCoin || laThanhVien;
       response.writeHead(204, {
-        'Access-Control-Allow-Methods': laTaiKhoan ? 'GET, POST, DELETE' : 'POST',
-        'Access-Control-Allow-Headers': laTaiKhoan ? 'Content-Type, Authorization' : 'Content-Type',
+        'Access-Control-Allow-Methods': canAuth ? 'GET, POST, DELETE' : 'POST',
+        'Access-Control-Allow-Headers': canAuth ? 'Content-Type, Authorization' : 'Content-Type',
       });
       return response.end();
     }
@@ -122,6 +139,26 @@ export function taoMayChu({
       } catch (loi) {
         console.error(`Account: ${loi.code ?? loi.name}`);
         return tra(500, { loi: 'Máy chủ chưa xử lý được tài khoản.' });
+      }
+    }
+    if (laViCoin) {
+      const nguoiDung = taiKhoan.xacThucToken(request.headers.authorization);
+      if (!nguoiDung) return tra(401, { loi: 'Vui lòng đăng nhập để thao tác với ví.' });
+      try {
+        return await viCoin.xuLy(request, tra, docJson, nguoiDung);
+      } catch (loi) {
+        console.error(`Wallet: ${loi.code ?? loi.name}`);
+        return tra(500, { loi: 'Máy chủ chưa xử lý được ví Coin.' });
+      }
+    }
+    if (laThanhVien) {
+      const nguoiDung = taiKhoan.xacThucToken(request.headers.authorization);
+      if (!nguoiDung) return tra(401, { loi: 'Vui lòng đăng nhập để xem thông tin gói thành viên.' });
+      try {
+        return await thanhVien.xuLy(request, tra, docJson, nguoiDung);
+      } catch (loi) {
+        console.error(`Subscription: ${loi.code ?? loi.name}`);
+        return tra(500, { loi: 'Máy chủ chưa xử lý được thông tin thành viên.' });
       }
     }
     if (request.method !== 'POST') return tra(405, { loi: 'Chỉ hỗ trợ POST.' });
@@ -203,6 +240,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     apiKey: process.env[`${prefix}_API_KEY`]?.trim(),
     model: process.env[`${prefix}_MODEL`]?.trim() || undefined,
     accountDb: fileURLToPath(new URL('accounts.sqlite', thuMucTaiKhoan)),
+    cauHinhBlockchain: {
+      rpcUrl: process.env.SEPOLIA_RPC_URL || 'http://127.0.0.1:8545',
+      contractAddress: process.env.CONTRACT_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+      depositEventTopic: process.env.DEPOSIT_EVENT_TOPIC || '0xa1f70d8aaaf6aafecf69db7239885a8dbc2d3636257385ea05b8038a273b6587',
+      requiredConfirmations: Number(process.env.REQUIRED_CONFIRMATIONS) || 0,
+    },
   }).listen(port, '127.0.0.1', () => {
     console.log(`AI Tutor (${nhaCungCap}): http://127.0.0.1:${port}/api/ai-tutor`);
   });

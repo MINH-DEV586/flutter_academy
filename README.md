@@ -11,6 +11,9 @@ Biên soạn: **Võ Thái Anh** · Trường Đại học Phenikaa · Tháng 9/2
 > phần lớn không biên dịch được. Toàn bộ khác biệt được liệt kê theo từng
 > chương trong **[DOI-CHIEU-2022-2026.md](DOI-CHIEU-2022-2026.md)** — đọc
 > tệp đó trước nếu thầy cô đang dạy theo sách.
+>
+> 🦊 **Hướng dẫn kết nối MetaMask & Blockchain (Học phần INT1449)**:
+> Xem hướng dẫn thực hành kết nối ví, nạp coin và xử lý lỗi tại **[README_KET_NOI_METAMASK.md](README_KET_NOI_METAMASK.md)**.
 
 ---
 
