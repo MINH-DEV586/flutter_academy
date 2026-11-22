@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../cau_hinh/diem_ngat.dart';
 import '../dinh_tuyen/duong_dan.dart';
 import '../models/che_do_giao_dien.dart';
 import '../models/chuoi_hoc.dart';
@@ -411,11 +412,14 @@ class _TheCapDoVaStreak extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                Text(
-                  capDo.danhHieu,
-                  style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                Expanded(
+                  child: Text(
+                    capDo.danhHieu,
+                    style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 Text(
                   '${capDo.xpCuaCap} / ${capDo.xpCanThiet} XP',
                   style: t.bodyMedium?.copyWith(
@@ -604,37 +608,39 @@ class _TheViCoinHoSo extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 14),
-            Row(
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Số dư: ${vi?.coinBalance ?? 0} Coin',
-                        style: t.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: mau.primary,
-                        ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Số dư: ${vi?.coinBalance ?? 0} Coin',
+                      style: t.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: mau.primary,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        vi?.daLienKetVi == true
-                            ? 'MetaMask: ${vi!.diaChiRutGon}'
-                            : 'Chưa liên kết ví MetaMask',
-                        style: t.bodySmall?.copyWith(color: mau.onSurfaceVariant),
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      vi?.daLienKetVi == true
+                          ? 'MetaMask: ${vi!.diaChiRutGon}'
+                          : 'Chưa liên kết ví MetaMask',
+                      style: t.bodySmall?.copyWith(color: mau.onSurfaceVariant),
+                    ),
+                  ],
                 ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     FilledButton.tonal(
                       onPressed: () => context.go(DuongDan.viCoin),
                       child: const Text('Mở Ví Coin'),
                     ),
-                    const SizedBox(width: 8),
                     FilledButton(
                       onPressed: () => context.go(DuongDan.nangCapPro),
                       child: const Text('Nâng cấp Pro'),
@@ -734,9 +740,10 @@ class _TheThanhVienProHoSo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final laDienThoai = context.kho.laDienThoai;
     if (!laPro) {
       return Container(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(laDienThoai ? 16 : 20),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           gradient: const LinearGradient(
@@ -750,33 +757,37 @@ class _TheThanhVienProHoSo extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [Color(0xFFFFD700), Color(0xFFFFA000)],
-                ),
-              ),
-              child: const Icon(Icons.workspace_premium,
-                  color: Colors.black87, size: 28),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
+        child: laDienThoai
+            ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Trải nghiệm tài khoản PRO VIP',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Color(0xFFFFD700),
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [Color(0xFFFFD700), Color(0xFFFFA000)],
+                          ),
+                        ),
+                        child: const Icon(Icons.workspace_premium,
+                            color: Colors.black87, size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Trải nghiệm tài khoản PRO VIP',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: Color(0xFFFFD700),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 10),
                   Text(
                     'Mở khóa toàn bộ 5+ khóa học cao cấp, AI Tutor chuyên sâu và tài liệu mã nguồn.',
                     style: TextStyle(
@@ -784,23 +795,73 @@ class _TheThanhVienProHoSo extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.85),
                     ),
                   ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFFFFD700),
+                        foregroundColor: Colors.black87,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                      onPressed: () => context.go(DuongDan.nangCapPro),
+                      child: const Text('Nâng cấp ngay',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFFFD700), Color(0xFFFFA000)],
+                      ),
+                    ),
+                    child: const Icon(Icons.workspace_premium,
+                        color: Colors.black87, size: 28),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Trải nghiệm tài khoản PRO VIP',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Color(0xFFFFD700),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Mở khóa toàn bộ 5+ khóa học cao cấp, AI Tutor chuyên sâu và tài liệu mã nguồn.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white.withValues(alpha: 0.85),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFD700),
+                      foregroundColor: Colors.black87,
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    onPressed: () => context.go(DuongDan.nangCapPro),
+                    child: const Text('Nâng cấp ngay',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
                 ],
               ),
-            ),
-            const SizedBox(width: 12),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFFFD700),
-                foregroundColor: Colors.black87,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
-              onPressed: () => context.go(DuongDan.nangCapPro),
-              child: const Text('Nâng cấp ngay',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
       );
     }
 
@@ -808,7 +869,7 @@ class _TheThanhVienProHoSo extends StatelessWidget {
     final soNgay = pro?.soNgayConLai ?? 0;
 
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: EdgeInsets.all(laDienThoai ? 16 : 22),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         gradient: const LinearGradient(
@@ -833,21 +894,29 @@ class _TheThanhVienProHoSo extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              const Icon(Icons.workspace_premium,
-                  color: Color(0xFFFFD700), size: 28),
-              const SizedBox(width: 10),
-              const Text(
-                'THẺ THÀNH VIÊN PRO VIP',
-                style: TextStyle(
-                  color: Color(0xFFFFD700),
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16,
-                  letterSpacing: 1.2,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.workspace_premium,
+                      color: const Color(0xFFFFD700), size: laDienThoai ? 24 : 28),
+                  const SizedBox(width: 8),
+                  Text(
+                    'THẺ THÀNH VIÊN PRO VIP',
+                    style: TextStyle(
+                      color: const Color(0xFFFFD700),
+                      fontWeight: FontWeight.w800,
+                      fontSize: laDienThoai ? 14 : 16,
+                      letterSpacing: laDienThoai ? 0.6 : 1.2,
+                    ),
+                  ),
+                ],
               ),
-              const Spacer(),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -934,19 +1003,32 @@ class _TheThanhVienProHoSo extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
+          Wrap(
+            spacing: 12,
+            runSpacing: 10,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               TextButton.icon(
-                style: TextButton.styleFrom(foregroundColor: Colors.white70),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white70,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: laDienThoai ? 8 : 12,
+                    vertical: 8,
+                  ),
+                ),
                 onPressed: () => _hienThiLichSu(context),
                 icon: const Icon(Icons.history, size: 18),
                 label: const Text('Lịch sử gia hạn PRO'),
               ),
-              const Spacer(),
               FilledButton.icon(
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFFFFD700),
                   foregroundColor: Colors.black87,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: laDienThoai ? 12 : 16,
+                    vertical: 8,
+                  ),
                 ),
                 onPressed: () => context.go(DuongDan.nangCapPro),
                 icon: const Icon(Icons.add_circle_outline, size: 18),

@@ -50,7 +50,10 @@ class CuaToiScreen extends ConsumerWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       Text(
                         'Đã đăng ký ${ds.length} khóa · Đã hoàn thành $xong khóa',
@@ -58,8 +61,7 @@ class CuaToiScreen extends ConsumerWidget {
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
-                      if (proCount > 0) ...[
-                        const SizedBox(width: 10),
+                      if (proCount > 0)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
@@ -76,7 +78,6 @@ class CuaToiScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
-                      ],
                     ],
                   ),
                   const SizedBox(height: 16),
