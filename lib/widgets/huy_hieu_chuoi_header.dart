@@ -8,14 +8,15 @@ import '../viewmodels/providers.dart';
 
 /// Huy hiệu hiển thị Chuỗi học tập (Streak) và Cấp độ (Level) trên AppBar.
 class HuyHieuChuoiHeader extends ConsumerWidget {
-  const HuyHieuChuoiHeader({super.key});
+  final bool compact;
+  const HuyHieuChuoiHeader({super.key, this.compact = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final chuoiAsync = ref.watch(chuoiHocProvider);
 
     return chuoiAsync.when(
-      data: (chuoiHoc) => _NoiDungHuyHieu(chuoiHoc: chuoiHoc),
+      data: (chuoiHoc) => _NoiDungHuyHieu(chuoiHoc: chuoiHoc, compact: compact),
       loading: () => const SizedBox.shrink(),
       error: (_, _) => const SizedBox.shrink(),
     );
@@ -23,7 +24,8 @@ class HuyHieuChuoiHeader extends ConsumerWidget {
 }
 
 class _NoiDungHuyHieu extends StatelessWidget {
-  const _NoiDungHuyHieu({required this.chuoiHoc});
+  final bool compact;
+  const _NoiDungHuyHieu({required this.chuoiHoc, this.compact = false});
 
   final ChuoiHoc chuoiHoc;
 
@@ -152,12 +154,15 @@ class _NoiDungHuyHieu extends StatelessWidget {
     final capDo = chuoiHoc.capDo;
 
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: EdgeInsets.only(right: compact ? 4 : 8),
       child: InkWell(
         onTap: () => _hienBangTomTat(context),
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 6 : 10,
+            vertical: compact ? 3 : 5,
+          ),
           decoration: BoxDecoration(
             color: daHoc
                 ? Colors.amber.withValues(alpha: 0.15)
@@ -173,25 +178,30 @@ class _NoiDungHuyHieu extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(daHoc ? '🔥' : '⏳', style: const TextStyle(fontSize: 16)),
-              const SizedBox(width: 4),
+              Text(
+                daHoc ? '🔥' : '⏳',
+                style: TextStyle(fontSize: compact ? 13 : 16),
+              ),
+              SizedBox(width: compact ? 2 : 4),
               Text(
                 '${chuoiHoc.chuoiHienTai}',
-                style: text.titleSmall?.copyWith(
+                style: (compact ? text.labelMedium : text.titleSmall)?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: daHoc ? Colors.amber.shade900 : mau.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(width: 8),
-              Container(width: 1, height: 14, color: mau.outlineVariant),
-              const SizedBox(width: 8),
-              Text(
-                'Lv.${capDo.capHienTai}',
-                style: text.labelMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: mau.primary,
+              if (!compact) ...[
+                const SizedBox(width: 8),
+                Container(width: 1, height: 14, color: mau.outlineVariant),
+                const SizedBox(width: 8),
+                Text(
+                  'Lv.${capDo.capHienTai}',
+                  style: text.labelMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: mau.primary,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

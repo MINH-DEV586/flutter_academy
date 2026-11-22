@@ -217,7 +217,7 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
 
     return AppBar(
       automaticallyImplyLeading: false,
-      titleSpacing: laDienThoai ? 12 : 24,
+      titleSpacing: laDienThoai ? 8 : 24,
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -230,7 +230,7 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(7),
+                    padding: EdgeInsets.all(laDienThoai ? 6 : 7),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFF1E40AF), Color(0xFF0284C7)],
@@ -244,17 +244,22 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
                         ),
                       ],
                     ),
-                    child: const Icon(Icons.school_rounded,
-                        color: Colors.white, size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Flutter Academy',
-                    style: t.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.3,
+                    child: Icon(
+                      Icons.school_rounded,
+                      color: Colors.white,
+                      size: laDienThoai ? 18 : 20,
                     ),
                   ),
+                  if (!laDienThoai) ...[
+                    const SizedBox(width: 10),
+                    Text(
+                      'Flutter Academy',
+                      style: t.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -293,13 +298,15 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
         if (daDangNhap) ...[
           // Coin Chip
           Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: EdgeInsets.only(right: laDienThoai ? 4 : 8),
             child: InkWell(
               onTap: () => context.go(DuongDan.viCoin),
               borderRadius: BorderRadius.circular(20),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: EdgeInsets.symmetric(
+                  horizontal: laDienThoai ? 6 : 10,
+                  vertical: laDienThoai ? 3 : 5,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.amber.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
@@ -309,14 +316,14 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.monetization_on,
-                        size: 16, color: Colors.amber),
-                    const SizedBox(width: 4),
+                    Icon(Icons.monetization_on,
+                        size: laDienThoai ? 14 : 16, color: Colors.amber),
+                    const SizedBox(width: 3),
                     Text(
                       '${vi?.coinBalance ?? 0}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                        fontSize: laDienThoai ? 11 : 12,
                       ),
                     ),
                   ],
@@ -324,42 +331,45 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
               ),
             ),
           ),
-          const HuyHieuChuoiHeader(),
-          const SizedBox(width: 6),
+          HuyHieuChuoiHeader(compact: laDienThoai),
+          if (!laDienThoai) const SizedBox(width: 6),
           // Nút PRO hoặc Badge
           if (laPro)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: EdgeInsets.only(right: laDienThoai ? 4 : 8),
               child: InkWell(
                 onTap: () => context.go(DuongDan.nangCapPro),
                 borderRadius: BorderRadius.circular(8),
-                child: const HuyHieuProBadge(fontSize: 10, compact: false),
+                child: HuyHieuProBadge(fontSize: 10, compact: laDienThoai),
               ),
             )
           else
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: EdgeInsets.only(right: laDienThoai ? 4 : 8),
               child: FilledButton.tonal(
                 style: FilledButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: laDienThoai ? 6 : 10,
+                    vertical: laDienThoai ? 4 : 6,
+                  ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   backgroundColor: const Color(0xFFFFF3E0),
                 ),
                 onPressed: () => context.go(DuongDan.nangCapPro),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.workspace_premium,
-                        size: 15, color: Color(0xFFE65100)),
-                    SizedBox(width: 4),
+                        size: laDienThoai ? 13 : 15,
+                        color: const Color(0xFFE65100)),
+                    const SizedBox(width: 3),
                     Text(
                       'PRO',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: laDienThoai ? 10 : 11,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFFE65100),
+                        color: const Color(0xFFE65100),
                       ),
                     ),
                   ],
@@ -368,7 +378,7 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
             ),
           // User Avatar + Dropdown Menu
           Padding(
-            padding: EdgeInsets.only(right: laDienThoai ? 12 : 20),
+            padding: EdgeInsets.only(right: laDienThoai ? 8 : 20),
             child: PopupMenuButton<String>(
               tooltip: 'Tài khoản',
               offset: const Offset(0, 48),
@@ -505,12 +515,12 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
                           )
                         : null,
                     child: CircleAvatar(
-                      radius: 17,
+                      radius: laDienThoai ? 15 : 17,
                       backgroundColor: mau.primaryContainer,
                       child: Text(
                         nguoiDung?.chuVietTat ?? 'H',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: laDienThoai ? 11 : 12,
                           fontWeight: FontWeight.bold,
                           color: mau.onPrimaryContainer,
                         ),
@@ -529,16 +539,24 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
             ),
           ),
         ] else ...[
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: TextButton(
-              onPressed: () => context.go(DuongDan.danhSach),
-              child: const Text('Khám phá'),
+          if (!laDienThoai)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: TextButton(
+                onPressed: () => context.go(DuongDan.danhSach),
+                child: const Text('Khám phá'),
+              ),
             ),
-          ),
           Padding(
             padding: EdgeInsets.only(right: laDienThoai ? 12 : 24),
             child: FilledButton(
+              style: laDienThoai
+                  ? FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      minimumSize: Size.zero,
+                    )
+                  : null,
               onPressed: () =>
                   context.go(DuongDan.dangNhapRoiVe(diaChiHienTai)),
               child: const Text('Đăng nhập'),
