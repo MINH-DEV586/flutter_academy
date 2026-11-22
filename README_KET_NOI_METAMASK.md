@@ -33,7 +33,7 @@ Theo hướng dẫn trong slide, hệ thống yêu cầu 3 tiến trình chạy 
 
 ### 1.1. Cửa sổ PowerShell 1: Khởi động Blockchain Node
 ```powershell
-cd c:\Users\Admin\flutter_academy-main\flutter_academy-main\blockchain
+cd c:\Users\Admin\flutter_academy-main\blockchain
 npx hardhat node
 ```
 * Khi xuất hiện dòng: `Started HTTP and WebSocket JSON-RPC server at http://127.0.0.1:8545/` kèm danh sách 20 tài khoản thử nghiệm (`Account #0` đến `#19`) $\rightarrow$ **Node đã chạy thành công, hãy giữ cửa sổ này chạy liên tục**.
@@ -41,7 +41,7 @@ npx hardhat node
 ### 1.2. Cửa sổ PowerShell bổ sung: Deploy Smart Contract
 Mở thêm một tab PowerShell để deploy hợp đồng:
 ```powershell
-cd c:\Users\Admin\flutter_academy-main\flutter_academy-main\blockchain
+cd c:\Users\Admin\flutter_academy-main\blockchain
 node scripts/deploy.js
 ```
 * Màn hình sẽ in ra địa chỉ hợp đồng đã deploy, thông thường là:
@@ -112,13 +112,13 @@ Invoke-RestMethod -Uri "http://127.0.0.1:8545" -Method Post -ContentType "applic
 ### 5.1. Khởi động Backend & Frontend
 * **Cửa sổ PS 2 (Backend)**:
   ```powershell
-  cd c:\Users\Admin\flutter_academy-main\flutter_academy-main
+  cd c:\Users\Admin\flutter_academy-main
   node --env-file=.env server/ai-tutor.mjs
   ```
 * **Cửa sổ PS 3 (Flutter Web)**:
   ```powershell
   $env:Path += ";D:\Dowloads\flutter_windows_3.47.6-stable\flutter\bin"
-  cd c:\Users\Admin\flutter_academy-main\flutter_academy-main
+  cd c:\Users\Admin\flutter_academy-main
   flutter run -d chrome --web-port 8082
   ```
 
