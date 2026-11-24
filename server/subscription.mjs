@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 
+export const GOI_PRO_THUONG = Object.freeze({ id: 'pro_7', days: 7, amount: 30 });
+
 // ─── Module quản lý gói thành viên Pro ─────────────────────────────────────
-export function taoThanhVien(duongDan) {
+export function taoThanhVien(duongDan, dongHo = () => new Date()) {
   const db = typeof duongDan === 'object' && duongDan !== null && duongDan.prepare ? duongDan : new DatabaseSync(duongDan);
   db.exec(`
     PRAGMA journal_mode = WAL;
@@ -53,7 +55,7 @@ export function taoThanhVien(duongDan) {
   // ── Prepared Statements ────────────────────────────────────────────────
   const dsGoi        = db.prepare("SELECT * FROM pro_packages WHERE is_active = 1 ORDER BY duration_days");
   const layGoi       = db.prepare('SELECT * FROM pro_packages WHERE id = ? AND is_active = 1');
-  const laySubActive = db.prepare("SELECT * FROM user_subscriptions WHERE email = ? AND status = 'active' AND expires_at > datetime('now') ORDER BY expires_at DESC LIMIT 1");
+  const laySubActive = db.prepare("SELECT * FROM user_subscriptions WHERE email = ? AND status = 'active' AND julianday(expires_at) > julianday(?) ORDER BY julianday(expires_at) DESC LIMIT 1");
   const laySubAll    = db.prepare("SELECT us.*, pp.name AS package_name FROM user_subscriptions us JOIN pro_packages pp ON us.package_id = pp.id WHERE us.email = ? ORDER BY us.created_at DESC LIMIT 20");
   const themSub      = db.prepare('INSERT INTO user_subscriptions (id, email, package_id, started_at, expires_at, status, coin_transaction_id) VALUES (?, ?, ?, ?, ?, ?, ?)');
   const laySubGanNhat = db.prepare("SELECT * FROM user_subscriptions WHERE email = ? ORDER BY expires_at DESC LIMIT 1");
@@ -65,7 +67,7 @@ export function taoThanhVien(duongDan) {
 
   // ── Kiểm tra quyền Pro ────────────────────────────────────────────────
   function kiemTraPro(email) {
-    const sub = laySubActive.get(email);
+    const sub = laySubActive.get(email, dongHo().toISOString());
     if (!sub) return { isPro: false, expiresAt: null, packageId: null };
     return {
       isPro: true,
@@ -73,6 +75,21 @@ export function taoThanhVien(duongDan) {
       packageId: sub.package_id,
       startedAt: sub.started_at,
     };
+  }
+
+  db.prepare(`INSERT OR IGNORE INTO pro_packages
+    (id, name, duration_days, coin_price, description, is_active)
+    VALUES (?, ?, ?, ?, 'Đổi bằng Coin thưởng học tập.', 0)`).run(
+    GOI_PRO_THUONG.id, `Pro ${GOI_PRO_THUONG.days} ngày`, GOI_PRO_THUONG.days, GOI_PRO_THUONG.amount,
+  );
+
+  function capProBlockchain(email, requestId) {
+    const hienTai = dongHo();
+    const sub = laySubActive.get(email, hienTai.toISOString());
+    const batDau = sub ? new Date(sub.expires_at.replace(' ', 'T') + (sub.expires_at.includes('T') ? '' : 'Z')) : hienTai;
+    const expiresAt = new Date(batDau.getTime() + GOI_PRO_THUONG.days * 86_400_000).toISOString();
+    themSub.run(requestId, email, GOI_PRO_THUONG.id, batDau.toISOString(), expiresAt, 'active', null);
+    return expiresAt;
   }
 
   // ── Handler HTTP ───────────────────────────────────────────────────────
@@ -178,5 +195,5 @@ export function taoThanhVien(duongDan) {
     return tra(404, { loi: 'Sai địa chỉ thành viên.' });
   }
 
-  return { xuLy, dong: () => db.close(), kiemTraPro };
+  return { xuLy, dong: () => db.close(), kiemTraPro, capProBlockchain };
 }

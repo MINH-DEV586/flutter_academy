@@ -1,7 +1,9 @@
 import 'dart:convert';
+
 import 'package:hive_ce/hive_ce.dart';
 import 'package:http/http.dart' as http;
 
+import '../cau_hinh/may_chu.dart';
 import '../models/goi_pro.dart';
 
 abstract interface class KhoThanhVien {
@@ -15,10 +17,7 @@ abstract interface class KhoThanhVien {
 class HttpKhoThanhVien implements KhoThanhVien {
   HttpKhoThanhVien(this._phien);
 
-  static const _diaChi = String.fromEnvironment(
-    'ACCOUNT_API_URL',
-    defaultValue: 'http://127.0.0.1:8787/api',
-  );
+  static final _diaChi = MayChu.api;
   static const _khoaToken = 'token';
   final Box<String> _phien;
 
@@ -38,8 +37,10 @@ class HttpKhoThanhVien implements KhoThanhVien {
     final client = http.Client();
     try {
       final token = _docToken();
-      final request =
-          http.Request(method, Uri.parse('$_diaChi/subscriptions/$path'));
+      final request = http.Request(
+        method,
+        Uri.parse('$_diaChi/subscriptions/$path'),
+      );
       request.headers['Authorization'] = 'Bearer $token';
       if (duLieu != null) {
         request.headers['Content-Type'] = 'application/json; charset=utf-8';
@@ -61,9 +62,7 @@ class HttpKhoThanhVien implements KhoThanhVien {
     final duLieu =
         jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
     if (response.statusCode >= 400) {
-      throw Exception(
-        duLieu['loi'] as String? ?? 'Yêu cầu thất bại.',
-      );
+      throw Exception(duLieu['loi'] as String? ?? 'Yêu cầu thất bại.');
     }
     return duLieu;
   }
@@ -84,9 +83,11 @@ class HttpKhoThanhVien implements KhoThanhVien {
 
   @override
   Future<Map<String, dynamic>> muaGoiPro(String packageId) async {
-    final res = await _gui('POST', 'purchase', duLieu: {
-      'packageId': packageId,
-    });
+    final res = await _gui(
+      'POST',
+      'purchase',
+      duLieu: {'packageId': packageId},
+    );
     return _doc(res);
   }
 }

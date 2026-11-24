@@ -8,6 +8,7 @@ import '../models/goi_pro.dart';
 import '../viewmodels/providers.dart';
 import '../widgets/hop_thoai_chuc_mung_pro.dart';
 import '../widgets/huy_hieu_pro_badge.dart';
+import '../widgets/the_coin_thuong.dart';
 
 /// Màn hình nâng cấp tài khoản Pro — thiết kế Premium.
 ///
@@ -77,8 +78,7 @@ class _NangCapProScreenState extends ConsumerState<NangCapProScreen> {
     if (xacNhan != true) return;
 
     setState(() => _dangMuaGoiId = goi.id);
-    final ketQua =
-        await ref.read(thanhVienProvider.notifier).muaGoiPro(goi.id);
+    final ketQua = await ref.read(thanhVienProvider.notifier).muaGoiPro(goi.id);
     if (!mounted) return;
     setState(() => _dangMuaGoiId = null);
 
@@ -115,10 +115,7 @@ class _NangCapProScreenState extends ConsumerState<NangCapProScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // ═══════════ HERO BANNER ═══════════
-          _HeroBanner(
-            trangThaiPro: trangThaiPro,
-            hep: hep,
-          ),
+          _HeroBanner(trangThaiPro: trangThaiPro, hep: hep),
           // ═══════════ NỘI DUNG CHÍNH ═══════════
           Padding(
             padding: EdgeInsets.symmetric(
@@ -141,6 +138,8 @@ class _NangCapProScreenState extends ConsumerState<NangCapProScreen> {
                       _TheTrangThaiPro(trangThai: trangThaiPro),
                     // Số dư Coin
                     _TheSoDu(soDuCoin: soDuCoin),
+                    const SizedBox(height: 16),
+                    const TheCoinThuong(),
                     const SizedBox(height: 32),
                     // Bảng so sánh FREE vs PRO
                     const _BangSoSanh(),
@@ -148,9 +147,8 @@ class _NangCapProScreenState extends ConsumerState<NangCapProScreen> {
                     // Danh sách gói
                     Text(
                       'Chọn gói PRO phù hợp',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style: Theme.of(context).textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
                     dsGoiAsync.when(
@@ -243,9 +241,8 @@ class _HeroBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-    final daPro = trangThaiPro != null &&
-        trangThaiPro!.isPro &&
-        !trangThaiPro!.daHetHan;
+    final daPro =
+        trangThaiPro != null && trangThaiPro!.isPro && !trangThaiPro!.daHetHan;
 
     return Container(
       width: double.infinity,
@@ -285,7 +282,7 @@ class _HeroBanner extends StatelessWidget {
               daPro
                   ? 'Cảm ơn bạn đã đồng hành. Mua thêm gói sẽ được cộng dồn thời hạn.'
                   : 'Mở khóa toàn bộ khóa học chuyên sâu, AI Tutor nâng cao, '
-                      'tài liệu code và nhiều quyền lợi độc quyền.',
+                        'tài liệu code và nhiều quyền lợi độc quyền.',
               style: t.bodyLarge?.copyWith(
                 color: Colors.white.withValues(alpha: 0.8),
                 height: 1.5,
@@ -345,9 +342,7 @@ class _TheTrangThaiPro extends StatelessWidget {
                 Text(
                   'Còn ${trangThai.soNgayConLai} ngày · '
                   'Hết hạn ${trangThai.expiresAt?.toString().split(' ')[0] ?? ''}',
-                  style: t.bodySmall?.copyWith(
-                    color: const Color(0xFF795548),
-                  ),
+                  style: t.bodySmall?.copyWith(color: const Color(0xFF795548)),
                 ),
               ],
             ),
@@ -381,7 +376,7 @@ class _TheSoDu extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Số dư Coin', style: t.bodySmall),
+                Text('Số dư Coin trong ứng dụng', style: t.bodySmall),
                 Text(
                   '$soDuCoin Coin',
                   style: t.titleLarge?.copyWith(
@@ -438,14 +433,11 @@ class _BangSoSanh extends StatelessWidget {
             children: [
               // Header
               TableRow(
-                decoration: BoxDecoration(
-                  color: mau.surfaceContainerHighest,
-                ),
+                decoration: BoxDecoration(color: mau.surfaceContainerHighest),
                 children: [
                   _oChuong(
                     'Tính năng',
-                    style: t.labelLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: t.labelLarge?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   _oChuong(
                     'FREE',
@@ -521,10 +513,22 @@ class _BangSoSanh extends StatelessWidget {
 
   Widget _noiDung(_GiaTri gv, ColorScheme mau) {
     return switch (gv) {
-      _GiaTri.co => const Icon(Icons.check_circle, size: 20, color: Color(0xFF43A047)),
+      _GiaTri.co => const Icon(
+        Icons.check_circle,
+        size: 20,
+        color: Color(0xFF43A047),
+      ),
       _GiaTri.khong => Icon(Icons.cancel, size: 20, color: mau.outline),
-      _GiaTri.gioiHan => Icon(Icons.remove_circle_outline, size: 20, color: Colors.orange.shade700),
-      _GiaTri.khongGioiHan => const Icon(Icons.all_inclusive, size: 20, color: Color(0xFF43A047)),
+      _GiaTri.gioiHan => Icon(
+        Icons.remove_circle_outline,
+        size: 20,
+        color: Colors.orange.shade700,
+      ),
+      _GiaTri.khongGioiHan => const Icon(
+        Icons.all_inclusive,
+        size: 20,
+        color: Color(0xFF43A047),
+      ),
     };
   }
 
@@ -572,8 +576,7 @@ class _LuoiGoiPro extends StatelessWidget {
         final rong = constraints.maxWidth;
         final soCot = rong < 500 ? 1 : (rong < 900 ? 2 : 3);
         final spacing = 16.0;
-        final widthItem =
-            (rong - spacing * (soCot - 1)) / soCot;
+        final widthItem = (rong - spacing * (soCot - 1)) / soCot;
 
         return Wrap(
           spacing: spacing,
@@ -650,10 +653,11 @@ class _TheGoiProState extends State<_TheGoiPro> {
           boxShadow: _hovering
               ? [
                   BoxShadow(
-                    color: (widget.laNoiBat
-                            ? const Color(0xFFFFD700)
-                            : mau.primary)
-                        .withValues(alpha: 0.15),
+                    color:
+                        (widget.laNoiBat
+                                ? const Color(0xFFFFD700)
+                                : mau.primary)
+                            .withValues(alpha: 0.15),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -665,8 +669,10 @@ class _TheGoiProState extends State<_TheGoiPro> {
           children: [
             if (widget.laNoiBat)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 3,
+                ),
                 margin: const EdgeInsets.only(bottom: 10),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
@@ -704,8 +710,7 @@ class _TheGoiProState extends State<_TheGoiPro> {
                 const SizedBox(width: 4),
                 Text('Coin', style: t.bodyMedium),
                 const Text(' / '),
-                Text('${widget.goi.durationDays} ngày',
-                    style: t.bodyMedium),
+                Text('${widget.goi.durationDays} ngày', style: t.bodyMedium),
               ],
             ),
             if (widget.goi.durationDays >= 90)
@@ -722,8 +727,7 @@ class _TheGoiProState extends State<_TheGoiPro> {
             const SizedBox(height: 10),
             Text(
               widget.goi.description,
-              style:
-                  t.bodySmall?.copyWith(color: mau.onSurfaceVariant),
+              style: t.bodySmall?.copyWith(color: mau.onSurfaceVariant),
             ),
             const Divider(height: 24),
             for (final b in widget.goi.benefits)
@@ -732,12 +736,14 @@ class _TheGoiProState extends State<_TheGoiPro> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.check_circle, size: 16,
-                        color: Color(0xFF43A047)),
+                    const Icon(
+                      Icons.check_circle,
+                      size: 16,
+                      color: Color(0xFF43A047),
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(b,
-                          style: const TextStyle(fontSize: 13)),
+                      child: Text(b, style: const TextStyle(fontSize: 13)),
                     ),
                   ],
                 ),
