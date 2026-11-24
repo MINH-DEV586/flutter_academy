@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/kho_du_lieu.dart';
 import '../models/tien_do.dart';
 import 'providers.dart';
+import 'thuong_chuoi_vm.dart';
 
 /// Toàn bộ tiến độ học, gom trong một `Map` theo mã khoá học.
 ///
@@ -28,9 +31,9 @@ class TienDoVM extends AsyncNotifier<Map<String, TienDo>> {
   /// Dùng so khớp mẫu thay vì `state.value`: trình biên dịch bắt buộc xử lý
   /// nhánh chưa có dữ liệu, không quên được.
   Map<String, TienDo>? get _bang => switch (state) {
-        AsyncData(:final value) => value,
-        _ => null,
-      };
+    AsyncData(:final value) => value,
+    _ => null,
+  };
 
   /// Bật/tắt trạng thái hoàn thành của một bài học.
   ///
@@ -45,8 +48,14 @@ class TienDoVM extends AsyncNotifier<Map<String, TienDo>> {
     final moi = cu.daoTrangThai(maBai);
     state = AsyncData({...bang, maKhoaHoc: moi});
 
-    if (moi.daXong(maBai) && !cu.daXong(maBai)) {
-      ref.read(chuoiHocProvider.notifier).ghiNhanHocTap(
+    final vuaHoanThanh = moi.daXong(maBai) && !cu.daXong(maBai);
+    final email = !vuaHoanThanh || ref.read(khoThuongChuoiProvider) == null
+        ? null
+        : ref.read(phienProvider).asData?.value?.email;
+    if (vuaHoanThanh) {
+      ref
+          .read(chuoiHocProvider.notifier)
+          .ghiNhanHocTap(
             maKhoaHoc: maKhoaHoc,
             maBaiHoc: maBai,
             xpCongThem: 20,
@@ -58,6 +67,15 @@ class TienDoVM extends AsyncNotifier<Map<String, TienDo>> {
       await _kho.luu(moi);
     } catch (_) {
       ref.invalidateSelf();
+      return;
+    }
+    if (email != null && ref.mounted) {
+      unawaited(
+        ref
+            .read(dongBoThuongProvider.notifier)
+            .ghiNhan(email, '$maKhoaHoc/$maBai')
+            .catchError((Object _) {}),
+      );
     }
   }
 
