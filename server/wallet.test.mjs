@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { taoMayChu } from './ai-tutor.mjs';
 
 test('Hệ thống Ví Coin: số dư ban đầu, nhận thưởng, chống nhận trùng', async (t) => {
-  const server = taoMayChu().listen(0, '127.0.0.1');
+  const server = taoMayChu({ cauHinhBlockchain: { chainId: 31337 } }).listen(0, '127.0.0.1');
   t.after(() => server.close());
   await once(server, 'listening');
 
@@ -76,6 +76,19 @@ test('Hệ thống Ví Coin: số dư ban đầu, nhận thưởng, chống nh�
     }),
   });
   assert.equal(rewardDupRes.status, 409);
+  const taiKhoanKhac = await fetch(`${base}/account/register`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: 'wallet-other@example.com', hoTen: 'Học viên thứ hai', matKhau: 'password123456',
+    }),
+  });
+  const { token: tokenKhac } = await taiKhoanKhac.json();
+  const thuongKhac = await fetch(`${base}/wallet/claim-reward`, {
+    method: 'POST', headers: { Authorization: `Bearer ${tokenKhac}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'lesson_complete', referenceId: 'lesson_flutter_intro_01' }),
+  });
+  assert.equal(thuongKhac.status, 200);
+  assert.equal((await thuongKhac.json()).soDuMoi, 5);
 
   // 5. Kiểm tra lịch sử giao dịch
   const txRes = await fetch(`${base}/wallet/transactions`, {
@@ -105,4 +118,9 @@ test('Hệ thống Ví Coin: số dư ban đầu, nhận thưởng, chống nh�
   assert.ok(orderData.orderId);
   assert.equal(orderData.coinAmount, 50);
   assert.equal(orderData.ethAmount, '0.005');
+  assert.equal(orderData.chainId, 31337);
+  const goiNap = await fetch(`${base}/wallet/deposit-packages`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  assert.equal((await goiNap.json()).chainId, 31337);
 });
