@@ -2,12 +2,16 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
+import 'data/kho_gia_su_ai.dart';
 import 'data/kho_hive.dart';
 import 'data/kho_thanh_vien.dart';
+import 'data/kho_thuong_chuoi.dart';
 import 'data/kho_vi_coin.dart';
 import 'data/khoi_tao_hive.dart';
 import 'data/kho_tai_khoan.dart';
 import 'viewmodels/providers.dart';
+import 'viewmodels/gia_su_ai_vm.dart';
+import 'viewmodels/thuong_chuoi_vm.dart';
 
 /// Điểm vào của ứng dụng.
 ///
@@ -33,12 +37,15 @@ Future<void> main() async {
         khoKhoaHocProvider.overrideWithValue(HiveKhoKhoaHoc(hop.khoaHoc)),
         khoTienDoProvider.overrideWithValue(HiveKhoTienDo(hop.tienDo)),
         khoNguoiDungProvider.overrideWithValue(khoTaiKhoan),
+        khoGiaSuAiProvider.overrideWithValue(
+          HttpKhoGiaSuAi(hop.giaSuAi, hop.phien),
+        ),
+        khoThuongChuoiProvider.overrideWithValue(
+          HttpKhoThuongChuoi(hop.thuongDangCho, hop.phien),
+        ),
         khoDongBoChuoiHocProvider.overrideWithValue(khoTaiKhoan),
         khoChuoiHocProvider.overrideWithValue(
-          HiveKhoChuoiHoc(
-            hopChuoiHoc: hop.chuoiHoc,
-            hopNhatKy: hop.nhatKyHoc,
-          ),
+          HiveKhoChuoiHoc(hopChuoiHoc: hop.chuoiHoc, hopNhatKy: hop.nhatKyHoc),
         ),
         khoViCoinProvider.overrideWithValue(HttpKhoViCoin(hop.phien)),
         khoThanhVienProvider.overrideWithValue(HttpKhoThanhVien(hop.phien)),

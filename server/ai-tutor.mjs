@@ -4,17 +4,23 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { taoTaiKhoan } from './account.mjs';
 import { taoViCoin } from './wallet.mjs';
 import { taoThanhVien } from './subscription.mjs';
+import { htmlTaiLieu, phatTutor, taoHanMuc, taoTaiLieuTutor } from './tutor-stream.mjs';
+import { taoChuoiThuong } from './streak-rewards.mjs';
+import { taoThuongOnChain } from './reward-chain.mjs';
 
 const baiHoc = JSON.parse(
   readFileSync(new URL('../assets/bai_hoc_ai.json', import.meta.url), 'utf8'),
 );
 const maKhoaHoc = new Set(Object.keys(baiHoc).map((maBai) => maBai.split('/')[0]));
+const moRongTutor = taoTaiLieuTutor(baiHoc);
 const mucDo = {
   coBan: 'Giải thích thuật ngữ bằng từ đơn giản và một ví dụ ngắn.',
   trungCap: 'Giải thích từng bước và đưa một lỗi thường gặp.',
   chuyenSau: 'Giải thích cơ chế và tình huống biên bằng ví dụ cụ thể.',
 };
 const originCucBo = /^http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/;
+const trangVi = readFileSync(new URL('./meta-vi.html', import.meta.url));
+const scriptVi = readFileSync(new URL('./meta-vi.js', import.meta.url));
 
 async function docJson(request) {
   const chunks = [];
@@ -85,11 +91,15 @@ function layVanBan(nhaCungCap, ketQua) {
 
 export function taoMayChu({
   apiKey, model, nhaCungCap = 'openai', goiApi = fetch, accountDb = ':memory:',
-  cauHinhBlockchain = {},
+  cauHinhBlockchain = {}, demoTutor = false, tutorFree = 5, tutorPro = 30,
+  dongHo = () => new Date(), mocThuong, thuongBlockchain, hostThem, originThem,
 } = {}) {
   const taiKhoan = taoTaiKhoan(accountDb, maKhoaHoc);
   const viCoin = taoViCoin(taiKhoan.db, cauHinhBlockchain);
-  const thanhVien = taoThanhVien(taiKhoan.db);
+  const thanhVien = taoThanhVien(taiKhoan.db, dongHo);
+  const layHanMuc = taoHanMuc(taiKhoan.db, dongHo, tutorFree, tutorPro);
+  const chuoiThuong = taoChuoiThuong(taiKhoan.db, baiHoc, dongHo, mocThuong);
+  const thuongOnChain = taoThuongOnChain(taiKhoan.db, thanhVien, dongHo, thuongBlockchain);
   const khoaHocProMacDinh = new Set([
     'flutter-web3-blockchain',
     'flutter-clean-architecture',
@@ -109,29 +119,100 @@ export function taoMayChu({
     };
 
     // Máy chủ demo chỉ nhận kết nối loopback và origin của Flutter Web local.
-    if (!/^(?:127\.0\.0\.1|localhost)(?::\d+)?$/.test(request.headers.host ?? '')) {
+    if (!/^(?:127\.0\.0\.1|localhost)(?::\d+)?$/.test(request.headers.host ?? '') &&
+        (!hostThem || hostThem !== request.headers.host)) {
       return tra(403, { loi: 'Host không hợp lệ.' });
     }
     const origin = request.headers.origin;
     if (origin) {
-      if (!originCucBo.test(origin)) return tra(403, { loi: 'Origin không hợp lệ.' });
+      if (!originCucBo.test(origin) && origin !== originThem && origin !== `http://${hostThem}` &&
+          origin !== `https://${hostThem}`) return tra(403, { loi: 'Origin không hợp lệ.' });
       response.setHeader('Access-Control-Allow-Origin', origin);
       response.setHeader('Vary', 'Origin');
     }
     const laTaiKhoan = request.url?.startsWith('/api/account/');
     const laViCoin = request.url === '/api/wallet' || request.url?.startsWith('/api/wallet/');
     const laThanhVien = request.url === '/api/subscriptions' || request.url?.startsWith('/api/subscriptions/');
+    const laThuong = request.url === '/api/rewards' || request.url?.startsWith('/api/rewards/');
+    if (request.method === 'GET' && ['/meta/vi', '/meta/vi.js'].includes(request.url)) {
+      const html = request.url === '/meta/vi';
+      response.writeHead(200, {
+        'Content-Type': html ? 'text/html; charset=utf-8' : 'text/javascript; charset=utf-8',
+        'Cache-Control': 'no-store',
+        'Referrer-Policy': 'no-referrer',
+        'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'",
+      });
+      return response.end(html ? trangVi : scriptVi);
+    }
+    if (request.url === '/meta/vi/session' && request.method === 'POST') {
+      if (request.headers['content-type']?.split(';')[0] !== 'application/json') {
+        return tra(415, { loi: 'Yêu cầu nội dung JSON.' });
+      }
+      let duLieu;
+      try { duLieu = await docJson(request); } catch { return tra(400, { loi: 'JSON không hợp lệ.' }); }
+      try {
+        if (typeof duLieu?.token === 'string' && duLieu.token.startsWith('nap_')) {
+          return tra(200, await viCoin.trangNap(duLieu));
+        }
+        if (!thuongOnChain) return tra(503, { loi: 'Chưa cấu hình hợp đồng thưởng.' });
+        return tra(200, thuongOnChain.trangVi(duLieu ?? {}));
+      } catch (loi) {
+        return tra(loi.status ?? 500, { loi: loi.status ? loi.message : 'Chưa xử lý được xác nhận ví.' });
+      }
+    }
+    if (request.method === 'GET' && request.url?.startsWith('/tai-lieu/')) {
+      const ma = request.url.slice('/tai-lieu/'.length);
+      const muc = moRongTutor.get(ma);
+      if (!muc) return tra(404, { loi: 'Trang tài liệu không có sẵn.' });
+      response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      return response.end(htmlTaiLieu(baiHoc[ma], muc.nguon));
+    }
 
-    if (request.url !== '/api/ai-tutor' && !laTaiKhoan && !laViCoin && !laThanhVien) {
+    if (request.url !== '/api/ai-tutor' && !laTaiKhoan && !laViCoin && !laThanhVien && !laThuong) {
       return tra(404, { loi: 'Sai địa chỉ.' });
     }
     if (request.method === 'OPTIONS') {
-      const canAuth = laTaiKhoan || laViCoin || laThanhVien;
+      const canAuth = laTaiKhoan || laViCoin || laThanhVien || laThuong;
       response.writeHead(204, {
         'Access-Control-Allow-Methods': canAuth ? 'GET, POST, DELETE' : 'POST',
-        'Access-Control-Allow-Headers': canAuth ? 'Content-Type, Authorization' : 'Content-Type',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       });
       return response.end();
+    }
+    if (laThuong) {
+      const nguoiDung = taiKhoan.xacThucToken(request.headers.authorization);
+      if (!nguoiDung) return tra(401, { loi: 'Đăng nhập để xem Coin thưởng.' });
+      try {
+        const { url, method } = request;
+        if (url === '/api/rewards' && method === 'GET') {
+          chuoiThuong.buMoc(nguoiDung.email);
+          const onChain = await thuongOnChain?.trangThai(nguoiDung.email);
+          return tra(200, { ...chuoiThuong.trangThai(nguoiDung.email), onChain: onChain ?? null });
+        }
+        if (method === 'POST' && ['/api/rewards/link', '/api/rewards/redeem'].includes(url)) {
+          if (!thuongOnChain) return tra(503, { loi: 'Chưa cấu hình hợp đồng thưởng.' });
+          const operation = url.endsWith('/link') ? 'link' : 'redeem';
+          return tra(201, await thuongOnChain.batDau(nguoiDung.email, operation));
+        }
+        if (url === '/api/rewards/disconnect' && method === 'POST') {
+          if (!thuongOnChain) return tra(503, { loi: 'Chưa cấu hình hợp đồng thưởng.' });
+          return tra(200, thuongOnChain.ngatKetNoi(nguoiDung.email));
+        }
+        if (url === '/api/rewards/complete' && method === 'POST') {
+          let duLieu;
+          try { duLieu = await docJson(request); } catch { return tra(400, { loi: 'JSON không hợp lệ.' }); }
+          if (duLieu?.email !== nguoiDung.email) return tra(409, { loi: 'Phiên tài khoản đã thay đổi.' });
+          const { status, body } = chuoiThuong.ghiNhan(nguoiDung.email, duLieu);
+          if (status === 200 && body.reward > 0) {
+            await thuongOnChain?.trangThai(nguoiDung.email);
+          }
+          return tra(status, body);
+        }
+        return tra(404, { loi: 'Sai địa chỉ Coin thưởng.' });
+      } catch (loi) {
+        if (!loi.status) console.error(`Rewards: ${loi.code ?? loi.name}`);
+        return tra(loi.status ?? 500, { loi: loi.status ? loi.message : 'Chưa cập nhật được Coin thưởng. Hãy thử lại.' });
+      }
     }
     if (laTaiKhoan) {
       try {
@@ -147,8 +228,8 @@ export function taoMayChu({
       try {
         return await viCoin.xuLy(request, tra, docJson, nguoiDung);
       } catch (loi) {
-        console.error(`Wallet: ${loi.code ?? loi.name}`);
-        return tra(500, { loi: 'Máy chủ chưa xử lý được ví Coin.' });
+        if (!loi.status) console.error(`Wallet: ${loi.code ?? loi.name}`);
+        return tra(loi.status ?? 500, { loi: loi.status ? loi.message : 'Máy chủ chưa xử lý được ví Coin.' });
       }
     }
     if (laThanhVien) {
@@ -181,8 +262,16 @@ export function taoMayChu({
     if (!Object.hasOwn(baiHoc, duLieu.baiHoc)) {
       return tra(404, { loi: 'Bài học chưa có tài liệu AI Tutor.' });
     }
-    if (!apiKey) return tra(503, { loi: 'Máy chủ chưa cấu hình khóa API.' });
-    if (dangXuLy >= 4) return tra(429, { loi: 'Máy chủ đang bận.' });
+    const nguoiDung = taiKhoan.xacThucToken(request.headers.authorization);
+    if (!nguoiDung) return tra(401, { loi: 'Đăng nhập để hỏi Gia sư AI.' });
+    if (duLieu.email != null && duLieu.email !== nguoiDung.email) {
+      return tra(409, { loi: 'Phiên tài khoản đã thay đổi.' });
+    }
+    if (dangXuLy >= 4) return tra(503, { loi: 'Máy chủ đang bận. Hãy thử lại.' });
+    const { duocHoi, ...hanMuc } = layHanMuc(
+      nguoiDung.email, thanhVien.kiemTraPro(nguoiDung.email).isPro,
+    );
+    if (!duocHoi) return tra(429, { loi: 'Bạn đã hết lượt hỏi hôm nay.', ...hanMuc });
 
     const taiLieu = baiHoc[duLieu.baiHoc];
     dangXuLy++;
@@ -198,6 +287,22 @@ export function taoMayChu({
         `Bài học: ${taiLieu.tieuDe}\n${taiLieu.noiDung}\nVí dụ:\n${taiLieu.code}`,
       ].join('\n');
       const yeuCau = yeuCauAi(nhaCungCap, apiKey, model, instructions, cauHoi);
+      if (request.headers.accept?.includes('application/x-ndjson')) {
+        if (nhaCungCap === 'gemini') {
+          yeuCau.url = yeuCau.url.replace(':generateContent', ':streamGenerateContent?alt=sse');
+        } else {
+          yeuCau.body.stream = true;
+        }
+        return await phatTutor({
+          response, nhaCungCap, goiApi,
+          yeuCau: apiKey && !demoTutor ? yeuCau : null,
+          bai: taiLieu, duLieu, moRong: moRongTutor.get(duLieu.baiHoc), hanMuc,
+        });
+      }
+      if (!apiKey || demoTutor) return tra(200, {
+        cauTraLoi: taiLieu.noiDung + '\n\n' + taiLieu.code,
+        demo: true, ...moRongTutor.get(duLieu.baiHoc), ...hanMuc,
+      });
       const upstream = await goiApi(yeuCau.url, {
         method: 'POST',
         headers: { ...yeuCau.headers, 'Content-Type': 'application/json' },
@@ -222,6 +327,7 @@ export function taoMayChu({
     }
   });
   server.once('close', taiKhoan.dong);
+  if (thuongOnChain) server.once('close', thuongOnChain.dong);
   return server;
 }
 
@@ -239,14 +345,31 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     nhaCungCap,
     apiKey: process.env[`${prefix}_API_KEY`]?.trim(),
     model: process.env[`${prefix}_MODEL`]?.trim() || undefined,
-    accountDb: fileURLToPath(new URL('accounts.sqlite', thuMucTaiKhoan)),
+    demoTutor: process.env.AI_TUTOR_DEMO === '1',
+    tutorFree: Number(process.env.AI_TUTOR_FREE) || 5,
+    tutorPro: Number(process.env.AI_TUTOR_PRO) || 30,
+    mocThuong: {
+      3: Number(process.env.STREAK_DAY_3_COIN) || 10,
+      7: Number(process.env.STREAK_DAY_7_COIN) || 20,
+    },
+    thuongBlockchain: {
+      address: process.env.REWARD_CONTRACT_ADDRESS,
+      issuerKey: process.env.REWARD_ISSUER_PRIVATE_KEY,
+      rpcUrl: process.env.REWARD_RPC_URL,
+      rpcDienThoai: process.env.REWARD_WALLET_RPC_URL,
+      confirmations: Math.max(1, Number(process.env.REWARD_CONFIRMATIONS) || 1),
+    },
+    hostThem: process.env.ACADEMY_ALLOWED_HOST,
+    originThem: process.env.ACADEMY_ALLOWED_ORIGIN,
+    accountDb: process.env.ACADEMY_DB_PATH ?? fileURLToPath(new URL('accounts.sqlite', thuMucTaiKhoan)),
     cauHinhBlockchain: {
-      rpcUrl: process.env.SEPOLIA_RPC_URL || 'http://127.0.0.1:8545',
+      rpcUrl: process.env.DEPOSIT_RPC_URL || process.env.SEPOLIA_RPC_URL || 'http://127.0.0.1:8545',
+      walletRpcUrl: process.env.DEPOSIT_WALLET_RPC_URL,
       contractAddress: process.env.CONTRACT_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3',
       depositEventTopic: process.env.DEPOSIT_EVENT_TOPIC || '0xa1f70d8aaaf6aafecf69db7239885a8dbc2d3636257385ea05b8038a273b6587',
       requiredConfirmations: Number(process.env.REQUIRED_CONFIRMATIONS) || 0,
     },
-  }).listen(port, '127.0.0.1', () => {
+  }).listen(port, process.env.ACADEMY_LISTEN_HOST ?? '127.0.0.1', () => {
     console.log(`AI Tutor (${nhaCungCap}): http://127.0.0.1:${port}/api/ai-tutor`);
   });
 }

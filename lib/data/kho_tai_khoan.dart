@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:hive_ce/hive_ce.dart';
 import 'package:http/http.dart' as http;
 
+import '../cau_hinh/may_chu.dart';
 import '../models/chuoi_hoc.dart';
 import '../models/nguoi_dung.dart';
 import 'kho_du_lieu.dart';
@@ -10,10 +11,7 @@ import 'kho_du_lieu.dart';
 class KhoTaiKhoan implements KhoNguoiDung, KhoDongBoChuoiHoc {
   KhoTaiKhoan(this._phien);
 
-  static const _diaChi = String.fromEnvironment(
-    'ACCOUNT_API_URL',
-    defaultValue: 'http://127.0.0.1:8787/api/account',
-  );
+  static final _diaChi = MayChu.taiKhoan;
   static const _khoaToken = 'token';
   static const _khoaTaiKhoanStreak = 'tai_khoan_streak';
   final Box<String> _phien;
