@@ -37,6 +37,13 @@ async function main() {
     const pkg = await contract.getPackage(i);
     console.log(`Gói ${i}: ${pkg.coinAmount} Coin = ${hre.ethers.formatEther(pkg.ethPrice)} ETH (active: ${pkg.active})`);
   }
+  const { chainId } = await hre.ethers.provider.getNetwork();
+  console.log(`DEPOSIT_CHAIN_ID=${chainId}`);
+  if (chainId === 31337n) {
+    const rewards = await hre.ethers.deployContract("FlutterAcademyRewards");
+    await rewards.waitForDeployment();
+    console.log(`REWARD_CONTRACT_ADDRESS=${await rewards.getAddress()}`);
+  }
 }
 
 main().catch((error) => {
