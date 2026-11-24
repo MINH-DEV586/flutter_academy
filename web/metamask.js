@@ -147,15 +147,8 @@
      * @param {string} ethAmount - Số ETH phải trả (vd: "0.005").
      * @returns {Promise<string|null>} Transaction hash hoặc null.
      */
-    sendDeposit: async function (contractAddress, orderId, packageId, ethAmount) {
+    sendDeposit: async function (contractAddress, orderId, packageId, ethAmount, chainId, walletAddress) {
       try {
-        // Kiểm tra mạng
-        var isSep = await this.isSepolia();
-        if (!isSep) {
-          var switched = await this.switchToSepolia();
-          if (!switched) return null;
-        }
-
         // Encode ABI: deposit(bytes32 orderId, uint256 packageId)
         var data =
           DEPOSIT_SELECTOR +
@@ -163,9 +156,10 @@
           padHex(numberToHex(packageId), 32);
 
         var accounts = await window.ethereum.request({
-          method: 'eth_requestAccounts',
+          method: 'eth_accounts',
         });
-        if (!accounts || accounts.length === 0) return null;
+        if (accounts?.[0]?.toLowerCase() !== walletAddress.toLowerCase() ||
+            await this.getChainId() !== chainId) return 'WALLET_CHANGED';
 
         var txHash = await window.ethereum.request({
           method: 'eth_sendTransaction',
@@ -228,6 +222,16 @@
       window.ethereum.on('chainChanged', function (chainId) {
         callback(chainId);
       });
+    },
+
+    watchConnection: function (callback) {
+      window.ethereum?.on('accountsChanged', callback);
+      window.ethereum?.on('chainChanged', callback);
+    },
+
+    unwatchConnection: function (callback) {
+      window.ethereum?.removeListener('accountsChanged', callback);
+      window.ethereum?.removeListener('chainChanged', callback);
     },
 
     // Map packageId trong Flutter (pkg_50...) sang packageId contract (1-5)

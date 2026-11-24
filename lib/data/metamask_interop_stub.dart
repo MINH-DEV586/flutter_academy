@@ -17,10 +17,13 @@ class MetaMaskService {
     required String orderId,
     required int packageId,
     required String ethAmount,
-  }) async =>
-      null;
+    required int chainId,
+    required String walletAddress,
+  }) async => null;
 
   static Future<String> getBalance(String address) async => '0';
+
+  static void Function() quanSatKetNoi(void Function() callback) => () {};
 
   static void onAccountsChanged(void Function(String?) callback) {}
 

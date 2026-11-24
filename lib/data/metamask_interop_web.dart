@@ -16,10 +16,14 @@ extension type _FlutterMetaMask(JSObject _) implements JSObject {
     JSString orderId,
     JSNumber packageId,
     JSString ethAmount,
+    JSString chainId,
+    JSString walletAddress,
   );
   external JSPromise<JSString> getBalance(JSString address);
   external void onAccountsChanged(JSFunction callback);
   external void onChainChanged(JSFunction callback);
+  external void watchConnection(JSFunction callback);
+  external void unwatchConnection(JSFunction callback);
   external JSNumber getContractPackageId(JSString flutterPkgId);
 }
 
@@ -82,6 +86,8 @@ class MetaMaskService {
     required String orderId,
     required int packageId,
     required String ethAmount,
+    required int chainId,
+    required String walletAddress,
   }) async {
     try {
       final res = await _metaMask
@@ -90,11 +96,23 @@ class MetaMaskService {
             orderId.toJS,
             packageId.toJS,
             ethAmount.toJS,
+            '0x${chainId.toRadixString(16)}'.toJS,
+            walletAddress.toJS,
           )
           .toDart;
       return res?.toDart;
     } catch (_) {
       return null;
+    }
+  }
+
+  static void Function() quanSatKetNoi(void Function() callback) {
+    final handler = ((JSAny? _) => callback()).toJS;
+    try {
+      _metaMask.watchConnection(handler);
+      return () => _metaMask.unwatchConnection(handler);
+    } catch (_) {
+      return () {};
     }
   }
 
