@@ -1,7 +1,9 @@
 import 'dart:convert';
+
 import 'package:hive_ce/hive_ce.dart';
 import 'package:http/http.dart' as http;
 
+import '../cau_hinh/may_chu.dart';
 import '../models/don_nap_coin.dart';
 import '../models/giao_dich_coin.dart';
 import '../models/vi_coin.dart';
@@ -17,15 +19,10 @@ abstract interface class KhoViCoin {
 
   Future<Map<String, dynamic>> taoDonNap({
     required String packageId,
-    String? walletAddress,
+    String? orderId,
   });
 
-  Future<void> guiTxHash({
-    required String orderId,
-    required String txHash,
-  });
-
-  Future<Map<String, dynamic>> xacMinhDonNap(String orderId);
+  Future<DonNapCoin?> layDonNapGanNhat();
 
   Future<Map<String, dynamic>> nhanThuong({
     required String type,
@@ -37,10 +34,7 @@ abstract interface class KhoViCoin {
 class HttpKhoViCoin implements KhoViCoin {
   HttpKhoViCoin(this._phien);
 
-  static const _diaChi = String.fromEnvironment(
-    'ACCOUNT_API_URL',
-    defaultValue: 'http://127.0.0.1:8787/api',
-  );
+  static final _diaChi = MayChu.api;
   static const _khoaToken = 'token';
   final Box<String> _phien;
 
@@ -82,9 +76,7 @@ class HttpKhoViCoin implements KhoViCoin {
     final duLieu =
         jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
     if (response.statusCode >= 400) {
-      throw Exception(
-        duLieu['loi'] as String? ?? 'Yêu cầu ví thất bại.',
-      );
+      throw Exception(duLieu['loi'] as String? ?? 'Yêu cầu ví thất bại.');
     }
     return duLieu;
   }
@@ -114,7 +106,9 @@ class HttpKhoViCoin implements KhoViCoin {
     final res = await _gui('GET', 'transactions?page=$page&limit=$limit');
     final data = _doc(res);
     final list = data['transactions'] as List? ?? [];
-    return list.map((e) => GiaoDichCoin.tuMap(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => GiaoDichCoin.tuMap(e as Map<String, dynamic>))
+        .toList();
   }
 
   @override
@@ -122,7 +116,9 @@ class HttpKhoViCoin implements KhoViCoin {
     final res = await _gui('GET', 'deposit-packages');
     final data = _doc(res);
     final list = data['packages'] as List? ?? [];
-    return list.map((e) => GoiNapCoin.tuMap(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => GoiNapCoin.tuMap(e as Map<String, dynamic>))
+        .toList();
   }
 
   @override
@@ -134,29 +130,21 @@ class HttpKhoViCoin implements KhoViCoin {
   @override
   Future<Map<String, dynamic>> taoDonNap({
     required String packageId,
-    String? walletAddress,
+    String? orderId,
   }) async {
-    final payload = <String, dynamic>{'packageId': packageId};
-    if (walletAddress != null) payload['walletAddress'] = walletAddress;
-    final res = await _gui('POST', 'deposits', duLieu: payload);
-    return _doc(res);
+    return _doc(
+      await _gui(
+        'POST',
+        'deposits',
+        duLieu: {'packageId': packageId, 'checkout': true, 'orderId': ?orderId},
+      ),
+    );
   }
 
   @override
-  Future<void> guiTxHash({
-    required String orderId,
-    required String txHash,
-  }) async {
-    final res = await _gui('POST', 'deposits/$orderId/submit', duLieu: {
-      'transactionHash': txHash,
-    });
-    _doc(res);
-  }
-
-  @override
-  Future<Map<String, dynamic>> xacMinhDonNap(String orderId) async {
-    final res = await _gui('POST', 'deposits/$orderId/verify');
-    return _doc(res);
+  Future<DonNapCoin?> layDonNapGanNhat() async {
+    final don = _doc(await _gui('GET', 'deposits/latest'))['order'];
+    return don is Map<String, dynamic> ? DonNapCoin.tuMap(don) : null;
   }
 
   @override
@@ -165,10 +153,7 @@ class HttpKhoViCoin implements KhoViCoin {
     required String referenceId,
     String? description,
   }) async {
-    final payload = <String, dynamic>{
-      'type': type,
-      'referenceId': referenceId,
-    };
+    final payload = <String, dynamic>{'type': type, 'referenceId': referenceId};
     if (description != null) payload['description'] = description;
     final res = await _gui('POST', 'claim-reward', duLieu: payload);
     return _doc(res);

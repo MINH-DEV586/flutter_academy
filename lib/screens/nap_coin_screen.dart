@@ -2,12 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../data/mo_trang_metamask.dart';
 import '../dinh_tuyen/duong_dan.dart';
 import '../models/don_nap_coin.dart';
 import '../viewmodels/providers.dart';
+import '../viewmodels/vi_coin_vm.dart';
 import '../widgets/trang.dart';
+import '../widgets/trang_thai.dart';
 
-/// Màn hình Nạp Coin bằng ví MetaMask qua Ethereum Sepolia Testnet.
 class NapCoinScreen extends ConsumerStatefulWidget {
   const NapCoinScreen({super.key});
 
@@ -16,229 +18,202 @@ class NapCoinScreen extends ConsumerStatefulWidget {
 }
 
 class _NapCoinScreenState extends ConsumerState<NapCoinScreen> {
-  String? _dangXuLyGoiId;
-  String? _thongBaoLoi;
+  late final AppLifecycleListener _vongDoi;
+  GoiNapCoin? _goiChon;
+  Uri? _trangKy;
+  bool _dangChuanBi = false;
+  String? _thongBao;
 
-  void _napCoin(GoiNapCoin goi) async {
+  @override
+  void initState() {
+    super.initState();
+    _vongDoi = AppLifecycleListener(onResume: _kiemTra);
+  }
+
+  @override
+  void dispose() {
+    _vongDoi.dispose();
+    super.dispose();
+  }
+
+  void _kiemTra() => ref.invalidate(donNapGanNhatProvider);
+
+  Future<void> _thanhToan(String packageId, {String? orderId}) async {
     setState(() {
-      _dangXuLyGoiId = goi.id;
-      _thongBaoLoi = null;
+      _dangChuanBi = true;
+      _trangKy = null;
+      _thongBao = null;
     });
-
-    final loi = await ref.read(viCoinProvider.notifier).napCoin(
-          packageId: goi.id,
-          ethAmount: goi.ethAmount,
-        );
-
-    if (!mounted) return;
-    setState(() {
-      _dangXuLyGoiId = null;
-      if (loi != null) {
-        _thongBaoLoi = loi;
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Nạp thành công ${goi.coinAmount} Coin! 🎉'),
-            backgroundColor: Colors.green,
-          ),
+    try {
+      final diaChi = await ref
+          .read(viCoinProvider.notifier)
+          .taoPhienNap(packageId, orderId: orderId);
+      if (!mounted || diaChi == null) return;
+      setState(() => _trangKy = diaChi);
+      await _moVi(diaChi);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _thongBao =
+              'Chưa chuẩn bị được thanh toán. Kiểm tra kết nối rồi thử lại.',
         );
       }
-    });
+    } finally {
+      if (mounted) setState(() => _dangChuanBi = false);
+    }
+  }
+
+  Future<void> _moVi(Uri diaChi) async {
+    try {
+      final thongBao = await moTrangMetaMask(diaChi);
+      if (mounted) setState(() => _thongBao = thongBao);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _thongBao = 'Chưa mở được MetaMask. Hãy thử mở lại.');
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final vi = ref.watch(viCoinProvider).asData?.value;
-    final goiNapAsync = ref.watch(danhSachGoiNapProvider);
-    final mau = Theme.of(context).colorScheme;
-    final t = Theme.of(context).textTheme;
+    ref.listen(phienProvider, (cu, moi) {
+      if (cu?.asData?.value?.email == moi.asData?.value?.email) return;
+      setState(() {
+        _goiChon = null;
+        _trangKy = null;
+        _thongBao = null;
+      });
+    });
+    final daDangNhap = ref.watch(daDangNhapProvider);
+    final text = Theme.of(context).textTheme;
+    final goi = _goiChon;
+    final don = daDangNhap
+        ? ref.watch(donNapGanNhatProvider)
+        : const AsyncData<DonNapCoin?>(null);
 
     return Trang(
       con: [
         TieuDeMuc(
-          chu: 'Nạp Coin qua MetaMask',
+          chu: 'Nạp Coin',
           hanhDong: TextButton.icon(
             onPressed: () => context.go(DuongDan.viCoin),
             icon: const Icon(Icons.arrow_back, size: 18),
             label: const Text('Ví Coin'),
           ),
         ),
-        Card(
-          color: mau.surfaceContainerHighest.withValues(alpha: 0.5),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                const Icon(Icons.info_outline, color: Colors.blue),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Mạng thử nghiệm: Ethereum Sepolia Testnet (Chain ID 11155111). '
-                    'Thanh toán bằng Sepolia ETH (miễn phí nhận từ Faucet).',
-                    style: t.bodySmall,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        const Text(
+          'Coin nạp được cộng vào số dư trong ứng dụng sau khi thanh toán được xác minh.',
         ),
-        if (_thongBaoLoi != null) ...[
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.red.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.red.shade300),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.red),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(_thongBaoLoi!, style: const TextStyle(color: Colors.red)),
-                ),
-              ],
-            ),
-          ),
-        ],
         const SizedBox(height: 16),
-        if (vi != null && !vi.daLienKetVi) ...[
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  const Text('🦊', style: TextStyle(fontSize: 36)),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Bạn cần kết nối ví MetaMask trước khi nạp Coin',
-                    style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  FilledButton.icon(
-                    onPressed: () =>
-                        ref.read(viCoinProvider.notifier).ketNoiMetaMask(),
-                    icon: const Icon(Icons.account_balance_wallet),
-                    label: const Text('Kết nối MetaMask ngay'),
-                  ),
-                ],
-              ),
+        if (!daDangNhap)
+          KhoiRong(
+            bieuTuong: Icons.account_balance_wallet_outlined,
+            tieuDe: 'Đăng nhập để nạp Coin',
+            moTa: 'Đơn nạp và số dư được lưu theo tài khoản của bạn.',
+            hanhDong: FilledButton(
+              onPressed: () =>
+                  context.go(DuongDan.dangNhapRoiVe(DuongDan.napCoin)),
+              child: const Text('Đăng nhập'),
             ),
-          ),
-          const SizedBox(height: 16),
-        ],
-        Text(
-          'Chọn gói nạp Coin',
-          style: t.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        goiNapAsync.when(
-          data: (dsGoi) {
-            final danhSach = dsGoi.isNotEmpty
-                ? dsGoi
-                : const [
-                    GoiNapCoin(id: 'pkg_50', coinAmount: 50, ethAmount: '0.005', name: '50 Coin'),
-                    GoiNapCoin(id: 'pkg_100', coinAmount: 100, ethAmount: '0.01', name: '100 Coin'),
-                    GoiNapCoin(id: 'pkg_250', coinAmount: 250, ethAmount: '0.025', name: '250 Coin'),
-                    GoiNapCoin(id: 'pkg_500', coinAmount: 500, ethAmount: '0.05', name: '500 Coin'),
-                    GoiNapCoin(id: 'pkg_1000', coinAmount: 1000, ethAmount: '0.1', name: '1000 Coin'),
-                  ];
-
-            return Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              children: [
-                for (final goi in danhSach)
-                  _TheGoiNap(
-                    goi: goi,
-                    dangXuLy: _dangXuLyGoiId == goi.id,
-                    onChon: vi?.daLienKetVi == true && _dangXuLyGoiId == null
-                        ? () => _napCoin(goi)
-                        : null,
-                  ),
-              ],
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, _) => const Text('Không tải được danh sách gói nạp.'),
-        ),
-      ],
-    );
-  }
-}
-
-class _TheGoiNap extends StatelessWidget {
-  final GoiNapCoin goi;
-  final bool dangXuLy;
-  final VoidCallback? onChon;
-
-  const _TheGoiNap({
-    required this.goi,
-    required this.dangXuLy,
-    required this.onChon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final mau = Theme.of(context).colorScheme;
-    final t = Theme.of(context).textTheme;
-
-    return Container(
-      width: 220,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: mau.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: mau.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.monetization_on, color: Colors.amber, size: 28),
-              const Spacer(),
-              Text(
-                '${goi.coinAmount}',
-                style: t.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: mau.primary,
+          )
+        else ...[
+          if (don.hasError || don.isLoading || don.value != null)
+            Card(
+              margin: EdgeInsets.zero,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Đơn nạp gần nhất', style: text.titleMedium),
+                    if (don.value case final ganNhat?) ...[
+                      Text(
+                        '${ganNhat.coinAmount} Coin · ${ganNhat.ethAmount} ETH thử nghiệm',
+                      ),
+                      Text(ganNhat.moTaTrangThai),
+                      if (ganNhat.coTheKy)
+                        TextButton(
+                          onPressed: _dangChuanBi || don.isLoading
+                              ? null
+                              : () => _thanhToan(
+                                  ganNhat.packageId,
+                                  orderId: ganNhat.orderId,
+                                ),
+                          child: const Text('Tiếp tục đơn nạp'),
+                        ),
+                    ],
+                    if (don.isLoading)
+                      const LinearProgressIndicator(
+                        semanticsLabel: 'Đang kiểm tra đơn nạp',
+                      ),
+                    if (don.hasError)
+                      const Text(
+                        'Chưa đọc được trạng thái đơn nạp. Kiểm tra kết nối và thử lại.',
+                      ),
+                    TextButton.icon(
+                      onPressed: don.isLoading ? null : _kiemTra,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Kiểm tra đơn nạp'),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 4),
-              const Text('Coin'),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            '${goi.ethAmount} Sepolia ETH',
-            style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '+ Phí Gas mạng Sepolia',
-            style: t.bodySmall?.copyWith(color: mau.onSurfaceVariant),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: onChon,
-              child: dangXuLy
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text('Nạp ngay'),
             ),
+          const SizedBox(height: 16),
+          Text('Chọn gói nạp Coin', style: text.titleLarge),
+          const SizedBox(height: 12),
+          KhiAsync(
+            gia: ref.watch(danhSachGoiNapProvider),
+            thuLai: () => ref.invalidate(danhSachGoiNapProvider),
+            khiCo: (cacGoi) => cacGoi.isEmpty
+                ? const Text('Chưa có gói nạp khả dụng.')
+                : Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final muc in cacGoi)
+                        ChoiceChip(
+                          label: Text(
+                            '${muc.coinAmount} Coin · ${muc.ethAmount} ETH',
+                          ),
+                          selected: muc.id == goi?.id,
+                          onSelected: _dangChuanBi
+                              ? null
+                              : (_) => setState(() => _goiChon = muc),
+                        ),
+                    ],
+                  ),
           ),
+          if (goi != null) ...[
+            const SizedBox(height: 16),
+            Text('Thanh toán', style: text.titleMedium),
+            Text('Nhận ${goi.coinAmount} Coin trong ứng dụng'),
+            Text(
+              '${goi.ethAmount} ETH thử nghiệm + phí mạng hiển thị trong MetaMask',
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: _dangChuanBi || don.value?.dangXacNhan == true
+                  ? null
+                  : () => _thanhToan(goi.id),
+              icon: const Icon(Icons.account_balance_wallet_outlined),
+              label: const Text('Xác nhận thanh toán'),
+            ),
+          ],
+          if (_dangChuanBi)
+            const LinearProgressIndicator(
+              semanticsLabel: 'Đang chuẩn bị thanh toán',
+            ),
+          if (_trangKy case final diaChi?)
+            if (don.value?.coTheKy != false)
+              OutlinedButton(
+                onPressed: _dangChuanBi ? null : () => _moVi(diaChi),
+                child: const Text('Mở lại trang thanh toán'),
+              ),
+          if (_thongBao case final thongBao?)
+            Semantics(liveRegion: true, child: Text(thongBao)),
         ],
-      ),
+      ],
     );
   }
 }
