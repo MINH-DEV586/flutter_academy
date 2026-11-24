@@ -1,13 +1,7 @@
-# Dựng và triển khai bản web mỗi khi đẩy mã lên nhánh main.
-#
-# Hai việc tách riêng có chủ đích: `kiem-thu` chạy trên MỌI pull request,
-# còn `trien-khai` chỉ chạy trên `main` và chỉ khi kiểm thử đã xanh. Nhờ vậy
-# không bao giờ có bản hỏng lên thẳng trang thật.
-name: Web
+name: Kiểm thử và triển khai Web
 
 on:
   push:
-    branches: [main]
   pull_request:
 
 jobs:
@@ -19,11 +13,11 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.50.1'
           cache: true
 
       - run: flutter --version
-      - run: flutter pub get
+      - run: flutter pub get --enforce-lockfile
 
       # `--fatal-infos` để một cảnh báo nhỏ cũng làm đỏ CI. Nghiêm khắc từ
       # đầu thì cảnh báo không kịp tích tụ thành hàng trăm dòng ai cũng lờ đi.
@@ -31,9 +25,25 @@ jobs:
 
       - run: flutter test --reporter expanded
 
+  backend:
+    name: Kiểm thử backend và hợp đồng
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: blockchain/package-lock.json
+      - run: npm ci
+        working-directory: blockchain
+      - run: node --test --test-concurrency=2 server/*.test.mjs
+      - run: npm test
+        working-directory: blockchain
+
   trien-khai:
     name: Dựng và đưa lên GitHub Pages
-    needs: kiem-thu
+    needs: [kiem-thu, backend]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
@@ -48,16 +58,16 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.50.1'
           cache: true
 
-      - run: flutter pub get
+      - run: flutter pub get --enforce-lockfile
 
       # GitHub Pages phục vụ dự án ở đường dẫn con /<tên-kho>/, nên phải khai
       # `--base-href`. Thiếu dòng này là trang trắng và console báo không tải
       # được main.dart.js — lỗi hay gặp nhất khi triển khai Flutter web.
       - name: Dựng bản phát hành
-        run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
+        run: flutter build web --no-pub --release --base-href "/${{ github.event.repository.name }}/"
 
       # GitHub Pages không có cơ chế rewrite. Chép index.html thành 404.html
       # để tải lại một trang con (ví dụ /khoa-hoc/dart-co-ban) không ra lỗi
