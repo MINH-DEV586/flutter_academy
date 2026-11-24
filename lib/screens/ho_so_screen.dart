@@ -10,10 +10,12 @@ import '../models/dinh_dang.dart' as dd;
 import '../models/goi_pro.dart';
 import '../models/huy_hieu.dart';
 import '../models/khoa_hoc.dart';
+import '../models/nhat_ky_ngay.dart';
 import '../models/nguoi_dung.dart';
 import '../viewmodels/providers.dart';
 import '../widgets/huy_hieu_pro_badge.dart';
 import '../widgets/lich_hoc_thang.dart';
+import '../widgets/the_coin_thuong.dart';
 import '../widgets/trang.dart';
 import '../widgets/trang_thai.dart';
 
@@ -71,6 +73,10 @@ class _NoiDung extends ConsumerWidget {
 
     final daBatDau = phanTram.length;
     final daXong = phanTram.values.where((p) => p >= 100).length;
+    final trungBinh = daBatDau == 0
+        ? 0
+        : (phanTram.values.fold<num>(0, (tong, p) => tong + p) / daBatDau)
+              .round();
     final giayDaHoc = _giayDaHoc(danhSach, phanTram);
     final chuoiHoc =
         ref.watch(chuoiHocProvider).asData?.value ?? const ChuoiHoc();
@@ -114,8 +120,11 @@ class _NoiDung extends ConsumerWidget {
                       const Positioned(
                         right: -4,
                         bottom: -4,
-                        child: Icon(Icons.workspace_premium,
-                            color: Color(0xFFFFD700), size: 22),
+                        child: Icon(
+                          Icons.workspace_premium,
+                          color: Color(0xFFFFD700),
+                          size: 22,
+                        ),
                       ),
                   ],
                 ),
@@ -181,16 +190,20 @@ class _NoiDung extends ConsumerWidget {
         const SizedBox(height: 16),
         const _TheViCoinHoSo(),
         const SizedBox(height: 16),
+        const TheCoinThuong(hienVi: false),
+        const SizedBox(height: 16),
         _TheCapDoVaStreak(chuoiHoc: chuoiHoc),
+        const SizedBox(height: 16),
+        const _LichChuoiTuan(),
         const SizedBox(height: 24),
         Text(
           'Thống kê học tập',
           style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 12),
-        Wrap(
-          spacing: 16,
-          runSpacing: 16,
+        _LuoiHoSo(
+          cotNho: 2,
+          cotRong: 4,
           children: [
             _O(so: '${chuoiHoc.chuoiHienTai} ngày', nhan: 'Chuỗi hiện tại '),
             _O(
@@ -201,6 +214,11 @@ class _NoiDung extends ConsumerWidget {
             _O(so: '$daBatDau', nhan: 'Khoá đã bắt đầu'),
             _O(so: '$daXong', nhan: 'Khoá đã hoàn thành'),
             _O(so: dd.thoiLuong(giayDaHoc), nhan: 'Thời lượng đã học'),
+            _O(so: '$trungBinh%', nhan: 'Tiến độ trung bình'),
+            _O(
+              so: '${chuoiHoc.danhSachHuyHieu.length}',
+              nhan: 'Huy hiệu đã mở',
+            ),
           ],
         ),
         const SizedBox(height: 32),
@@ -286,8 +304,7 @@ class _O extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     final mau = Theme.of(context).colorScheme;
     return Container(
-      width: 200,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: mau.outlineVariant),
@@ -305,6 +322,114 @@ class _O extends StatelessWidget {
           const SizedBox(height: 4),
           Text(nhan, style: t.bodySmall?.copyWith(color: mau.onSurfaceVariant)),
         ],
+      ),
+    );
+  }
+}
+
+class _LuoiHoSo extends StatelessWidget {
+  const _LuoiHoSo({
+    required this.cotNho,
+    required this.cotRong,
+    required this.children,
+  });
+  final int cotNho;
+  final int cotRong;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final cot = constraints.maxWidth < DiemNgat.mayTinhBang
+          ? cotNho
+          : cotRong;
+      const cach = 8.0;
+      final rong = (constraints.maxWidth - cach * (cot - 1)) / cot;
+      return Wrap(
+        spacing: cach,
+        runSpacing: cach,
+        children: [
+          for (final child in children) SizedBox(width: rong, child: child),
+        ],
+      );
+    },
+  );
+}
+
+final _lichTuanProvider = FutureProvider.autoDispose<List<NhatKyNgay>>((ref) {
+  ref.watch(chuoiHocProvider);
+  final kho = ref.watch(khoChuoiHocProvider);
+  final homNay = DateTime.now();
+  final thuHai = DateTime(
+    homNay.year,
+    homNay.month,
+    homNay.day - homNay.weekday + 1,
+  );
+  return Future.wait([
+    for (var i = 0; i < 7; i++)
+      kho.layNhatKy(ChuoiHoc.dinhDangNgay(thuHai.add(Duration(days: i)))),
+  ]);
+});
+
+class _LichChuoiTuan extends ConsumerWidget {
+  const _LichChuoiTuan();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mau = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+    const tenThu = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Chuỗi học tuần này', style: text.titleMedium),
+            const SizedBox(height: 8),
+            KhiAsync(
+              gia: ref.watch(_lichTuanProvider),
+              thuLai: () => ref.invalidate(_lichTuanProvider),
+              khiCo: (ds) => Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final (i, ngay) in ds.indexed)
+                    Expanded(
+                      child: Semantics(
+                        label:
+                            '${tenThu[i]}, ${ngay.ngay}, ${ngay.dungFreeze
+                                ? 'dùng khiên'
+                                : ngay.datDieuKienStreak
+                                ? 'đã học'
+                                : 'chưa ghi nhận'}',
+                        excludeSemantics: true,
+                        child: Column(
+                          children: [
+                            Text(tenThu[i], style: text.labelSmall),
+                            Text(
+                              ngay.ngay.split('-').last,
+                              style: text.bodySmall,
+                            ),
+                            Icon(
+                              ngay.dungFreeze
+                                  ? Icons.shield_outlined
+                                  : ngay.datDieuKienStreak
+                                  ? Icons.check_circle
+                                  : Icons.circle_outlined,
+                              size: 18,
+                              color: ngay.datDieuKienStreak
+                                  ? mau.primary
+                                  : mau.outline,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -478,9 +603,9 @@ class _BoSuuTapHuyHieu extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     final mau = Theme.of(context).colorScheme;
 
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
+    return _LuoiHoSo(
+      cotNho: 3,
+      cotRong: 5,
       children: [
         for (final h in HuyHieu.tatCaMoc)
           _TheHuyHieu(
@@ -510,8 +635,7 @@ class _TheHuyHieu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 170,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: daMo
             ? Colors.amber.withValues(alpha: 0.1)
@@ -525,7 +649,9 @@ class _TheHuyHieu extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
                 huyHieu.bieuTuong,
@@ -534,7 +660,6 @@ class _TheHuyHieu extends StatelessWidget {
                   color: daMo ? null : Colors.grey,
                 ),
               ),
-              const Spacer(),
               if (daMo)
                 const Icon(Icons.verified, size: 18, color: Colors.amber)
               else
@@ -557,6 +682,7 @@ class _TheHuyHieu extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
+          Text(daMo ? 'Đã mở khóa' : 'Chưa mở khóa', style: t.labelSmall),
           const SizedBox(height: 2),
           Text(
             huyHieu.moTa,
@@ -596,13 +722,18 @@ class _TheViCoinHoSo extends ConsumerWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.account_balance_wallet, color: Colors.amber, size: 28),
-                const SizedBox(width: 10),
-                Text(
-                  'Ví Coin & Blockchain',
-                  style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                const Icon(
+                  Icons.account_balance_wallet,
+                  color: Colors.amber,
+                  size: 28,
                 ),
-                const Spacer(),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Coin trong ứng dụng',
+                    style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ),
                 if (pro != null && pro.isPro && !pro.daHetHan)
                   const HuyHieuProBadge(fontSize: 11),
               ],
@@ -618,7 +749,9 @@ class _TheViCoinHoSo extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Số dư: ${vi?.coinBalance ?? 0} Coin',
+                      vi == null
+                          ? 'Chưa tải được số dư Coin'
+                          : '${vi.coinBalance} Coin',
                       style: t.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: mau.primary,
@@ -626,9 +759,7 @@ class _TheViCoinHoSo extends ConsumerWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      vi?.daLienKetVi == true
-                          ? 'MetaMask: ${vi!.diaChiRutGon}'
-                          : 'Chưa liên kết ví MetaMask',
+                      'Số dư dùng cho các gói Pro 30/90/365 ngày.',
                       style: t.bodySmall?.copyWith(color: mau.onSurfaceVariant),
                     ),
                   ],
@@ -696,17 +827,28 @@ class _TheThanhVienProHoSo extends StatelessWidget {
                       contentPadding: EdgeInsets.zero,
                       leading: const CircleAvatar(
                         backgroundColor: Color(0x20FFD700),
-                        child: Icon(Icons.workspace_premium,
-                            color: Color(0xFFFFD700), size: 20),
+                        child: Icon(
+                          Icons.workspace_premium,
+                          color: Color(0xFFFFD700),
+                          size: 20,
+                        ),
                       ),
-                      title: Text(item.packageName,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 14)),
-                      subtitle: Text('$startStr → $endStr',
-                          style: const TextStyle(fontSize: 12)),
+                      title: Text(
+                        item.packageName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      subtitle: Text(
+                        '$startStr → $endStr',
+                        style: const TextStyle(fontSize: 12),
+                      ),
                       trailing: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: item.laHieuLuc
                               ? Colors.green.withValues(alpha: 0.15)
@@ -771,8 +913,11 @@ class _TheThanhVienProHoSo extends StatelessWidget {
                             colors: [Color(0xFFFFD700), Color(0xFFFFA000)],
                           ),
                         ),
-                        child: const Icon(Icons.workspace_premium,
-                            color: Colors.black87, size: 22),
+                        child: const Icon(
+                          Icons.workspace_premium,
+                          color: Colors.black87,
+                          size: 22,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       const Expanded(
@@ -805,8 +950,10 @@ class _TheThanhVienProHoSo extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 10),
                       ),
                       onPressed: () => context.go(DuongDan.nangCapPro),
-                      child: const Text('Nâng cấp ngay',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'Nâng cấp ngay',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
@@ -821,8 +968,11 @@ class _TheThanhVienProHoSo extends StatelessWidget {
                         colors: [Color(0xFFFFD700), Color(0xFFFFA000)],
                       ),
                     ),
-                    child: const Icon(Icons.workspace_premium,
-                        color: Colors.black87, size: 28),
+                    child: const Icon(
+                      Icons.workspace_premium,
+                      color: Colors.black87,
+                      size: 28,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -853,12 +1003,16 @@ class _TheThanhVienProHoSo extends StatelessWidget {
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFFFFD700),
                       foregroundColor: Colors.black87,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                     onPressed: () => context.go(DuongDan.nangCapPro),
-                    child: const Text('Nâng cấp ngay',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'Nâng cấp ngay',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
@@ -875,14 +1029,12 @@ class _TheThanhVienProHoSo extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF16082F),
-            Color(0xFF240E48),
-            Color(0xFF120326),
-          ],
+          colors: [Color(0xFF16082F), Color(0xFF240E48), Color(0xFF120326)],
         ),
         border: Border.all(
-            color: const Color(0xFFFFD700).withValues(alpha: 0.6), width: 1.5),
+          color: const Color(0xFFFFD700).withValues(alpha: 0.6),
+          width: 1.5,
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x33FFD700),
@@ -903,8 +1055,11 @@ class _TheThanhVienProHoSo extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.workspace_premium,
-                      color: const Color(0xFFFFD700), size: laDienThoai ? 24 : 28),
+                  Icon(
+                    Icons.workspace_premium,
+                    color: const Color(0xFFFFD700),
+                    size: laDienThoai ? 24 : 28,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'THẺ THÀNH VIÊN PRO VIP',
@@ -918,8 +1073,10 @@ class _TheThanhVienProHoSo extends StatelessWidget {
                 ],
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.green.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(8),
@@ -928,8 +1085,11 @@ class _TheThanhVienProHoSo extends StatelessWidget {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.check_circle,
-                        size: 14, color: Colors.greenAccent),
+                    Icon(
+                      Icons.check_circle,
+                      size: 14,
+                      color: Colors.greenAccent,
+                    ),
                     SizedBox(width: 4),
                     Text(
                       'ĐANG HOẠT ĐỘNG',
@@ -960,8 +1120,9 @@ class _TheThanhVienProHoSo extends StatelessWidget {
                       Text(
                         'Thời hạn còn lại',
                         style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.6),
-                            fontSize: 12),
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 12,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -984,8 +1145,9 @@ class _TheThanhVienProHoSo extends StatelessWidget {
                       Text(
                         'Hết hạn vào',
                         style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.6),
-                            fontSize: 12),
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 12,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -1032,8 +1194,10 @@ class _TheThanhVienProHoSo extends StatelessWidget {
                 ),
                 onPressed: () => context.go(DuongDan.nangCapPro),
                 icon: const Icon(Icons.add_circle_outline, size: 18),
-                label: const Text('Gia hạn thêm gói PRO',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                label: const Text(
+                  'Gia hạn thêm gói PRO',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
