@@ -405,13 +405,8 @@ class _NoiDungState extends ConsumerState<_NoiDung> {
         children: [
           Padding(
             padding: EdgeInsets.only(right: tutorCanhBai ? rongTutor : 0),
-            child: ExcludeSemantics(
-              excluding: hienTutor && !rong,
-              child: IgnorePointer(
-                ignoring: hienTutor && !rong,
-                child: noiDungBai,
-              ),
-            ),
+            // WebView của video phải ngừng vẽ khi Tutor phủ toàn màn hình.
+            child: Offstage(offstage: hienTutor && !rong, child: noiDungBai),
           ),
           if (hienTutor)
             Positioned(

@@ -145,6 +145,8 @@ void main() {
     final kho = _KhoTutor();
     await dung(tester, kho, ValueNotifier('b1'), const Size(360, 740));
     expect(tester.getSize(find.byType(GiaSuAi)).width, 360);
+    expect(find.byTooltip('Mở Gia sư AI'), findsNothing);
+    expect(find.byTooltip('Mở Gia sư AI', skipOffstage: false), findsOneWidget);
     for (final nhan in ['Đóng Gia sư AI', 'Gửi câu hỏi']) {
       final nut = tester.getSize(find.byTooltip(nhan));
       expect(nut.width, greaterThanOrEqualTo(48));
