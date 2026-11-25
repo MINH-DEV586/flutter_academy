@@ -55,7 +55,8 @@ function yeuCauAi(nhaCungCap, apiKey, model, instructions, input) {
       body: {
         systemInstruction: { parts: [{ text: instructions }] },
         contents: [{ role: 'user', parts: [{ text: input }] }],
-        generationConfig: { maxOutputTokens: 1400 },
+        // Gemini tính cả token suy luận vào giới hạn đầu ra.
+        generationConfig: { maxOutputTokens: 4096 },
       },
     };
   }

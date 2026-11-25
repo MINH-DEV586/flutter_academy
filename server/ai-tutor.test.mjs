@@ -89,6 +89,7 @@ test('Gemini nhận tài liệu bài học và trả nội dung hiển thị', a
       const payload = JSON.parse(options.body);
       assert.match(payload.systemInstruction.parts[0].text, /queryParameters/);
       assert.equal(payload.contents[0].parts[0].text, cauHoi.cauHoi);
+      assert.equal(payload.generationConfig.maxOutputTokens, 4096);
       return Response.json({
         candidates: [{ content: { parts: [
           { thought: true, text: 'Suy luận nội bộ' },
