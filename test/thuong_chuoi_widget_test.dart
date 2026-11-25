@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_academy/data/kho_thuong_chuoi.dart';
 import 'package:flutter_academy/models/nguoi_dung.dart';
 import 'package:flutter_academy/viewmodels/providers.dart';
@@ -68,8 +67,6 @@ void main() {
     tester,
   ) async {
     final kho = _KhoVi();
-    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -128,5 +125,5 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('+20 Coin · Mốc 7 ngày'), findsOneWidget);
     expect(find.textContaining('Đã nhận'), findsOneWidget);
-  });
+  }, variant: const TargetPlatformVariant({TargetPlatform.windows}));
 }
