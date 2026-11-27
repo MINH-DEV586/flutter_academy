@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../data/kho_thuong_chuoi.dart';
 import '../data/mo_trang_metamask.dart';
+import '../dinh_tuyen/duong_dan.dart';
 import '../models/thuong_chuoi.dart';
 import '../viewmodels/providers.dart';
 import '../viewmodels/thuong_chuoi_vm.dart';
@@ -23,6 +25,9 @@ class _TheCoinThuongState extends ConsumerState<TheCoinThuong> {
   bool _dangMo = false;
   String? _loi;
   bool _dangKiemTra = false;
+  String? _dangNhanId;
+  String? _vuaYeuCauNhan;
+  String? _loiNhan;
   String? _ketQuaKiemTra;
 
   @override
@@ -54,9 +59,14 @@ class _TheCoinThuongState extends ConsumerState<TheCoinThuong> {
       final trang = await ref.refresh(trangThaiThuongProvider.future);
       if (mounted && ref.read(phienProvider).asData?.value?.email == email) {
         setState(
-          () => _ketQuaKiemTra = trang?.loiMang == null
-              ? 'Đã cập nhật Coin thưởng.'
-              : 'Chưa đối soát được với ví. Hãy thử lại.',
+          () => _ketQuaKiemTra = switch ((
+            ref.read(dongBoThuongProvider),
+            trang?.loiMang,
+          )) {
+            (> 0, _) => 'Bài học đang chờ đồng bộ. Hãy thử lại.',
+            (_, String()) => 'Chưa đối soát được với ví. Hãy thử lại.',
+            _ => 'Đã cập nhật Coin.',
+          },
         );
       }
     } catch (_) {
@@ -87,7 +97,7 @@ class _TheCoinThuongState extends ConsumerState<TheCoinThuong> {
     }
   }
 
-  void _hienLichSu(List<NhanCoinThuong> lichSu) {
+  void _hienLichSu(TrangThaiThuongChuoi tt) {
     final ngay = MaterialLocalizations.of(context);
     showModalBottomSheet<void>(
       context: context,
@@ -99,22 +109,18 @@ class _TheCoinThuongState extends ConsumerState<TheCoinThuong> {
           padding: const EdgeInsets.all(16),
           children: [
             Text(
-              'Lịch sử Coin thưởng',
+              'Lịch sử thưởng chuỗi',
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            if (lichSu.isEmpty)
+            if (tt.lichSu.isEmpty)
               const ListTile(title: Text('Chưa có mốc thưởng đã ghi nhận.')),
-            for (final item in lichSu)
+            for (final item in tt.lichSu)
               ListTile(
                 title: Text('+${item.coin} Coin · Mốc ${item.mocNgay} ngày'),
                 subtitle: Text(
                   [
                     if (item.thoiDiem case final moc?) _hienThoiDiem(moc, ngay),
-                    switch (item.trangThai) {
-                      'issued' => 'Đã nhận',
-                      'submitted' => 'Đang xác nhận',
-                      _ => 'Chờ cấp vào ví',
-                    },
+                    _trangThaiCap(tt, item.trangThai),
                   ].join(' · '),
                 ),
               ),
@@ -122,6 +128,39 @@ class _TheCoinThuongState extends ConsumerState<TheCoinThuong> {
         ),
       ),
     );
+  }
+
+  String _trangThaiCap(TrangThaiThuongChuoi tt, String? trangThai) =>
+      switch (trangThai) {
+        'issued' => 'Đã nhận',
+        'submitted' => 'Chờ xác nhận trên Hardhat',
+        'claiming' => 'Đang cấp vào ví',
+        _ when !tt.daKetNoiVi => 'Chờ xác minh ví',
+        _ => 'Có thể nhận',
+      };
+
+  Future<void> _nhanCoin(String id) async {
+    if (_dangNhanId != null) return;
+    final email = ref.read(emailHocVienProvider);
+    bool cungPhien() => mounted && ref.read(emailHocVienProvider) == email;
+    setState(() {
+      _dangNhanId = id;
+      _vuaYeuCauNhan = id;
+      _loiNhan = null;
+    });
+    try {
+      await ref.read(trangThaiThuongProvider.notifier).nhanCoin(id);
+    } on LoiThuongChuoi catch (loi) {
+      if (cungPhien()) setState(() => _loiNhan = loi.thongBao);
+    } catch (_) {
+      if (cungPhien()) {
+        setState(
+          () => _loiNhan = 'Chưa gửi được yêu cầu nhận thưởng. Hãy thử lại.',
+        );
+      }
+    } finally {
+      if (cungPhien()) setState(() => _dangNhanId = null);
+    }
   }
 
   String _hienThoiDiem(String moTa, MaterialLocalizations ngonNgu) {
@@ -195,6 +234,9 @@ class _TheCoinThuongState extends ConsumerState<TheCoinThuong> {
         _loi = null;
         _ketQuaKiemTra = null;
         _dangMo = false;
+        _dangNhanId = null;
+        _vuaYeuCauNhan = null;
+        _loiNhan = null;
       });
     });
     if (!ref.watch(daDangNhapProvider) ||
@@ -209,21 +251,16 @@ class _TheCoinThuongState extends ConsumerState<TheCoinThuong> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Coin thưởng học tập',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            if (trang.value case final tinhTrang?)
+            Text('Số dư Coin', style: Theme.of(context).textTheme.titleSmall),
+            if (trang.asData?.value case final tinhTrang?)
               _noiDung(tinhTrang)
             else if (trang.isLoading && !_dangKiemTra)
-              const KhoiDangTai(nhan: 'Đang tải Coin thưởng'),
+              const KhoiDangTai(nhan: 'Đang tải Coin'),
             if (trang.hasError && _ketQuaKiemTra == null)
-              const Text(
-                'Chưa tải được Coin thưởng. Kiểm tra kết nối rồi thử lại.',
-              ),
-            if (_dangKiemTra)
+              const Text('Chưa tải được Coin. Kiểm tra kết nối rồi thử lại.'),
+            if (_dangKiemTra || (trang.hasValue && trang.isLoading))
               const LinearProgressIndicator(
-                semanticsLabel: 'Đang kiểm tra Coin thưởng',
+                semanticsLabel: 'Đang kiểm tra Coin',
               ),
             if (_ketQuaKiemTra case final thongBao?)
               Semantics(liveRegion: true, child: Text(thongBao)),
@@ -232,11 +269,17 @@ class _TheCoinThuongState extends ConsumerState<TheCoinThuong> {
               spacing: 8,
               runSpacing: 4,
               children: [
-                if (trang.value case final tinhTrang?)
+                if (trang.asData?.value case final tinhTrang?)
                   TextButton.icon(
                     icon: const Icon(Icons.history),
-                    onPressed: () => _hienLichSu(tinhTrang.lichSu),
+                    onPressed: () => _hienLichSu(tinhTrang),
                     label: const Text('Lịch sử nhận thưởng'),
+                  ),
+                if (!widget.hienVi)
+                  TextButton.icon(
+                    icon: const Icon(Icons.account_balance_wallet_outlined),
+                    onPressed: () => context.go(DuongDan.viCoin),
+                    label: const Text('Xem ví'),
                   ),
                 TextButton.icon(
                   icon: const Icon(Icons.refresh),
@@ -255,43 +298,110 @@ class _TheCoinThuongState extends ConsumerState<TheCoinThuong> {
 
   Widget _noiDung(TrangThaiThuongChuoi tt) {
     final mucTiep = tt.mocTiepTheo;
+    final mucDat = tt.moc.where((muc) => muc.trangThai != null).lastOrNull;
+    final moiNhan =
+        _vuaYeuCauNhan != null &&
+        tt.lichSu.any(
+          (muc) => muc.id == _vuaYeuCauNhan && muc.trangThai == 'issued',
+        );
+    final baiChoDongBo = ref.watch(dongBoThuongProvider);
+    final giaoDien = Theme.of(context);
+    final mau = giaoDien.colorScheme;
+    final chu = giaoDien.textTheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        Text(
-          tt.soDu == null ? 'Số dư chưa khả dụng' : '${tt.soDu} Coin thưởng',
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        Text('${tt.soNgay} ngày hoàn thành bài liên tiếp'),
-        if (widget.hienVi)
-          const Text('Dùng Coin thưởng học tập để đổi gói Pro từ phần thưởng.'),
-        if (tt.coinDangCho > 0)
-          Text('${tt.coinDangCho} Coin đang chờ cấp vào ví'),
-        const SizedBox(height: 12),
-        for (final muc in tt.moc)
-          ListTile(
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-            leading: Icon(switch (muc.trangThai) {
-              'issued' => Icons.check_circle,
-              'submitted' || 'pending' => Icons.schedule,
-              _ when muc == mucTiep => Icons.flag_outlined,
-              _ => Icons.lock_outline,
-            }),
-            title: Text('${muc.ngay} ngày · +${muc.coin} Coin'),
-            subtitle: Text(switch (muc.trangThai) {
-              'issued' => 'Đã nhận',
-              'submitted' || 'pending' => 'Đã đạt · Chờ nhận',
-              _ when muc == mucTiep => 'Đang thực hiện',
-              _ => 'Chưa đạt',
-            }),
+        Semantics(
+          liveRegion: true,
+          child: Text(
+            tt.soDu == null ? 'Số dư Coin chưa khả dụng' : '${tt.soDu} Coin',
+            style: chu.headlineSmall,
           ),
-        if (mucTiep != null) ...[
-          Text('Tiến độ mốc tiếp theo · ${tt.soNgay}/${mucTiep.ngay} ngày'),
-          const SizedBox(height: 4),
-          LinearProgressIndicator(value: tt.soNgay / mucTiep.ngay),
-        ],
+        ),
+        const SizedBox(height: 16),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: mau.primaryContainer,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.emoji_events_outlined, color: mau.onPrimaryContainer),
+              const SizedBox(height: 6),
+              Text(
+                tt.soNgay > 0
+                    ? 'Bạn đã đạt chuỗi ${tt.soNgay} ngày!'
+                    : 'Thưởng chuỗi học',
+                style: chu.titleMedium?.copyWith(
+                  color: mau.onPrimaryContainer,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (mucDat != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '+${mucDat.coin} Coin',
+                  style: chu.headlineMedium?.copyWith(
+                    color: mau.onPrimaryContainer,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  'Mốc ${mucDat.ngay} ngày · ${_trangThaiCap(tt, mucDat.trangThai)}',
+                  style: TextStyle(color: mau.onPrimaryContainer),
+                ),
+              ],
+              if (mucTiep != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Mốc tiếp theo ${tt.soNgay}/${mucTiep.ngay} ngày · +${mucTiep.coin} Coin',
+                  style: TextStyle(color: mau.onPrimaryContainer),
+                ),
+                const SizedBox(height: 4),
+                LinearProgressIndicator(
+                  value: tt.soNgay / mucTiep.ngay,
+                  semanticsLabel: 'Tiến độ mốc tiếp theo',
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text('Chuỗi thưởng tính theo ngày có bài học hoàn thành.'),
+        if (baiChoDongBo > 0) Text('$baiChoDongBo bài đang chờ đồng bộ.'),
+        if (moiNhan)
+          Semantics(
+            liveRegion: true,
+            child: const Text('Nhận thưởng thành công.'),
+          ),
+        if (tt.coinDangCho > 0 && !tt.daKetNoiVi)
+          Text('${tt.coinDangCho} Coin chờ xác minh ví MetaMask.'),
+        if (tt.coinChoGiaoDich > 0)
+          Text(
+            tt.diaChiVi == null
+                ? '${tt.coinChoGiaoDich} Coin chờ xác minh ví MetaMask.'
+                : '${tt.coinChoGiaoDich} Coin đang chờ cấp vào ví.',
+          ),
+        if (tt.daKetNoiVi)
+          for (final muc in tt.lichSu)
+            if (muc.id case final id? when muc.trangThai == 'pending')
+              FilledButton(
+                onPressed: _dangNhanId != null ? null : () => _nhanCoin(id),
+                child: Text(
+                  _dangNhanId == id
+                      ? 'Đang gửi yêu cầu…'
+                      : 'Nhận ${muc.coin} Coin · Mốc ${muc.mocNgay} ngày',
+                ),
+              ),
+        if (_loiNhan case final thongBao?)
+          Semantics(liveRegion: true, child: Text(thongBao)),
+        if (_loi case final thongBao?) Text(thongBao),
+        if (tt.loiMang != null)
+          const Text('Chưa đối soát được với ví. Hãy kiểm tra trạng thái.'),
         if (widget.hienVi) _thaoTacVi(tt),
       ],
     );
@@ -316,15 +426,12 @@ class _TheCoinThuongState extends ConsumerState<TheCoinThuong> {
                 : diaChi,
           ),
         if (!tt.blockchain)
-          const Text('Kết nối ví thưởng tạm thời chưa khả dụng.'),
+          const Text('Kết nối ví Coin tạm thời chưa khả dụng.'),
         if (_trangThaiKy(tt) case final nhan?) Text(nhan),
         if (tt.hanPro case final hanPro?)
           Text(
             'Hạn Pro ${MaterialLocalizations.of(context).formatShortDate(hanPro.toLocal())}',
           ),
-        if (tt.loiMang != null)
-          const Text('Chưa đọc được dữ liệu ví. Hãy kiểm tra trạng thái.'),
-        if (_loi case final thongBao?) Text(thongBao),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -345,18 +452,18 @@ class _TheCoinThuongState extends ConsumerState<TheCoinThuong> {
                 onPressed: _dangMo || tt.doiPro == 'confirming'
                     ? null
                     : () => _chuanBi(doiPro: true),
-                child: Text('Đổi $gia Coin thưởng lấy $soNgay ngày Pro'),
+                child: Text('Đổi $gia Coin lấy $soNgay ngày Pro'),
               ),
             if (tt.daKetNoiVi &&
                 gia != null &&
                 soNgay != null &&
                 tt.soDu != null &&
                 tt.soDu! < gia)
-              Text('Gói Pro $soNgay ngày cần $gia Coin thưởng.'),
+              Text('Gói Pro $soNgay ngày cần $gia Coin.'),
             if (tt.daKetNoiVi)
               TextButton(
                 onPressed: _dangMo ? null : _ngatKetNoi,
-                child: const Text('Ngắt kết nối ví thưởng'),
+                child: const Text('Ngắt kết nối ví Coin'),
               ),
             if (trangKy != null &&
                 (_kyDoiPro ? tt.doiPro != 'completed' : !tt.daKetNoiVi))
@@ -371,13 +478,12 @@ class _TheCoinThuongState extends ConsumerState<TheCoinThuong> {
         if (diaChi != null || tt.txHash != null)
           ExpansionTile(
             tilePadding: EdgeInsets.zero,
-            title: const Text('Chi tiết ví thưởng'),
+            title: const Text('Chi tiết ví Coin'),
             childrenPadding: const EdgeInsets.only(bottom: 8),
             expandedCrossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (diaChi != null) SelectableText(diaChi),
-              if (tt.chainId != null)
-                Text('Mạng thử nghiệm · ID ${tt.chainId}'),
+              if (tt.chainId != null) Text('Hardhat Local · ID ${tt.chainId}'),
               if (tt.txHash case final hash?) SelectableText('Giao dịch $hash'),
             ],
           ),

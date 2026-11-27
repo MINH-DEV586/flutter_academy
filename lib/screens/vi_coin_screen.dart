@@ -1,11 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../dinh_tuyen/duong_dan.dart';
-import '../data/metamask_interop.dart';
-import '../models/vi_coin.dart';
 import '../viewmodels/providers.dart';
 import '../viewmodels/vi_coin_vm.dart';
 import '../widgets/the_coin_thuong.dart';
@@ -53,6 +50,10 @@ class _ViCoinScreenState extends ConsumerState<ViCoinScreen> {
             label: const Text('Hồ sơ'),
           ),
         ),
+        if (ref.watch(daDangNhapProvider)) ...[
+          const TheCoinThuong(),
+          const SizedBox(height: 16),
+        ],
         KhiAsync(
           gia: viAsync.hasValue ? AsyncData(viAsync.value) : viAsync,
           thuLai: () => ref.invalidate(viCoinProvider),
@@ -72,7 +73,22 @@ class _ViCoinScreenState extends ConsumerState<ViCoinScreen> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _TheSoDuCoin(vi: vi),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: () => context.go(DuongDan.napCoin),
+                      icon: const Icon(Icons.add_card),
+                      label: const Text('Nạp Coin'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => context.go(DuongDan.nangCapPro),
+                      icon: const Icon(Icons.workspace_premium_outlined),
+                      label: const Text('Đổi gói Pro'),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 if (donNap.value case final don? when !don.daXong)
                   ListTile(
@@ -82,15 +98,6 @@ class _ViCoinScreenState extends ConsumerState<ViCoinScreen> {
                     subtitle: const Text('Xem đơn nạp Coin'),
                     onTap: () => context.go(DuongDan.napCoin),
                   ),
-                const TheCoinThuong(),
-                const SizedBox(height: 16),
-                if (kIsWeb) ...[
-                  ExpansionTile(
-                    title: const Text('Chi tiết ví nạp trên Web'),
-                    children: [_TheMetaMask(vi: vi)],
-                  ),
-                  const SizedBox(height: 16),
-                ],
                 _TheTrangThaiPro(proAsync: proAsync),
                 const SizedBox(height: 24),
                 Wrap(
@@ -116,271 +123,6 @@ class _ViCoinScreenState extends ConsumerState<ViCoinScreen> {
           },
         ),
       ],
-    );
-  }
-}
-
-class _TheSoDuCoin extends StatelessWidget {
-  final ViCoin vi;
-  const _TheSoDuCoin({required this.vi});
-
-  @override
-  Widget build(BuildContext context) {
-    final mau = Theme.of(context).colorScheme;
-    final t = Theme.of(context).textTheme;
-
-    return Card(
-      elevation: 2,
-      color: mau.primaryContainer,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.monetization_on,
-                  color: mau.onPrimaryContainer,
-                  size: 28,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Số dư Coin trong ứng dụng',
-                    style: t.titleMedium?.copyWith(
-                      color: mau.onPrimaryContainer,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '${vi.coinBalance} Coin',
-              style: t.displaySmall?.copyWith(
-                color: mau.onPrimaryContainer,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Dùng để mua các gói Pro trong ứng dụng.',
-              style: t.bodyMedium?.copyWith(color: mau.onPrimaryContainer),
-            ),
-            const SizedBox(height: 20),
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: [
-                FilledButton.icon(
-                  onPressed: () => context.go(DuongDan.napCoin),
-                  icon: const Icon(Icons.add_card, size: 18),
-                  label: const Text('Nạp Coin'),
-                ),
-                OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: mau.onPrimaryContainer,
-                    side: BorderSide(
-                      color: mau.onPrimaryContainer.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  onPressed: () => context.go(DuongDan.nangCapPro),
-                  icon: const Icon(Icons.workspace_premium, size: 18),
-                  label: const Text('Đổi gói Pro'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TheMetaMask extends ConsumerStatefulWidget {
-  final ViCoin vi;
-  const _TheMetaMask({required this.vi});
-
-  @override
-  ConsumerState<_TheMetaMask> createState() => _TheMetaMaskState();
-}
-
-class _TheMetaMaskState extends ConsumerState<_TheMetaMask> {
-  bool _dangKetNoi = false;
-  String? _viHienTai;
-  String _chain = '';
-  int _lanDoc = 0;
-  late final VoidCallback _dungQuanSat;
-
-  @override
-  void initState() {
-    super.initState();
-    _dungQuanSat = MetaMaskService.quanSatKetNoi(_docTrangThai);
-    _docTrangThai();
-  }
-
-  @override
-  void dispose() {
-    _dungQuanSat();
-    super.dispose();
-  }
-
-  Future<void> _docTrangThai() async {
-    final lanDoc = ++_lanDoc;
-    final address = await MetaMaskService.getAccount();
-    final chain = await MetaMaskService.getChainId();
-    if (!mounted || lanDoc != _lanDoc) return;
-    setState(() {
-      _viHienTai = address;
-      _chain = chain;
-    });
-  }
-
-  void _xuLyKetNoi() async {
-    setState(() => _dangKetNoi = true);
-    final loi = await ref.read(viCoinProvider.notifier).ketNoiMetaMask();
-    if (!mounted) return;
-    setState(() => _dangKetNoi = false);
-
-    if (loi != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(loi), backgroundColor: Colors.red.shade700),
-      );
-    } else {
-      _docTrangThai();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Kết nối ví MetaMask thành công! 🦊'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    }
-  }
-
-  void _xuLyHuyKetNoi() async {
-    final loi = await ref.read(viCoinProvider.notifier).huyLienKetMetaMask();
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(loi ?? 'Đã ngắt liên kết ví nạp trên Web.')),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final vi = widget.vi;
-    final mau = Theme.of(context).colorScheme;
-    final t = Theme.of(context).textTheme;
-    final khopVi =
-        _viHienTai?.toLowerCase() == vi.metamaskAddress?.toLowerCase() &&
-        _viHienTai != null;
-    final chainId = int.tryParse(_chain);
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Text('🦊', style: TextStyle(fontSize: 24)),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'MetaMask Extension · Nạp Coin',
-                    style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                if (vi.daLienKetVi && khopVi)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.green),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.check_circle, size: 14, color: Colors.green),
-                        SizedBox(width: 4),
-                        Text(
-                          'Đã kết nối',
-                          style: TextStyle(
-                            color: Colors.green,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: mau.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'Chưa kết nối',
-                      style: TextStyle(
-                        color: mau.onSurfaceVariant,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (chainId != null)
-              Text('Mạng Extension hiện tại · Chain ID $chainId'),
-            if (_viHienTai != null && !khopVi)
-              SelectableText('Tài khoản Extension đang chọn · $_viHienTai'),
-            if (vi.daLienKetVi) ...[
-              Text(
-                'Địa chỉ ví: ${vi.metamaskAddress}',
-                style: t.bodyMedium?.copyWith(fontFamily: 'monospace'),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: _xuLyHuyKetNoi,
-                icon: const Icon(Icons.link_off, size: 16),
-                label: const Text('Ngắt kết nối ví'),
-              ),
-            ],
-            if (!khopVi || !vi.daLienKetVi) ...[
-              Text(
-                'Chọn tài khoản thử nghiệm trong Extension và liên kết để nạp Coin.',
-                style: t.bodyMedium?.copyWith(color: mau.onSurfaceVariant),
-              ),
-              const SizedBox(height: 12),
-              FilledButton.tonalIcon(
-                onPressed: _dangKetNoi ? null : _xuLyKetNoi,
-                icon: _dangKetNoi
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.account_balance_wallet, size: 18),
-                label: Text(
-                  _dangKetNoi ? 'Đang kết nối...' : 'Kết nối MetaMask',
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
     );
   }
 }
@@ -477,7 +219,7 @@ class _DanhSachGiaoDichNgan extends ConsumerWidget {
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 subtitle: Text(
-                  gd.createdAt,
+                  gd.dangCho ? 'Đang chờ cấp Coin' : gd.createdAt,
                   style: TextStyle(
                     fontSize: 12,
                     color: Theme.of(context).colorScheme.outline,

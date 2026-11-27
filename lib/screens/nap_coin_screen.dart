@@ -6,6 +6,7 @@ import '../data/mo_trang_metamask.dart';
 import '../dinh_tuyen/duong_dan.dart';
 import '../models/don_nap_coin.dart';
 import '../viewmodels/providers.dart';
+import '../viewmodels/thuong_chuoi_vm.dart';
 import '../viewmodels/vi_coin_vm.dart';
 import '../widgets/trang.dart';
 import '../widgets/trang_thai.dart';
@@ -85,6 +86,8 @@ class _NapCoinScreenState extends ConsumerState<NapCoinScreen> {
       });
     });
     final daDangNhap = ref.watch(daDangNhapProvider);
+    final vi = ref.watch(trangThaiThuongProvider).asData?.value;
+    final soDu = ref.watch(soDuCoinProvider);
     final text = Theme.of(context).textTheme;
     final goi = _goiChon;
     final don = daDangNhap
@@ -102,7 +105,7 @@ class _NapCoinScreenState extends ConsumerState<NapCoinScreen> {
           ),
         ),
         const Text(
-          'Coin nạp được cộng vào số dư trong ứng dụng sau khi thanh toán được xác minh.',
+          'Coin nạp và thưởng chuỗi cùng vào ví Hardhat. Dùng số dư này để đổi Pro.',
         ),
         const SizedBox(height: 16),
         if (!daDangNhap)
@@ -117,6 +120,10 @@ class _NapCoinScreenState extends ConsumerState<NapCoinScreen> {
             ),
           )
         else ...[
+          Text(
+            soDu == null ? 'Số dư Coin chưa khả dụng' : 'Số dư: $soDu Coin',
+            style: text.titleMedium,
+          ),
           if (don.hasError || don.isLoading || don.value != null)
             Card(
               margin: EdgeInsets.zero,
@@ -184,10 +191,15 @@ class _NapCoinScreenState extends ConsumerState<NapCoinScreen> {
                     ],
                   ),
           ),
-          if (goi != null) ...[
+          if (vi?.daKetNoiVi == false)
+            TextButton(
+              onPressed: () => context.go(DuongDan.viCoin),
+              child: const Text('Xác minh MetaMask để nạp Coin'),
+            ),
+          if (goi != null && vi?.daKetNoiVi == true) ...[
             const SizedBox(height: 16),
             Text('Thanh toán', style: text.titleMedium),
-            Text('Nhận ${goi.coinAmount} Coin trong ứng dụng'),
+            Text('Nhận ${goi.coinAmount} Coin vào ví Hardhat'),
             Text(
               '${goi.ethAmount} ETH thử nghiệm + phí mạng hiển thị trong MetaMask',
             ),

@@ -221,11 +221,6 @@ class _QuizState extends ConsumerState<_Quiz> {
                                 xpCongThem: 30,
                                 moTaHoatDong: 'Hoàn thành bài kiểm tra trắc nghiệm',
                               );
-                          ref.read(viCoinProvider.notifier).nhanThuong(
-                                loai: 'quiz_complete',
-                                referenceId: 'quiz_${widget.maKhoaHoc}',
-                                moTa: 'Hoàn thành Quiz khóa học',
-                              );
                         }
                       : null,
                   child: const Text('Nộp quiz'),

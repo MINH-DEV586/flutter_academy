@@ -7,6 +7,7 @@ import { taoThanhVien } from './subscription.mjs';
 import { htmlTaiLieu, phatTutor, taoHanMuc, taoTaiLieuTutor } from './tutor-stream.mjs';
 import { taoChuoiThuong } from './streak-rewards.mjs';
 import { taoThuongOnChain } from './reward-chain.mjs';
+import { taoSoCoinChung } from './coin-chung.mjs';
 
 const baiHoc = JSON.parse(
   readFileSync(new URL('../assets/bai_hoc_ai.json', import.meta.url), 'utf8'),
@@ -96,11 +97,15 @@ export function taoMayChu({
   dongHo = () => new Date(), mocThuong, thuongBlockchain, hostThem, originThem,
 } = {}) {
   const taiKhoan = taoTaiKhoan(accountDb, maKhoaHoc);
-  const viCoin = taoViCoin(taiKhoan.db, cauHinhBlockchain);
-  const thanhVien = taoThanhVien(taiKhoan.db, dongHo);
+  const coinChung = !!thuongBlockchain?.address;
+  const viCoin = taoViCoin(taiKhoan.db, cauHinhBlockchain, {
+    soCoin: () => soCoin, thuongOnChain: () => thuongOnChain,
+  });
+  const soCoin = coinChung ? taoSoCoinChung(taiKhoan.db) : null;
+  const thanhVien = taoThanhVien(taiKhoan.db, dongHo, { coinChung });
   const layHanMuc = taoHanMuc(taiKhoan.db, dongHo, tutorFree, tutorPro);
   const chuoiThuong = taoChuoiThuong(taiKhoan.db, baiHoc, dongHo, mocThuong);
-  const thuongOnChain = taoThuongOnChain(taiKhoan.db, thanhVien, dongHo, thuongBlockchain);
+  const thuongOnChain = taoThuongOnChain(taiKhoan.db, thanhVien, dongHo, { ...thuongBlockchain, soCoin });
   const khoaHocProMacDinh = new Set([
     'flutter-web3-blockchain',
     'flutter-clean-architecture',
@@ -156,7 +161,7 @@ export function taoMayChu({
           return tra(200, await viCoin.trangNap(duLieu));
         }
         if (!thuongOnChain) return tra(503, { loi: 'Chưa cấu hình hợp đồng thưởng.' });
-        return tra(200, thuongOnChain.trangVi(duLieu ?? {}));
+        return tra(200, await thuongOnChain.trangVi(duLieu ?? {}));
       } catch (loi) {
         return tra(loi.status ?? 500, { loi: loi.status ? loi.message : 'Chưa xử lý được xác nhận ví.' });
       }
@@ -190,10 +195,24 @@ export function taoMayChu({
           const onChain = await thuongOnChain?.trangThai(nguoiDung.email);
           return tra(200, { ...chuoiThuong.trangThai(nguoiDung.email), onChain: onChain ?? null });
         }
+        if (url === '/api/rewards/claim' && method === 'POST') {
+          if (!thuongOnChain) return tra(503, { loi: 'Chưa cấu hình hợp đồng thưởng.' });
+          let duLieu;
+          try { duLieu = await docJson(request); } catch { return tra(400, { loi: 'JSON không hợp lệ.' }); }
+          thuongOnChain.batDauNhan(nguoiDung.email, duLieu?.awardId);
+          const onChain = await thuongOnChain.trangThai(nguoiDung.email);
+          return tra(200, { ...chuoiThuong.trangThai(nguoiDung.email), onChain });
+        }
         if (method === 'POST' && ['/api/rewards/link', '/api/rewards/redeem'].includes(url)) {
           if (!thuongOnChain) return tra(503, { loi: 'Chưa cấu hình hợp đồng thưởng.' });
           const operation = url.endsWith('/link') ? 'link' : 'redeem';
-          return tra(201, await thuongOnChain.batDau(nguoiDung.email, operation));
+          let packageId;
+          if (operation === 'redeem') {
+            let duLieu;
+            try { duLieu = await docJson(request); } catch { return tra(400, { loi: 'JSON không hợp lệ.' }); }
+            packageId = duLieu?.packageId;
+          }
+          return tra(201, await thuongOnChain.batDau(nguoiDung.email, operation, packageId));
         }
         if (url === '/api/rewards/disconnect' && method === 'POST') {
           if (!thuongOnChain) return tra(503, { loi: 'Chưa cấu hình hợp đồng thưởng.' });
@@ -204,9 +223,6 @@ export function taoMayChu({
           try { duLieu = await docJson(request); } catch { return tra(400, { loi: 'JSON không hợp lệ.' }); }
           if (duLieu?.email !== nguoiDung.email) return tra(409, { loi: 'Phiên tài khoản đã thay đổi.' });
           const { status, body } = chuoiThuong.ghiNhan(nguoiDung.email, duLieu);
-          if (status === 200 && body.reward > 0) {
-            await thuongOnChain?.trangThai(nguoiDung.email);
-          }
           return tra(status, body);
         }
         return tra(404, { loi: 'Sai địa chỉ Coin thưởng.' });
@@ -332,23 +348,31 @@ export function taoMayChu({
   return server;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+export function docCauHinhTutor() {
   const envFile = new URL('../.env', import.meta.url);
   if (existsSync(envFile)) process.loadEnvFile(envFile);
-  const port = Number(process.env.AI_TUTOR_PORT ?? 8787);
   const nhaCungCap = ['openrouter', 'gemini', 'openai'].find(
     (ten) => process.env[`${ten.toUpperCase()}_API_KEY`]?.trim(),
   ) ?? 'openai';
   const prefix = nhaCungCap.toUpperCase();
-  const thuMucTaiKhoan = new URL('./.local/', import.meta.url);
-  mkdirSync(thuMucTaiKhoan, { recursive: true });
-  taoMayChu({
+  return {
     nhaCungCap,
     apiKey: process.env[`${prefix}_API_KEY`]?.trim(),
     model: process.env[`${prefix}_MODEL`]?.trim() || undefined,
     demoTutor: process.env.AI_TUTOR_DEMO === '1',
     tutorFree: Number(process.env.AI_TUTOR_FREE) || 5,
     tutorPro: Number(process.env.AI_TUTOR_PRO) || 30,
+  };
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const cauHinhTutor = docCauHinhTutor();
+  const { nhaCungCap } = cauHinhTutor;
+  const port = Number(process.env.AI_TUTOR_PORT ?? 8787);
+  const thuMucTaiKhoan = new URL('./.local/', import.meta.url);
+  mkdirSync(thuMucTaiKhoan, { recursive: true });
+  taoMayChu({
+    ...cauHinhTutor,
     mocThuong: {
       3: Number(process.env.STREAK_DAY_3_COIN) || 10,
       7: Number(process.env.STREAK_DAY_7_COIN) || 20,

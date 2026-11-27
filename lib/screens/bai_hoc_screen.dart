@@ -285,19 +285,9 @@ class _NoiDungState extends ConsumerState<_NoiDung> {
           children: [
             FilledButton.icon(
               onPressed: () {
-                final seXong = !daXong;
                 ref
                     .read(tienDoProvider.notifier)
                     .daoTrangThaiBai(khoaHoc.ma, bai.ma);
-                if (seXong) {
-                  ref
-                      .read(viCoinProvider.notifier)
-                      .nhanThuong(
-                        loai: 'lesson_complete',
-                        referenceId: '${khoaHoc.ma}_${bai.ma}',
-                        moTa: 'Hoàn thành bài: ${bai.tieuDe}',
-                      );
-                }
               },
               icon: Icon(daXong ? Icons.undo : Icons.check),
               label: Text(daXong ? 'Bỏ đánh dấu' : 'Đánh dấu đã xong'),
@@ -330,7 +320,7 @@ class _NoiDungState extends ConsumerState<_NoiDung> {
             onPressed: () => ref.read(dongBoThuongProvider.notifier).thuLai(),
             icon: const Icon(Icons.sync),
             label: Text(
-              '$thuongDangCho bài đang chờ đồng bộ Coin thưởng · Thử lại',
+              '$thuongDangCho bài đang chờ đồng bộ chuỗi học · Thử lại',
             ),
           ),
         if (taiLieu.isLoading)

@@ -214,6 +214,7 @@ export function taoDonNapCoin(db, goiNap, capCoin, {
       }
       const kq = await doiSoat(don);
       if (['completed', 'submitted', 'confirming'].includes(kq.status)) throw new LoiNapCoin(409, 'Giao dịch đã được gửi. Hãy kiểm tra trong ứng dụng.');
+      const nonce = chainId === 31337 ? await rpc('eth_getTransactionCount', [address, 'pending']) : null;
       return giaoDich(db, () => {
         const hienTai = lay.get(don.id);
         if (hienTai.token_hash !== don.token_hash || hienTai.token_expires <= Date.now() ||
@@ -222,7 +223,7 @@ export function taoDonNapCoin(db, goiNap, capCoin, {
           throw new LoiNapCoin(409, 'Phiên thanh toán đã thay đổi. Mở lại từ ứng dụng.');
         }
         batDauKy.run(address.toLowerCase(), don.id);
-        return { ok: true };
+        return { ok: true, nonce };
       });
     }
     if (action === 'signed' && don.wallet_address) return guiHash(don, txHash);

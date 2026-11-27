@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../cau_hinh/diem_ngat.dart';
 import '../dinh_tuyen/duong_dan.dart';
 import '../viewmodels/providers.dart';
+import '../viewmodels/thuong_chuoi_vm.dart';
 import 'hop_thoai_len_cap.dart';
 import 'huy_hieu_chuoi_header.dart';
 import 'huy_hieu_pro_badge.dart';
@@ -89,8 +90,11 @@ class KhungUngDung extends ConsumerWidget {
                   onDestinationSelected: (i) => _chon(context, i),
                   extended: kho.laManHinhRong,
                   minExtendedWidth: 220,
-                  indicatorColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
-                  selectedIconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
+                  indicatorColor: Theme.of(context).colorScheme.primary
+                      .withValues(alpha: 0.12),
+                  selectedIconTheme: IconThemeData(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                   selectedLabelTextStyle: TextStyle(
                     color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.bold,
@@ -119,7 +123,8 @@ class KhungUngDung extends ConsumerWidget {
                               ),
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: const Color(0xFFFFD700).withValues(alpha: 0.3),
+                                color: const Color(0xFFFFD700)
+                                    .withValues(alpha: 0.3),
                               ),
                             ),
                             child: Column(
@@ -128,8 +133,11 @@ class KhungUngDung extends ConsumerWidget {
                               children: [
                                 const Row(
                                   children: [
-                                    Icon(Icons.workspace_premium,
-                                        color: Color(0xFFFFD700), size: 18),
+                                    Icon(
+                                      Icons.workspace_premium,
+                                      color: Color(0xFFFFD700),
+                                      size: 18,
+                                    ),
                                     SizedBox(width: 6),
                                     Text(
                                       'Gói PRO VIP',
@@ -144,7 +152,10 @@ class KhungUngDung extends ConsumerWidget {
                                 const SizedBox(height: 6),
                                 const Text(
                                   'Mở khóa 15 khóa học & AI không giới hạn.',
-                                  style: TextStyle(color: Colors.white70, fontSize: 11),
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 11,
+                                  ),
                                 ),
                                 const SizedBox(height: 10),
                                 SizedBox(
@@ -153,13 +164,20 @@ class KhungUngDung extends ConsumerWidget {
                                     style: FilledButton.styleFrom(
                                       backgroundColor: const Color(0xFFFFD700),
                                       foregroundColor: Colors.black87,
-                                      padding: const EdgeInsets.symmetric(vertical: 6),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 6,
+                                      ),
                                       minimumSize: Size.zero,
                                     ),
-                                    onPressed: () => context.go(DuongDan.nangCapPro),
-                                    child: const Text('Nâng cấp',
-                                        style: TextStyle(
-                                            fontSize: 11, fontWeight: FontWeight.bold)),
+                                    onPressed: () =>
+                                        context.go(DuongDan.nangCapPro),
+                                    child: const Text(
+                                      'Nâng cấp',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -212,7 +230,7 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
     };
     final ten = nguoiDung?.hoTen;
     final laPro = ref.watch(laThanhVienProProvider);
-    final vi = ref.watch(viCoinProvider).asData?.value;
+    final coinThuong = ref.watch(soDuCoinProvider);
     final laDienThoai = context.kho.laDienThoai;
 
     return AppBar(
@@ -270,8 +288,10 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
               onTap: () => context.go(DuongDan.danhSach),
               borderRadius: BorderRadius.circular(20),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   color: mau.surfaceContainerHighest.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(20),
@@ -284,8 +304,10 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
                     const SizedBox(width: 8),
                     Text(
                       'Tìm kiếm khóa học...',
-                      style:
-                          TextStyle(fontSize: 13, color: mau.onSurfaceVariant),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: mau.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -311,19 +333,26 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
                   color: Colors.amber.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                      color: Colors.amber.shade700.withValues(alpha: 0.3)),
+                    color: Colors.amber.shade700.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.monetization_on,
-                        size: laDienThoai ? 14 : 16, color: Colors.amber),
+                    Icon(
+                      Icons.monetization_on,
+                      size: laDienThoai ? 14 : 16,
+                      color: Colors.amber,
+                    ),
                     const SizedBox(width: 3),
-                    Text(
-                      '${vi?.coinBalance ?? 0}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: laDienThoai ? 11 : 12,
+                    Tooltip(
+                      message: 'Số dư ví Coin',
+                      child: Text(
+                        '${coinThuong ?? '–'} Coin',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: laDienThoai ? 11 : 12,
+                        ),
                       ),
                     ),
                   ],
@@ -360,9 +389,11 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.workspace_premium,
-                        size: laDienThoai ? 13 : 15,
-                        color: const Color(0xFFE65100)),
+                    Icon(
+                      Icons.workspace_premium,
+                      size: laDienThoai ? 13 : 15,
+                      color: const Color(0xFFE65100),
+                    ),
                     const SizedBox(width: 3),
                     Text(
                       'PRO',
@@ -462,8 +493,11 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
                   value: 'pro',
                   child: Row(
                     children: [
-                      Icon(Icons.workspace_premium_outlined,
-                          size: 20, color: Color(0xFFE65100)),
+                      Icon(
+                        Icons.workspace_premium_outlined,
+                        size: 20,
+                        color: Color(0xFFE65100),
+                      ),
                       SizedBox(width: 12),
                       Text('Nâng cấp PRO ⭐'),
                     ],
@@ -531,8 +565,11 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
                     const Positioned(
                       right: -2,
                       bottom: -2,
-                      child: Icon(Icons.workspace_premium,
-                          size: 13, color: Color(0xFFFFD700)),
+                      child: Icon(
+                        Icons.workspace_premium,
+                        size: 13,
+                        color: Color(0xFFFFD700),
+                      ),
                     ),
                 ],
               ),
@@ -553,7 +590,9 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
               style: laDienThoai
                   ? FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       minimumSize: Size.zero,
                     )
                   : null,

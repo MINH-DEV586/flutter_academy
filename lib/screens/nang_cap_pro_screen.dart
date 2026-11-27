@@ -3,10 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../cau_hinh/diem_ngat.dart';
+import '../data/kho_thuong_chuoi.dart';
+import '../data/mo_trang_metamask.dart';
 import '../dinh_tuyen/duong_dan.dart';
 import '../models/goi_pro.dart';
 import '../viewmodels/providers.dart';
-import '../widgets/hop_thoai_chuc_mung_pro.dart';
+import '../viewmodels/thuong_chuoi_vm.dart';
 import '../widgets/huy_hieu_pro_badge.dart';
 import '../widgets/the_coin_thuong.dart';
 
@@ -69,43 +71,47 @@ class _NangCapProScreenState extends ConsumerState<NangCapProScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Xác nhận đổi'),
+            child: const Text('Mở MetaMask'),
           ),
         ],
       ),
     );
 
-    if (xacNhan != true) return;
+    if (xacNhan != true || !mounted) return;
 
     setState(() => _dangMuaGoiId = goi.id);
-    final ketQua = await ref.read(thanhVienProvider.notifier).muaGoiPro(goi.id);
-    if (!mounted) return;
-    setState(() => _dangMuaGoiId = null);
-
-    if (ketQua != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(ketQua), backgroundColor: Colors.red),
-      );
-    } else {
-      // Lấy trạng thái mới từ backend
-      final trangThai = ref.read(thanhVienProvider).asData?.value;
-      if (mounted && trangThai != null) {
-        await HopThoaiChucMungPro.hienThi(
-          context,
-          tenGoi: goi.name,
-          soNgay: goi.durationDays,
-          hetHan: trangThai.expiresAt ?? DateTime.now(),
-          coinDaTru: goi.coinPrice,
-          soDuMoi: (ref.read(viCoinProvider).asData?.value?.coinBalance ?? 0),
+    try {
+      final trang = await ref
+          .read(trangThaiThuongProvider.notifier)
+          .moVi(doiPro: true, packageId: goi.id);
+      if (!mounted) return;
+      ref.invalidate(trangThaiThuongProvider);
+      final thongBao = await moTrangMetaMask(trang);
+      if (mounted && thongBao != null) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(thongBao)));
+      }
+    } on LoiThuongChuoi catch (loi) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(loi.thongBao)));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Chưa mở được MetaMask. Hãy thử lại.')),
         );
       }
+    } finally {
+      if (mounted) setState(() => _dangMuaGoiId = null);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final vi = ref.watch(viCoinProvider).asData?.value;
-    final soDuCoin = vi?.coinBalance ?? 0;
+    final vi = ref.watch(trangThaiThuongProvider).asData?.value;
+    final soDu = ref.watch(soDuCoinProvider);
+    final soDuCoin = soDu ?? 0;
     final trangThaiPro = ref.watch(thanhVienProvider).asData?.value;
     final dsGoiAsync = ref.watch(danhSachGoiProProvider);
     final hep = context.kho.laDienThoai;
@@ -136,9 +142,6 @@ class _NangCapProScreenState extends ConsumerState<NangCapProScreen> {
                         trangThaiPro.isPro &&
                         !trangThaiPro.daHetHan)
                       _TheTrangThaiPro(trangThai: trangThaiPro),
-                    // Số dư Coin
-                    _TheSoDu(soDuCoin: soDuCoin),
-                    const SizedBox(height: 16),
                     const TheCoinThuong(),
                     const SizedBox(height: 32),
                     // Bảng so sánh FREE vs PRO
@@ -158,7 +161,10 @@ class _NangCapProScreenState extends ConsumerState<NangCapProScreen> {
                           danhSach: danhSach,
                           soDuCoin: soDuCoin,
                           dangMuaGoiId: _dangMuaGoiId,
-                          onMua: _dangMuaGoiId == null
+                          onMua:
+                              _dangMuaGoiId == null &&
+                                  vi?.daKetNoiVi == true &&
+                                  soDu != null
                               ? (goi) => _muaGoi(goi, soDuCoin)
                               : null,
                         );
@@ -354,52 +360,7 @@ class _TheTrangThaiPro extends StatelessWidget {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// SỐ DƯ COIN
-// ═════════════════════════════════════════════════════════════════════════════
-
-class _TheSoDu extends StatelessWidget {
-  final int soDuCoin;
-  const _TheSoDu({required this.soDuCoin});
-
-  @override
-  Widget build(BuildContext context) {
-    final mau = Theme.of(context).colorScheme;
-    final t = Theme.of(context).textTheme;
-    return Card(
-      color: mau.primaryContainer.withValues(alpha: 0.5),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            const Icon(Icons.monetization_on, color: Colors.amber, size: 32),
-            const SizedBox(width: 14),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Số dư Coin trong ứng dụng', style: t.bodySmall),
-                Text(
-                  '$soDuCoin Coin',
-                  style: t.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: mau.primary,
-                  ),
-                ),
-              ],
-            ),
-            const Spacer(),
-            FilledButton.tonal(
-              onPressed: () => GoRouter.of(context).go(DuongDan.napCoin),
-              child: const Text('Nạp thêm'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ═════════════════════════════════════════════════════════════════════════════
-// BẢNG SO SÁNH FREE vs PRO
+// BẢNG SO SÁNH QUYỀN LỢI
 // ═════════════════════════════════════════════════════════════════════════════
 
 class _BangSoSanh extends StatelessWidget {

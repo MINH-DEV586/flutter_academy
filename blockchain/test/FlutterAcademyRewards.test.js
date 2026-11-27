@@ -83,7 +83,9 @@ describe('FlutterAcademyRewards', function () {
         email: 'demo@example.test', hoTen: 'Demo', matKhau: 'mat-khau-kiem-thu',
       }, 201)).token;
       for (let ngay = 1; ngay <= 6; ngay++) await duaNgay(ngay);
-      assert.equal((await goi('/api/rewards')).awards[0].status, 'pending');
+      const mocBa = (await goi('/api/rewards')).awards[0];
+      assert.equal(mocBa.status, 'pending');
+      await goi('/api/rewards/claim', { awardId: mocBa.id }, 409);
       const expired = (await goi('/api/rewards/link', {}, 201)).path;
       now = new Date(now.getTime() + 10 * 60_000);
       await phien(expired, 'open', {}, 410);
@@ -93,8 +95,11 @@ describe('FlutterAcademyRewards', function () {
       await phien(link, 'signed', { address: user.address, signature: await user.signMessage(message) });
       await phien(link, 'open', {}, 410);
       const walletState = (await goi('/api/rewards')).onChain;
-      assert.equal(walletState.balance, 10);
+      assert.equal(walletState.balance, 0);
       assert.equal(walletState.chainId, 31337);
+      const daNhanMocBa = await goi('/api/rewards/claim', { awardId: mocBa.id });
+      assert.equal(daNhanMocBa.onChain.balance, 10);
+      assert.equal(daNhanMocBa.awards[0].status, 'issued');
       const truocKhiNgat = (await goi('/api/rewards/link', {}, 409)).loi;
       assert.match(truocKhiNgat, /đã kết nối/);
       await goi('/api/rewards/disconnect', {});
@@ -110,7 +115,17 @@ describe('FlutterAcademyRewards', function () {
         { address: user.address, signature: await user.signMessage(thuThachMoi) });
       assert.equal((await goi('/api/rewards')).onChain.connected, true);
       await duaNgay(7);
+      const chuaNhan = await goi('/api/rewards');
+      assert.equal(chuaNhan.onChain.balance, 10);
+      const mocBay = chuaNhan.awards.find((muc) => muc.milestone === 7);
+      assert.equal(mocBay.status, 'pending');
+      await Promise.all([
+        goi('/api/rewards/claim', { awardId: mocBay.id }),
+        goi('/api/rewards/claim', { awardId: mocBay.id }),
+      ]);
       assert.equal((await goi('/api/rewards')).onChain.balance, 30);
+      const soMint = await contract.queryFilter(contract.filters.RewardIssued(null, user.address));
+      assert.equal(soMint.length, 2);
       const first = (await goi('/api/rewards/redeem', {}, 201)).path;
       await phien(first, 'result', { status: 'rejected' });
       assert.equal((await goi('/api/rewards')).onChain.redemption.status, 'rejected');

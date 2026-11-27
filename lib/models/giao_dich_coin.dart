@@ -4,6 +4,7 @@ enum LoaiGiaoDich {
   deposit('DEPOSIT', 'Nạp Coin', '💎'),
   purchasePro('PURCHASE_PRO', 'Đổi gói Pro', '⭐'),
   refund('REFUND', 'Hoàn Coin', '↩️'),
+  migration('MIGRATION', 'Chuyển số dư cũ', '🔄'),
   adjustment('ADMIN_ADJUSTMENT', 'Điều chỉnh', '⚙️');
 
   final String ma;
@@ -47,6 +48,7 @@ class GiaoDichCoin {
   });
 
   bool get laCongCoin => amount > 0;
+  bool get dangCho => status == 'pending';
 
   String get soCoinHienThi =>
       laCongCoin ? '+$amount' : '$amount';

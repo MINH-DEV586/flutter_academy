@@ -7,11 +7,13 @@ class MocCoinThuong {
 
 class NhanCoinThuong {
   NhanCoinThuong.tuJson(Map<String, dynamic> json)
-    : mocNgay = json['milestone'] as int,
+    : id = json['id'] as String?,
+      mocNgay = json['milestone'] as int,
       coin = json['amount'] as int,
       trangThai = json['status'] as String,
       thoiDiem = json['earnedAt'] as String?;
 
+  final String? id;
   final int mocNgay;
   final int coin;
   final String trangThai;
@@ -45,6 +47,7 @@ class TrangThaiThuongChuoi {
           (json['onChain']?['wallet'] != null),
       chainId = json['onChain']?['chainId'] as int?,
       soDu = json['onChain']?['balance'] as int?,
+      coinChoGiaoDich = (json['onChain']?['creditPending'] as int?) ?? 0,
       giaDoiPro = json['onChain']?['proOffer']?['amount'] as int?,
       soNgayPro = json['onChain']?['proOffer']?['days'] as int?,
       loiMang = json['onChain']?['chainError'] as String?,
@@ -64,6 +67,7 @@ class TrangThaiThuongChuoi {
   final bool daKetNoiVi;
   final int? chainId;
   final int? soDu;
+  final int coinChoGiaoDich;
   final int? giaDoiPro;
   final int? soNgayPro;
   final String? loiMang;
@@ -74,4 +78,10 @@ class TrangThaiThuongChuoi {
 
   MocCoinThuong? get mocTiepTheo =>
       moc.where((muc) => muc.ngay > soNgay).firstOrNull;
+
+  bool get dangCapCoin =>
+      (diaChiVi != null && coinChoGiaoDich > 0) ||
+      lichSu.any(
+        (muc) => muc.trangThai == 'claiming' || muc.trangThai == 'submitted',
+      );
 }

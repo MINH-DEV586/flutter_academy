@@ -58,8 +58,8 @@ async function khoiTao() {
   const link = config.operation === 'link';
   const nap = config.operation === 'deposit';
   const mang = config.networkName ?? 'Hardhat Local';
-  title.textContent = nap ? `Nạp ${config.coinAmount} Coin` : link ? 'Xác minh ví thưởng' :
-    `Đổi ${config.coinAmount} Coin thưởng lấy ${config.proDays} ngày Pro`;
+  title.textContent = nap ? `Nạp ${config.coinAmount} Coin` : link ? 'Xác minh ví Coin' :
+    `Đổi ${config.coinAmount} Coin lấy ${config.proDays} ngày Pro`;
   status.textContent = link
     ? 'Chọn tài khoản Hardhat rồi ký xác minh quyền sở hữu ví.'
     : nap
@@ -105,8 +105,9 @@ async function khoiTao() {
         await session('signed', { address, signature });
         status.textContent = 'Đã xác minh. Quay về Flutter Academy để nhận Coin đang chờ.';
       } else {
-        if (nap) {
-          await session('prepare', { address });
+        let nonce;
+        if (nap || config.chainId === '0x7a69') {
+          ({ nonce } = await session('prepare', { address }));
           const [dangChon] = await ethereum.request({ method: 'eth_accounts' });
           if (dangChon?.toLowerCase() !== address.toLowerCase() ||
               await ethereum.request({ method: 'eth_chainId' }) !== config.chainId) {
@@ -116,7 +117,11 @@ async function khoiTao() {
         buoc = 'ký giao dịch';
         const txHash = await ethereum.request({
           method: 'eth_sendTransaction',
-          params: [{ from: address, to: config.to, data: config.data, ...(nap ? { value: config.value } : {}) }],
+          params: [{
+            from: address, to: config.to, data: config.data,
+            ...(nap ? { value: config.value } : {}),
+            ...(nonce ? { nonce } : {}),
+          }],
         });
         daGui = true;
         await session('signed', { txHash });
@@ -141,6 +146,8 @@ async function khoiTao() {
         ? error.message
         : buoc === 'chuyển mạng'
         ? `Chưa chuyển được sang ${mang}. Kiểm tra mạng trong MetaMask${maLoi}.`
+        : error.code === -32603 && config.chainId === '0x7a69' && buoc === 'ký giao dịch'
+        ? 'Hardhat từ chối giao dịch. Mở lại yêu cầu từ ứng dụng. Nếu vẫn lỗi, kiểm tra nonce hoặc lịch sử giao dịch đang chờ của ví thử trong MetaMask.'
         : `Lỗi khi ${buoc}${maLoi}. Kiểm tra tài khoản ví và mạng rồi thử lại.`;
       confirm.disabled = false;
     }

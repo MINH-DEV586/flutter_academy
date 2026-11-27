@@ -105,7 +105,7 @@ class HttpKhoThuongChuoi implements KhoThuongChuoi {
           jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
       if (response.statusCode >= 400) {
         throw LoiThuongChuoi(
-          kq['loi'] as String? ?? 'Chưa cập nhật được Coin thưởng.',
+          kq['loi'] as String? ?? 'Chưa cập nhật được Coin.',
           ma: kq['code'] as String?,
         );
       }

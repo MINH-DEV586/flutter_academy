@@ -6,7 +6,6 @@ import { GOI_PRO_THUONG } from './subscription.mjs';
 const require = createRequire(new URL('../blockchain/package.json', import.meta.url));
 const chainId = 31337;
 const chainHex = '0x7a69';
-const price = GOI_PRO_THUONG.amount;
 const bytes32 = (s) => typeof s === 'string' && /^0x[\da-f]{64}$/i.test(s);
 const randomId = () => '0x' + randomBytes(32).toString('hex');
 const hash = (s) => createHash('sha256').update(s).digest('hex');
@@ -16,6 +15,8 @@ const abi = [
   'function issue(bytes32,address,uint256)',
   'function awarded(bytes32) view returns (bool)',
   'function redeem(bytes32)',
+  'function priceOf(bytes32) view returns (uint256)',
+  'function redeemPackage(bytes32,bytes32)',
   'event RewardIssued(bytes32 indexed rewardId,address indexed wallet,uint256 amount)',
   'event ProRedeemed(bytes32 indexed requestId,address indexed wallet,bytes32 packageId,uint256 amount)',
 ];
@@ -29,7 +30,7 @@ class LoiVi extends Error {
 
 export function taoThuongOnChain(db, thanhVien, dongHo, cauHinh = {}) {
   const {
-    address, rpcUrl = 'http://127.0.0.1:8545', issuerKey,
+    address, rpcUrl = 'http://127.0.0.1:8545', issuerKey, soCoin,
     confirmations = 1, rpcDienThoai = 'http://127.0.0.1:8545',
   } = cauHinh;
   if (!address) return null;
@@ -39,9 +40,12 @@ export function taoThuongOnChain(db, thanhVien, dongHo, cauHinh = {}) {
   const rpc = new FetchRequest(rpcUrl);
   rpc.timeout = 8_000;
   const provider = new JsonRpcProvider(rpc, chainId, { staticNetwork: true, batchMaxCount: 1, cacheTimeout: -1 });
-  const contract = new Contract(address, abi, provider);
-  const contractAddress = address.toLowerCase();
-  const packageTopic = id(GOI_PRO_THUONG.id);
+  const nangCap = soCoin?.nangCap();
+  if (nangCap && nangCap.old_contract.toLowerCase() !== address.toLowerCase()) {
+    throw new Error('Cấu hình ví Coin không khớp hợp đồng trước khi hợp nhất.');
+  }
+  const contractAddress = (nangCap?.new_contract ?? address).toLowerCase();
+  const contract = new Contract(contractAddress, abi, provider);
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS verified_reward_wallets (
@@ -55,8 +59,9 @@ export function taoThuongOnChain(db, thanhVien, dongHo, cauHinh = {}) {
       package_id TEXT NOT NULL, amount INTEGER NOT NULL, start_block INTEGER NOT NULL,
       status TEXT NOT NULL DEFAULT 'signing', tx_hash TEXT, expires_at TEXT
     ) STRICT;
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_pro_active
-      ON pro_redemptions(email) WHERE status != 'completed';
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_pro_active_package
+      ON pro_redemptions(email, chain, contract, package_id) WHERE status != 'completed';
+    DROP INDEX IF EXISTS idx_pro_active;
     CREATE UNIQUE INDEX IF NOT EXISTS idx_pro_tx
       ON pro_redemptions(chain, tx_hash) WHERE status = 'completed';
     CREATE TABLE IF NOT EXISTS reward_wallet_sessions (
@@ -79,8 +84,9 @@ export function taoThuongOnChain(db, thanhVien, dongHo, cauHinh = {}) {
   const huyPhienVi = db.prepare("UPDATE reward_wallet_sessions SET status = 'expired' WHERE email = ? AND status != 'completed'");
   const doiSession = db.prepare('UPDATE reward_wallet_sessions SET status = ? WHERE token_hash = ?');
   const yeuCau = db.prepare('SELECT * FROM pro_redemptions WHERE id = ?');
-  const dangDoi = db.prepare("SELECT * FROM pro_redemptions WHERE email = ? AND status != 'completed'");
-  const ganNhat = db.prepare('SELECT * FROM pro_redemptions WHERE email = ? ORDER BY rowid DESC LIMIT 1');
+  const dangDoi = db.prepare("SELECT * FROM pro_redemptions WHERE email = ? AND chain = ? AND contract = ? AND package_id = ? AND status != 'completed'");
+  const cacDonDangDoi = db.prepare("SELECT * FROM pro_redemptions WHERE email = ? AND chain = ? AND contract = ? AND status != 'completed'");
+  const ganNhat = db.prepare('SELECT * FROM pro_redemptions WHERE email = ? AND chain = ? AND contract = ? ORDER BY rowid DESC LIMIT 1');
   const themYeuCau = db.prepare(`INSERT INTO pro_redemptions
     (id,salt,email,wallet,chain,contract,package_id,amount,start_block) VALUES (?,?,?,?,?,?,?,?,?)`);
   const capNhatYeuCau = db.prepare("UPDATE pro_redemptions SET status = ?, tx_hash = ? WHERE id = ? AND status != 'completed'");
@@ -89,47 +95,82 @@ export function taoThuongOnChain(db, thanhVien, dongHo, cauHinh = {}) {
     WHERE id = ? AND tx_hash = ? AND status = 'confirming'`);
   const daCap = db.prepare("UPDATE pro_redemptions SET status = 'completed', tx_hash = ?, expires_at = ? WHERE id = ?");
   const choMint = db.prepare("SELECT * FROM reward_mints WHERE email = ? AND status != 'issued' ORDER BY rowid");
+  const timMint = db.prepare('SELECT status FROM reward_mints WHERE id = ? AND email = ?');
+  const yeuCauMint = db.prepare("UPDATE reward_mints SET status = 'claiming' WHERE id = ? AND email = ? AND status = 'pending'");
   const capNhatMint = db.prepare("UPDATE reward_mints SET status = ?, tx_hash = ? WHERE id = ? AND status != 'issued'");
   let capThuong = Promise.resolve();
 
   async function kiemTraMang() {
-    const [actual, code] = await Promise.all([
+    const [actual, code, metadata] = await Promise.all([
       provider.send('eth_chainId', []), provider.getCode(contractAddress),
+      nangCap ? provider.send('hardhat_metadata', []) : null,
     ]);
     if (actual !== chainHex || code === '0x') {
-      throw new LoiVi(503, 'Chưa tìm thấy hợp đồng thưởng trên Hardhat 31337.');
+      throw new LoiVi(503, 'Chưa tìm thấy hợp đồng Coin trên Hardhat 31337.');
+    }
+    if (nangCap && metadata?.instanceId !== nangCap.instance_id) {
+      throw new LoiVi(503, 'Hardhat đang chạy khác phiên đã đối soát Coin.');
     }
   }
 
   async function dongBoMint(email, wallet) {
-    for (const moi of choMint.all(email)) {
+    const mints = [
+      ...choMint.all(email).map((mint) => ({ mint, credit: false })),
+      ...(soCoin?.dangCho(email) ?? []).map((mint) => ({ mint, credit: true })),
+    ];
+    for (const { mint: moi, credit } of mints) {
+      const capNhat = credit ? soCoin.capNhat : capNhatMint;
+      let txHash = moi.tx_hash;
       if (await contract.awarded(moi.id)) {
         const [log] = await contract.queryFilter(contract.filters.RewardIssued(moi.id, wallet));
-        if (log && log.args.amount === BigInt(moi.amount)) capNhatMint.run('issued', log.transactionHash, moi.id);
-        continue;
+        if (!log || log.args.amount !== BigInt(moi.amount)) {
+          throw new LoiVi(503, 'Chưa đối soát được sự kiện cấp Coin.');
+        }
+        txHash = log.transactionHash;
+      } else {
+        if (txHash) {
+          const [receipt, tx] = await Promise.all([
+            provider.getTransactionReceipt(txHash), provider.getTransaction(txHash),
+          ]);
+          if ((!receipt && tx) || receipt?.status === 1) continue;
+        }
+        if (moi.status === 'pending' && !txHash) continue;
+        const signer = issuerKey ? new Wallet(issuerKey, provider) : await provider.getSigner(0);
+        if ((await contract.owner()).toLowerCase() !== (await signer.getAddress()).toLowerCase()) {
+          throw new LoiVi(503, 'Máy chủ chưa có quyền cấp Coin trên hợp đồng.');
+        }
+        const tx = await contract.connect(signer).issue(moi.id, wallet, moi.amount);
+        txHash = tx.hash;
+        capNhat.run('submitted', txHash, moi.id);
       }
-      if (moi.tx_hash) {
-        const [receipt, tx] = await Promise.all([
-          provider.getTransactionReceipt(moi.tx_hash), provider.getTransaction(moi.tx_hash),
-        ]);
-        if (!receipt && tx) continue;
-        if (receipt?.status === 1) continue;
+      const receipt = await provider.getTransactionReceipt(txHash);
+      if (receipt?.status !== 1 || receipt.to?.toLowerCase() !== contractAddress ||
+          (await provider.getBlockNumber()) - receipt.blockNumber + 1 < confirmations) continue;
+      if (credit) {
+        const soDu = Number(await contract.balanceOf(wallet, { blockTag: receipt.blockNumber }));
+        soCoin.hoanTat(moi, txHash, soDu);
+      } else {
+        capNhat.run('issued', txHash, moi.id);
       }
-      const signer = issuerKey ? new Wallet(issuerKey, provider) : await provider.getSigner(0);
-      if ((await contract.owner()).toLowerCase() !== (await signer.getAddress()).toLowerCase()) {
-        throw new LoiVi(503, 'Máy chủ chưa có quyền cấp Coin trên hợp đồng thưởng.');
-      }
-      const tx = await contract.connect(signer).issue(moi.id, wallet, moi.amount);
-      capNhatMint.run('submitted', tx.hash, moi.id);
-      const receipt = await provider.getTransactionReceipt(tx.hash);
-      if (receipt?.status === 1) capNhatMint.run('issued', tx.hash, moi.id);
     }
+  }
+
+  function batDauNhan(email, awardId) {
+    if (!bytes32(awardId)) throw new LoiVi(400, 'Mã phần thưởng không hợp lệ.');
+    const mint = timMint.get(awardId, email);
+    if (!mint) throw new LoiVi(404, 'Không tìm thấy phần thưởng của tài khoản.');
+    if (mint.status === 'issued') return;
+    if (vi.get(email)?.connected !== 1) {
+      throw new LoiVi(409, 'Xác minh ví MetaMask để nhận Coin.');
+    }
+    yeuCauMint.run(awardId, email);
   }
 
   async function dongBoDoi(don) {
     if (!don || don.status === 'completed') return;
+    const goi = thanhVien.timGoiCoin(don.package_id);
     if (don.chain !== chainId || don.contract !== contractAddress ||
-        don.package_id !== GOI_PRO_THUONG.id || don.amount !== price) {
+        !goi || don.amount !== goi.amount) {
       throw new LoiVi(409, 'Đơn đổi thuộc hợp đồng hoặc mạng khác.');
     }
     const [log] = await contract.queryFilter(
@@ -150,7 +191,7 @@ export function taoThuongOnChain(db, thanhVien, dongHo, cauHinh = {}) {
     const [receipt, block] = await Promise.all([
       provider.getTransactionReceipt(log.transactionHash), provider.getBlockNumber(),
     ]);
-    if (log.args.packageId !== packageTopic || log.args.amount !== BigInt(price) ||
+    if (log.args.packageId !== id(don.package_id) || log.args.amount !== BigInt(don.amount) ||
         receipt?.status !== 1 || receipt.to?.toLowerCase() !== contractAddress ||
         receipt.from?.toLowerCase() !== don.wallet ||
         receipt.blockHash !== log.blockHash) {
@@ -163,7 +204,7 @@ export function taoThuongOnChain(db, thanhVien, dongHo, cauHinh = {}) {
     }
     giaoDich(db, () => {
       if (yeuCau.get(don.id).status === 'completed') return;
-      const expiresAt = thanhVien.capProBlockchain(don.email, don.id);
+      const expiresAt = thanhVien.capProBlockchain(don.email, don.id, don.package_id);
       daCap.run(log.transactionHash, expiresAt, don.id);
     });
   }
@@ -178,31 +219,37 @@ export function taoThuongOnChain(db, thanhVien, dongHo, cauHinh = {}) {
         const luot = capThuong.then(() => dongBoMint(email, wallet));
         capThuong = luot.catch(() => {});
         await luot;
-        await dongBoDoi(dangDoi.get(email));
+        for (const don of cacDonDangDoi.all(email, chainId, contractAddress)) await dongBoDoi(don);
         balance = Number(await contract.balanceOf(wallet));
       } catch (loi) {
         chainError = loi instanceof LoiVi ? loi.message : 'Chưa đọc được Hardhat. Hãy kiểm tra RPC rồi thử lại.';
       }
     }
-    const don = ganNhat.get(email);
+    const don = ganNhat.get(email, chainId, contractAddress);
     const link = latestLink.get(email);
     const connected = vi.get(email)?.connected === 1;
     return {
       chainId, wallet, balance, chainError, connected, proOffer: GOI_PRO_THUONG,
+      creditPending: soCoin?.coinCho(email) ?? 0,
       linkStatus: !connected && link && link.expires_ms > dongHo().getTime() && link.status !== 'expired' ? link.status : null,
       redemption: don ? { status: don.status, txHash: don.tx_hash, expiresAt: don.expires_at } : null,
     };
   }
 
-  async function batDau(email, operation) {
+  async function batDau(email, operation, packageId = GOI_PRO_THUONG.id) {
     const viHienTai = vi.get(email);
     const wallet = viHienTai?.wallet;
     let don = null;
     if (operation === 'link' && viHienTai?.connected === 1) throw new LoiVi(409, 'Tài khoản đã kết nối ví thưởng.');
     if (operation === 'redeem') {
       if (viHienTai?.connected !== 1) throw new LoiVi(409, 'Kết nối ví MetaMask để đổi Pro.');
+      const goi = typeof packageId === 'string' ? thanhVien.timGoiCoin(packageId) : null;
+      if (!goi) throw new LoiVi(404, 'Gói Pro không tồn tại.');
       await kiemTraMang();
-      don = dangDoi.get(email);
+      if (goi.id !== GOI_PRO_THUONG.id && await contract.priceOf(id(goi.id)) !== BigInt(goi.amount)) {
+        throw new LoiVi(409, 'Giá gói Pro chưa khớp với hợp đồng.');
+      }
+      don = dangDoi.get(email, chainId, contractAddress, goi.id);
       if (don) {
         await dongBoDoi(don);
         don = yeuCau.get(don.id);
@@ -210,16 +257,16 @@ export function taoThuongOnChain(db, thanhVien, dongHo, cauHinh = {}) {
           throw new LoiVi(409, 'Đơn đã gửi. Hãy tải lại trạng thái.');
         }
       } else {
-        if (await contract.balanceOf(wallet) < BigInt(price)) {
-          throw new LoiVi(409, 'Ví MetaMask cần 30 Coin thưởng.');
+        if (await contract.balanceOf(wallet) < BigInt(goi.amount)) {
+          throw new LoiVi(409, `Ví MetaMask cần ${goi.amount} Coin.`);
         }
         const block = await provider.getBlockNumber();
         don = giaoDich(db, () => {
-          const cu = dangDoi.get(email);
+          const cu = dangDoi.get(email, chainId, contractAddress, goi.id);
           if (cu) return cu;
           const salt = randomId();
           const request = keccak256(AbiCoder.defaultAbiCoder().encode(['address', 'bytes32'], [wallet, salt]));
-          themYeuCau.run(request, salt, email, wallet, chainId, contractAddress, GOI_PRO_THUONG.id, price, block);
+          themYeuCau.run(request, salt, email, wallet, chainId, contractAddress, goi.id, goi.amount, block);
           return yeuCau.get(request);
         });
       }
@@ -259,13 +306,29 @@ export function taoThuongOnChain(db, thanhVien, dongHo, cauHinh = {}) {
       throw new LoiVi(410, 'Phiên ví đã hết hạn hoặc đã dùng. Mở lại từ Flutter Academy.');
     }
     const don = phien.request_id ? yeuCau.get(phien.request_id) : null;
+    if (don && don.contract !== contractAddress) {
+      throw new LoiVi(410, 'Phiên thuộc hợp đồng Coin cũ. Mở lại từ ứng dụng.');
+    }
+    const goi = don ? thanhVien.timGoiCoin(don.package_id) : null;
+    if (don && !goi) throw new LoiVi(404, 'Gói Pro không tồn tại.');
     if (action === 'open') {
       return {
         operation: phien.operation, message: phien.message, chainId: chainHex, rpcUrl: rpcDienThoai,
-        ...(don ? { coinAmount: GOI_PRO_THUONG.amount, proDays: GOI_PRO_THUONG.days } : {}),
+        ...(don ? { coinAmount: don.amount, proDays: goi.days } : {}),
         wallet: don?.wallet ?? vi.get(phien.email)?.wallet, to: don?.contract,
-        data: don ? contract.interface.encodeFunctionData('redeem', [don.salt]) : null,
+        data: !don ? null : don.package_id === GOI_PRO_THUONG.id
+          ? contract.interface.encodeFunctionData('redeem', [don.salt])
+          : contract.interface.encodeFunctionData('redeemPackage', [don.salt, id(don.package_id)]),
       };
+    }
+    if (action === 'prepare' && don) {
+      if (don.status === 'completed' || don.status === 'confirming' ||
+          vi.get(phien.email)?.connected !== 1 || wallet?.toLowerCase() !== don.wallet) {
+        throw new LoiVi(409, 'Kiểm tra lại đơn đổi Pro và ví đã xác minh.');
+      }
+      return kiemTraMang().then(async () => ({
+        nonce: await provider.send('eth_getTransactionCount', [don.wallet, 'pending']),
+      }));
     }
     if (action === 'result' && ['rejected', 'failed'].includes(status)) {
       doiSession.run(status, khoa);
@@ -301,5 +364,5 @@ export function taoThuongOnChain(db, thanhVien, dongHo, cauHinh = {}) {
     throw new LoiVi(400, 'Kết quả ví không hợp lệ.');
   }
 
-  return { trangThai, batDau, ngatKetNoi, trangVi, dong: () => provider.destroy() };
+  return { trangThai, batDau, batDauNhan, ngatKetNoi, trangVi, xemVi: (email) => vi.get(email), dong: () => provider.destroy() };
 }

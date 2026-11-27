@@ -11,6 +11,7 @@ import '../models/dinh_dang.dart' as dd;
 import '../models/khoa_hoc.dart';
 import '../models/nhat_ky_ngay.dart';
 import '../viewmodels/providers.dart';
+import '../viewmodels/thuong_chuoi_vm.dart';
 import '../widgets/banner_nhac_nho_streak.dart';
 import '../widgets/huy_hieu_pro_badge.dart';
 import '../widgets/muc_noi_bat.dart';
@@ -37,9 +38,10 @@ class TrangChuScreen extends ConsumerWidget {
     final chuoiHoc =
         ref.watch(chuoiHocProvider).asData?.value ?? const ChuoiHoc();
     final dangKy = ref.watch(dangKyKhoaHocProvider).asData?.value ?? const {};
-    final vi = ref.watch(viCoinProvider).asData?.value;
-    final nhatKy = ref.watch(nhatKyHomNayProvider).asData?.value ??
-        NhatKyNgay(ngay: ChuoiHoc.dinhDangNgay(DateTime.now()));
+    final soDuCoin = ref.watch(soDuCoinProvider);
+    final nhatKy =
+        ref.watch(nhatKyHomNayProvider).asData?.value ??
+        NhatKyNgay(ngay: ChuoiHoc.dinhDangNgay(ChuoiHoc.gioVietNam()));
 
     // Tính thời lượng đã học chính xác
     var giayDaHoc = 0;
@@ -68,7 +70,7 @@ class TrangChuScreen extends ConsumerWidget {
           chuoiHienTai: chuoiHoc.chuoiHienTai,
           capHienTai: chuoiHoc.capDo.capHienTai,
           tongXp: chuoiHoc.tongXp,
-          soDuCoin: vi?.coinBalance ?? 0,
+          soDuCoin: soDuCoin,
           giayDaHoc: giayDaHoc,
         ),
         const SizedBox(height: 28),
@@ -147,9 +149,8 @@ class TrangChuScreen extends ConsumerWidget {
               for (final d in danhMuc)
                 _TheChuDe(
                   ten: d,
-                  onTap: () => context.go(
-                    DuongDan.danhSachVoiLoc(BoLoc(danhMuc: d)),
-                  ),
+                  onTap: () =>
+                      context.go(DuongDan.danhSachVoiLoc(BoLoc(danhMuc: d))),
                 ),
             ],
           ),
@@ -246,12 +247,16 @@ class _HeroDashboard extends ConsumerWidget {
                   children: [
                     FilledButton.icon(
                       style: FilledButton.styleFrom(
-                        backgroundColor:
-                            laPro ? const Color(0xFFFFD700) : Colors.white,
-                        foregroundColor:
-                            laPro ? Colors.black87 : const Color(0xFF1E40AF),
+                        backgroundColor: laPro
+                            ? const Color(0xFFFFD700)
+                            : Colors.white,
+                        foregroundColor: laPro
+                            ? Colors.black87
+                            : const Color(0xFF1E40AF),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 18, vertical: 12),
+                          horizontal: 18,
+                          vertical: 12,
+                        ),
                       ),
                       onPressed: () => context.go(DuongDan.danhSach),
                       icon: const Icon(Icons.explore, size: 18),
@@ -263,18 +268,22 @@ class _HeroDashboard extends ConsumerWidget {
                     if (!laPro)
                       FilledButton.tonal(
                         style: FilledButton.styleFrom(
-                          backgroundColor:
-                              Colors.white.withValues(alpha: 0.2),
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 18, vertical: 12),
+                            horizontal: 18,
+                            vertical: 12,
+                          ),
                         ),
                         onPressed: () => context.go(DuongDan.nangCapPro),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.workspace_premium,
-                                size: 18, color: Color(0xFFFFD700)),
+                            Icon(
+                              Icons.workspace_premium,
+                              size: 18,
+                              color: Color(0xFFFFD700),
+                            ),
                             SizedBox(width: 6),
                             Text('Nâng cấp PRO ⭐'),
                           ],
@@ -321,7 +330,7 @@ class _BangThongKeDashboard extends StatelessWidget {
   final int chuoiHienTai;
   final int capHienTai;
   final int tongXp;
-  final int soDuCoin;
+  final int? soDuCoin;
   final int giayDaHoc;
 
   const _BangThongKeDashboard({
@@ -357,7 +366,7 @@ class _BangThongKeDashboard extends StatelessWidget {
             const Color(0xFF10B981),
           ),
           _StatData(
-            'Chuỗi học tập',
+            'Chuỗi hoạt động',
             '$chuoiHienTai ngày',
             Icons.local_fire_department,
             const Color(0xFFF97316),
@@ -369,8 +378,8 @@ class _BangThongKeDashboard extends StatelessWidget {
             const Color(0xFF8B5CF6),
           ),
           _StatData(
-            'Ví Coin',
-            '$soDuCoin Coin',
+            'Số dư Coin',
+            soDuCoin == null ? '–' : '$soDuCoin Coin',
             Icons.monetization_on_outlined,
             const Color(0xFFF59E0B),
           ),
@@ -475,10 +484,7 @@ class _MucTieuHangNgayCard extends ConsumerWidget {
   final ChuoiHoc chuoiHoc;
   final NhatKyNgay nhatKy;
 
-  const _MucTieuHangNgayCard({
-    required this.chuoiHoc,
-    required this.nhatKy,
-  });
+  const _MucTieuHangNgayCard({required this.chuoiHoc, required this.nhatKy});
 
   void _doiMucTieu(BuildContext context, WidgetRef ref) {
     showDialog<void>(
@@ -553,10 +559,11 @@ class _MucTieuHangNgayCard extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: (datMoc
-                          ? const Color(0xFF10B981)
-                          : const Color(0xFFF97316))
-                      .withValues(alpha: 0.12),
+                  color:
+                      (datMoc
+                              ? const Color(0xFF10B981)
+                              : const Color(0xFFF97316))
+                          .withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -576,8 +583,9 @@ class _MucTieuHangNgayCard extends ConsumerWidget {
                       datMoc
                           ? '🎉 Đã hoàn thành mục tiêu hôm nay!'
                           : 'Mục tiêu học tập hôm nay',
-                      style:
-                          t.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                      style: t.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     Text(
                       datMoc
@@ -590,14 +598,18 @@ class _MucTieuHangNgayCard extends ConsumerWidget {
               ),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   minimumSize: Size.zero,
                 ),
                 onPressed: () => _doiMucTieu(context, ref),
                 icon: const Icon(Icons.tune, size: 16),
-                label: Text('${mucTieu}p/ngày',
-                    style: const TextStyle(fontSize: 12)),
+                label: Text(
+                  '${mucTieu}p/ngày',
+                  style: const TextStyle(fontSize: 12),
+                ),
               ),
             ],
           ),
@@ -663,8 +675,11 @@ class _EmptyContinueLearningCard extends StatelessWidget {
       child: Center(
         child: Column(
           children: [
-            Icon(Icons.menu_book_outlined,
-                size: 48, color: mau.onSurfaceVariant.withValues(alpha: 0.6)),
+            Icon(
+              Icons.menu_book_outlined,
+              size: 48,
+              color: mau.onSurfaceVariant.withValues(alpha: 0.6),
+            ),
             const SizedBox(height: 12),
             Text(
               'Bạn chưa bắt đầu khóa học nào',
@@ -718,8 +733,11 @@ class _LearningMotivationCard extends StatelessWidget {
               color: Colors.amber.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.lightbulb_outline,
-                color: Colors.amber, size: 24),
+            child: const Icon(
+              Icons.lightbulb_outline,
+              color: Colors.amber,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(

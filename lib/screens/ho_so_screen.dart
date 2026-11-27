@@ -188,8 +188,6 @@ class _NoiDung extends ConsumerWidget {
         const SizedBox(height: 16),
         _TheThanhVienProHoSo(pro: pro, laPro: laPro),
         const SizedBox(height: 16),
-        const _TheViCoinHoSo(),
-        const SizedBox(height: 16),
         const TheCoinThuong(hienVi: false),
         const SizedBox(height: 16),
         _TheCapDoVaStreak(chuoiHoc: chuoiHoc),
@@ -205,7 +203,7 @@ class _NoiDung extends ConsumerWidget {
           cotNho: 2,
           cotRong: 4,
           children: [
-            _O(so: '${chuoiHoc.chuoiHienTai} ngày', nhan: 'Chuỗi hiện tại '),
+            _O(so: '${chuoiHoc.chuoiHienTai} ngày', nhan: 'Chuỗi hoạt động'),
             _O(
               so: '${chuoiHoc.chuoiDaiNhat} ngày',
               nhan: 'Kỷ lục chuỗi dài nhất ',
@@ -357,17 +355,18 @@ class _LuoiHoSo extends StatelessWidget {
 }
 
 final _lichTuanProvider = FutureProvider.autoDispose<List<NhatKyNgay>>((ref) {
-  ref.watch(chuoiHocProvider);
-  final kho = ref.watch(khoChuoiHocProvider);
-  final homNay = DateTime.now();
-  final thuHai = DateTime(
+  final homNay = ChuoiHoc.gioVietNam();
+  final thuHai = DateTime.utc(
     homNay.year,
     homNay.month,
     homNay.day - homNay.weekday + 1,
   );
   return Future.wait([
     for (var i = 0; i < 7; i++)
-      kho.layNhatKy(ChuoiHoc.dinhDangNgay(thuHai.add(Duration(days: i)))),
+      ref.watch(
+        nhatKyNgayProvider(ChuoiHoc.dinhDangNgay(thuHai.add(Duration(days: i))))
+            .future,
+      ),
   ]);
 });
 
@@ -693,95 +692,6 @@ class _TheHuyHieu extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _TheViCoinHoSo extends ConsumerWidget {
-  const _TheViCoinHoSo();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final vi = ref.watch(viCoinProvider).asData?.value;
-    final pro = ref.watch(thanhVienProvider).asData?.value;
-    final mau = Theme.of(context).colorScheme;
-    final t = Theme.of(context).textTheme;
-
-    return Card(
-      elevation: 0,
-      color: mau.primaryContainer.withValues(alpha: 0.25),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: mau.outlineVariant),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.account_balance_wallet,
-                  color: Colors.amber,
-                  size: 28,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Coin trong ứng dụng',
-                    style: t.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                if (pro != null && pro.isPro && !pro.daHetHan)
-                  const HuyHieuProBadge(fontSize: 11),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      vi == null
-                          ? 'Chưa tải được số dư Coin'
-                          : '${vi.coinBalance} Coin',
-                      style: t.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: mau.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Số dư dùng cho các gói Pro 30/90/365 ngày.',
-                      style: t.bodySmall?.copyWith(color: mau.onSurfaceVariant),
-                    ),
-                  ],
-                ),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    FilledButton.tonal(
-                      onPressed: () => context.go(DuongDan.viCoin),
-                      child: const Text('Mở Ví Coin'),
-                    ),
-                    FilledButton(
-                      onPressed: () => context.go(DuongDan.nangCapPro),
-                      child: const Text('Nâng cấp Pro'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }

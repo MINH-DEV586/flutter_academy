@@ -27,11 +27,29 @@ contract FlutterAcademyRewards {
     }
 
     function redeem(bytes32 salt) external {
+        _redeem(salt, PRO_PACKAGE, PRO_PRICE);
+    }
+
+    function priceOf(bytes32 packageId) public pure returns (uint256) {
+        if (packageId == PRO_PACKAGE) return PRO_PRICE;
+        if (packageId == keccak256("pro_30")) return 100;
+        if (packageId == keccak256("pro_90")) return 250;
+        if (packageId == keccak256("pro_365")) return 800;
+        return 0;
+    }
+
+    function redeemPackage(bytes32 salt, bytes32 packageId) external {
+        uint256 price = priceOf(packageId);
+        require(price != 0, "Unknown Pro package");
+        _redeem(salt, packageId, price);
+    }
+
+    function _redeem(bytes32 salt, bytes32 packageId, uint256 price) private {
         bytes32 requestId = keccak256(abi.encode(msg.sender, salt));
         require(!redeemed[requestId], "Request already redeemed");
-        require(balanceOf[msg.sender] >= PRO_PRICE, "Insufficient reward balance");
+        require(balanceOf[msg.sender] >= price, "Insufficient reward balance");
         redeemed[requestId] = true;
-        balanceOf[msg.sender] -= PRO_PRICE;
-        emit ProRedeemed(requestId, msg.sender, PRO_PACKAGE, PRO_PRICE);
+        balanceOf[msg.sender] -= price;
+        emit ProRedeemed(requestId, msg.sender, packageId, price);
     }
 }

@@ -13,7 +13,7 @@ const GOI_NAP = [
 
 const THUONG = { lesson_complete: 5, quiz_complete: 10, daily_goal: 20 };
 
-export function taoViCoin(duongDan, cauHinh = {}) {
+export function taoViCoin(duongDan, cauHinh = {}, coin = {}) {
   const {
     rpcUrl = process.env.SEPOLIA_RPC_URL || 'http://127.0.0.1:8545',
     contractAddress = process.env.CONTRACT_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3',
@@ -89,7 +89,7 @@ export function taoViCoin(duongDan, cauHinh = {}) {
   const lienKetMM = db.prepare("UPDATE wallets SET metamask_address = ?, updated_at = datetime('now') WHERE email = ?");
   const themGiaoDich = db.prepare('INSERT INTO coin_transactions (id, email, type, amount, balance_before, balance_after, status, description, reference_id, transaction_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
   const dsGiaoDich = db.prepare('SELECT * FROM coin_transactions WHERE email = ? ORDER BY created_at DESC, rowid DESC LIMIT ? OFFSET ?');
-  const kiemTraRef = db.prepare("SELECT id FROM coin_transactions WHERE email = ? AND reference_id = ? AND type = ? AND status = 'completed' LIMIT 1");
+  const kiemTraRef = db.prepare("SELECT id FROM coin_transactions WHERE email = ? AND reference_id = ? AND type = ? AND status IN ('pending','completed') LIMIT 1");
 
   function damBaoVi(email) {
     const vi = layVi.get(email);
@@ -100,6 +100,14 @@ export function taoViCoin(duongDan, cauHinh = {}) {
 
   const donNap = taoDonNapCoin(db, GOI_NAP, (don, hash, wallet) => {
     if (kiemTraRef.get(don.email, don.id, 'DEPOSIT')) return;
+    const soCoin = coin.soCoin?.();
+    if (soCoin) {
+      soCoin.ghiNhan({
+        email: don.email, loai: 'DEPOSIT', thamChieu: don.id, coin: don.coin_amount,
+        moTa: `Nạp ${don.coin_amount} Coin qua MetaMask`, txHash: hash,
+      });
+      return;
+    }
     const vi = damBaoVi(don.email);
     const soDuMoi = vi.coin_balance + don.coin_amount;
     capNhatSoDu.run(soDuMoi, don.email);
@@ -126,12 +134,22 @@ export function taoViCoin(duongDan, cauHinh = {}) {
     });
   }
 
+  async function trangThaiNap(email, order) {
+    if (!order || order.status !== 'completed' || !coin.soCoin?.()?.dangCapNap(email, order.orderId)) return order;
+    await coin.thuongOnChain().trangThai(email);
+    return coin.soCoin().dangCapNap(email, order.orderId) ? { ...order, status: 'confirming' } : order;
+  }
+
   async function xuLy(request, tra, docJson, nguoiDung) {
     const { url, method } = request;
     const { email } = nguoiDung;
 
     if (url === '/api/wallet' && method === 'GET') {
       const vi = damBaoVi(email);
+      const onChain = await coin.thuongOnChain?.()?.trangThai(email);
+      if (onChain) {
+        return tra(200, { email, coinBalance: onChain.balance, metamaskAddress: onChain.wallet, createdAt: vi.created_at });
+      }
       return tra(200, { email, coinBalance: vi.coin_balance, metamaskAddress: vi.metamask_address, createdAt: vi.created_at });
     }
     if (url?.startsWith('/api/wallet/transactions') && method === 'GET') {
@@ -155,17 +173,18 @@ export function taoViCoin(duongDan, cauHinh = {}) {
       });
     }
     if (url === '/api/wallet/deposits/latest' && method === 'GET') {
-      return tra(200, { order: await donNap.kiemTraGanNhat(email) });
+      return tra(200, { order: await trangThaiNap(email, await donNap.kiemTraGanNhat(email)) });
     }
 
     const routeDon = url?.match(/^\/api\/wallet\/deposits\/([^/]+)(?:\/(submit|verify))?$/);
     if (routeDon && method === 'GET' && !routeDon[2]) {
-      return tra(200, donNap.thongTin(donNap.cuaToi(email, routeDon[1])));
+      return tra(200, await trangThaiNap(email, donNap.thongTin(donNap.cuaToi(email, routeDon[1]))));
     }
     if (routeDon && method === 'POST' && routeDon[2] === 'verify') {
-      const kq = await donNap.doiSoat(donNap.cuaToi(email, routeDon[1]));
+      const kq = await trangThaiNap(email, await donNap.doiSoat(donNap.cuaToi(email, routeDon[1])));
       if (kq.status === 'completed') {
-        return tra(200, { ...kq, ok: true, newBalance: damBaoVi(email).coin_balance });
+        const onChain = await coin.thuongOnChain?.()?.trangThai(email);
+        return tra(200, { ...kq, ok: true, newBalance: onChain ? onChain.balance : damBaoVi(email).coin_balance });
       }
       return tra(kq.status === 'failed' ? 400 : 202, {
         ...kq, ok: false, loi: kq.status === 'failed' ? 'Giao dịch nạp không hợp lệ hoặc thất bại.' : 'Đang chờ giao dịch được xác nhận.',
@@ -183,6 +202,7 @@ export function taoViCoin(duongDan, cauHinh = {}) {
         return tra(200, { ok: true, ...donNap.guiHash(donNap.cuaToi(email, routeDon[1]), duLieu?.transactionHash) });
       }
       if (url === '/api/wallet/metamask') {
+        if (coin.soCoin?.()) return tra(409, { loi: 'Xác minh ví bằng chữ ký MetaMask trong thẻ Coin.' });
         const address = duLieu?.address;
         if (address !== null && !diaChiHopLe(address)) return tra(400, { loi: 'Địa chỉ ví không hợp lệ.' });
         damBaoVi(email);
@@ -195,8 +215,18 @@ export function taoViCoin(duongDan, cauHinh = {}) {
         if (duLieu?.walletAddress != null && !diaChiHopLe(duLieu.walletAddress)) {
           return tra(400, { loi: 'Địa chỉ ví không hợp lệ.' });
         }
-        return tra(201, await donNap.batDau(email, goi, duLieu));
+        if (coin.soCoin?.()) {
+          const vi = coin.thuongOnChain().xemVi(email);
+          if (chainId !== 31337) return tra(503, { loi: 'Nạp Coin cần Hardhat Local 31337.' });
+          if (vi?.connected !== 1) return tra(409, { loi: 'Xác minh ví MetaMask trong Ví Coin trước khi nạp.' });
+          if (duLieu?.walletAddress && duLieu.walletAddress.toLowerCase() !== vi.wallet) {
+            return tra(409, { loi: 'Chọn đúng tài khoản đã xác minh trong MetaMask.' });
+          }
+          duLieu = { ...duLieu, walletAddress: vi.wallet };
+        }
+        return tra(201, await trangThaiNap(email, await donNap.batDau(email, goi, duLieu)));
       }
+      if (coin.soCoin?.()) return tra(409, { loi: 'Nhận Coin theo mốc chuỗi ngày học trong Ví Coin.' });
       const { type, referenceId, description } = duLieu ?? {};
       if (!type || !referenceId || typeof type !== 'string' || typeof referenceId !== 'string') {
         return tra(400, { loi: 'Thiếu type hoặc referenceId.' });

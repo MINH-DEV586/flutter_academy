@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../dinh_tuyen/duong_dan.dart';
 import '../viewmodels/providers.dart';
@@ -10,11 +9,6 @@ import '../widgets/trang.dart';
 /// Màn hình lịch sử giao dịch Coin chi tiết.
 class LichSuGiaoDichScreen extends ConsumerWidget {
   const LichSuGiaoDichScreen({super.key});
-
-  void _moEtherscan(String txHash) {
-    final uri = Uri.parse('https://sepolia.etherscan.io/tx/$txHash');
-    launchUrl(uri, mode: LaunchMode.externalApplication);
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -83,33 +77,14 @@ class LichSuGiaoDichScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Số dư: ${gd.balanceBefore} → ${gd.balanceAfter} Coin',
+                                  gd.dangCho
+                                      ? 'Đang chờ cấp Coin'
+                                      : 'Số dư: ${gd.balanceBefore} → ${gd.balanceAfter} Coin',
                                   style: t.bodySmall?.copyWith(color: mau.onSurfaceVariant),
                                 ),
-                                if (gd.transactionHash != null && gd.transactionHash!.isNotEmpty) ...[
+                                if (gd.transactionHash case final hash? when hash.isNotEmpty) ...[
                                   const SizedBox(height: 6),
-                                  InkWell(
-                                    onTap: () => _moEtherscan(gd.transactionHash!),
-                                    borderRadius: BorderRadius.circular(4),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 2),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(Icons.open_in_new, size: 14, color: Colors.blue),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            'Tx: ${gd.txHashRutGon} (Sepolia Etherscan)',
-                                            style: const TextStyle(
-                                              color: Colors.blue,
-                                              fontSize: 12,
-                                              decoration: TextDecoration.underline,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
+                                  SelectableText('Tx: $hash', style: t.bodySmall),
                                 ],
                               ],
                             ),

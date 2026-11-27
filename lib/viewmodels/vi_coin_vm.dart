@@ -6,6 +6,7 @@ import '../models/don_nap_coin.dart';
 import '../data/metamask_interop.dart';
 import '../models/vi_coin.dart';
 import 'providers.dart';
+import 'thuong_chuoi_vm.dart';
 
 /// ViewModel quản lý Ví Coin, kết nối MetaMask, nạp Coin và nhận thưởng.
 class ViCoinVM extends AsyncNotifier<ViCoin?> {
@@ -68,6 +69,7 @@ class ViCoinVM extends AsyncNotifier<ViCoin?> {
         description: moTa,
       );
       await lamMoi();
+      ref.invalidate(trangThaiThuongProvider);
       return (res['coinNhan'] as num?)?.toInt();
     } catch (_) {
       return null;
@@ -103,6 +105,7 @@ final donNapGanNhatProvider = FutureProvider.autoDispose<DonNapCoin?>((
   if (ref.mounted && ref.read(phienProvider).asData?.value?.email == email) {
     ref.invalidate(viCoinProvider);
     ref.invalidate(lichSuGiaoDichProvider);
+    ref.invalidate(trangThaiThuongProvider);
   }
   return don;
 }, retry: (_, _) => null);

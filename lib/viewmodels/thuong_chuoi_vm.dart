@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../cau_hinh/may_chu.dart';
@@ -17,22 +19,67 @@ final trangThaiThuongProvider =
     );
 
 class ThuongChuoiVM extends AsyncNotifier<TrangThaiThuongChuoi?> {
+  final _yeuCauNhan = <(String, String)>{};
+  Timer? _henGio;
+
   @override
   Future<TrangThaiThuongChuoi?> build() async {
-    final email = ref.watch(phienProvider).asData?.value?.email;
-    final kho = ref.watch(khoThuongChuoiProvider);
+    final lanTai = ref;
+    final email = lanTai.watch(emailHocVienProvider);
+    final kho = lanTai.watch(khoThuongChuoiProvider);
     if (email == null || kho == null) return null;
+    lanTai.onDispose(() => _henGio?.cancel());
     final tinhTrang = TrangThaiThuongChuoi.tuJson(await kho.yeuCau(''));
-    if (ref.mounted && tinhTrang.doiPro == 'completed') {
-      ref.invalidate(thanhVienProvider);
-    }
+    if (_conPhien(lanTai, email)) _theoDoi(lanTai, tinhTrang);
     return tinhTrang;
   }
 
-  Future<Uri> moVi({required bool doiPro}) async {
+  bool _conPhien(Ref lanTai, String email) =>
+      lanTai.mounted && lanTai.read(emailHocVienProvider) == email;
+
+  void _theoDoi(Ref lanTai, TrangThaiThuongChuoi tinhTrang) {
+    if (tinhTrang.doiPro == 'completed') lanTai.invalidate(thanhVienProvider);
+    _henGio?.cancel();
+    if ((tinhTrang.dangCapCoin || tinhTrang.doiPro == 'confirming') &&
+        tinhTrang.loiMang == null) {
+      _henGio = Timer(const Duration(seconds: 3), lanTai.invalidateSelf);
+    }
+  }
+
+  Future<void> nhanCoin(String id) async {
+    final lanTai = ref;
+    final email = lanTai.read(emailHocVienProvider);
+    final kho = lanTai.read(khoThuongChuoiProvider);
+    if (email == null || kho == null) {
+      throw const LoiThuongChuoi('Đăng nhập để nhận Coin.');
+    }
+    final yeuCau = (email, id);
+    if (!_yeuCauNhan.add(yeuCau)) return;
+    try {
+      final tinhTrang = TrangThaiThuongChuoi.tuJson(
+        await kho.yeuCau('/claim', duLieu: {'awardId': id}),
+      );
+      if (_conPhien(lanTai, email)) {
+        _theoDoi(lanTai, tinhTrang);
+        state = AsyncData(tinhTrang);
+      } else if (_conPhien(ref, email)) {
+        ref.invalidateSelf();
+      }
+    } catch (_) {
+      if (_conPhien(lanTai, email)) lanTai.invalidateSelf();
+      rethrow;
+    } finally {
+      _yeuCauNhan.remove(yeuCau);
+    }
+  }
+
+  Future<Uri> moVi({required bool doiPro, String? packageId}) async {
     final kho = ref.read(khoThuongChuoiProvider);
-    if (kho == null) throw const LoiThuongChuoi('Chưa cấu hình Coin thưởng.');
-    final kq = await kho.yeuCau(doiPro ? '/redeem' : '/link', duLieu: {});
+    if (kho == null) throw const LoiThuongChuoi('Chưa cấu hình ví Coin.');
+    final kq = await kho.yeuCau(
+      doiPro ? '/redeem' : '/link',
+      duLieu: {if (doiPro && packageId != null) 'packageId': packageId},
+    );
     final path = Uri.parse(kq['path'] as String);
     if (path.hasAuthority || path.path != '/meta/vi' || !path.hasFragment) {
       throw const LoiThuongChuoi('Đường dẫn ký ví không hợp lệ.');
@@ -47,6 +94,10 @@ class ThuongChuoiVM extends AsyncNotifier<TrangThaiThuongChuoi?> {
     if (ref.mounted) ref.invalidateSelf();
   }
 }
+
+final soDuCoinProvider = Provider<int?>(
+  (ref) => ref.watch(trangThaiThuongProvider).asData?.value?.soDu,
+);
 
 class DongBoThuongVM extends Notifier<int> {
   @override
@@ -79,6 +130,7 @@ class DongBoThuongVM extends Notifier<int> {
     }
     if (ref.mounted && ref.read(phienProvider).asData?.value?.email == email) {
       state = kho.soDangCho(email);
+      ref.invalidate(trangThaiThuongProvider);
     }
   }
 }

@@ -4,7 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 export const GOI_PRO_THUONG = Object.freeze({ id: 'pro_7', days: 7, amount: 30 });
 
 // ─── Module quản lý gói thành viên Pro ─────────────────────────────────────
-export function taoThanhVien(duongDan, dongHo = () => new Date()) {
+export function taoThanhVien(duongDan, dongHo = () => new Date(), { coinChung = false } = {}) {
   const db = typeof duongDan === 'object' && duongDan !== null && duongDan.prepare ? duongDan : new DatabaseSync(duongDan);
   db.exec(`
     PRAGMA journal_mode = WAL;
@@ -83,12 +83,19 @@ export function taoThanhVien(duongDan, dongHo = () => new Date()) {
     GOI_PRO_THUONG.id, `Pro ${GOI_PRO_THUONG.days} ngày`, GOI_PRO_THUONG.days, GOI_PRO_THUONG.amount,
   );
 
-  function capProBlockchain(email, requestId) {
+  function timGoiCoin(id) {
+    if (id === GOI_PRO_THUONG.id) return GOI_PRO_THUONG;
+    const goi = layGoi.get(id);
+    return goi ? { id, amount: goi.coin_price, days: goi.duration_days } : null;
+  }
+
+  function capProBlockchain(email, requestId, packageId = GOI_PRO_THUONG.id) {
+    const goi = timGoiCoin(packageId);
     const hienTai = dongHo();
     const sub = laySubActive.get(email, hienTai.toISOString());
     const batDau = sub ? new Date(sub.expires_at.replace(' ', 'T') + (sub.expires_at.includes('T') ? '' : 'Z')) : hienTai;
-    const expiresAt = new Date(batDau.getTime() + GOI_PRO_THUONG.days * 86_400_000).toISOString();
-    themSub.run(requestId, email, GOI_PRO_THUONG.id, batDau.toISOString(), expiresAt, 'active', null);
+    const expiresAt = new Date(batDau.getTime() + goi.days * 86_400_000).toISOString();
+    themSub.run(requestId, email, packageId, batDau.toISOString(), expiresAt, 'active', null);
     return expiresAt;
   }
 
@@ -119,6 +126,7 @@ export function taoThanhVien(duongDan, dongHo = () => new Date()) {
 
     // POST /api/subscriptions/purchase — mua gói Pro
     if (url === '/api/subscriptions/purchase' && method === 'POST') {
+      if (coinChung) return tra(409, { loi: 'Chọn gói Pro và xác nhận giao dịch bằng MetaMask trong app mới.' });
       if (request.headers['content-type']?.split(';')[0] !== 'application/json') {
         return tra(415, { loi: 'Yêu cầu nội dung JSON.' });
       }
@@ -195,5 +203,5 @@ export function taoThanhVien(duongDan, dongHo = () => new Date()) {
     return tra(404, { loi: 'Sai địa chỉ thành viên.' });
   }
 
-  return { xuLy, dong: () => db.close(), kiemTraPro, capProBlockchain };
+  return { xuLy, dong: () => db.close(), kiemTraPro, capProBlockchain, timGoiCoin };
 }
