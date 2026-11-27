@@ -10,20 +10,7 @@ import '../viewmodels/providers.dart';
 /// - Đánh dấu trực quan ngày đã học (🟢), ngày dùng Freeze (❄️), ngày chưa học (⚪).
 /// - Nhấn vào một ngày để xem chi tiết thời gian, số bài hoàn thành, khóa học, XP và hoạt động duy trì chuỗi.
 class LichHocThang extends ConsumerStatefulWidget {
-  const LichHocThang({
-    super.key,
-    this.nam,
-    this.thang,
-    this.nhatKyThang,
-    this.cacNgayFreeze,
-    this.onThayDoiThang,
-  });
-
-  final int? nam;
-  final int? thang;
-  final Map<String, NhatKyNgay>? nhatKyThang;
-  final Set<String>? cacNgayFreeze;
-  final void Function(int nam, int thang)? onThayDoiThang;
+  const LichHocThang({super.key});
 
   @override
   ConsumerState<LichHocThang> createState() => _LichHocThangState();
@@ -31,77 +18,34 @@ class LichHocThang extends ConsumerStatefulWidget {
 
 class _LichHocThangState extends ConsumerState<LichHocThang> {
   late DateTime _thangHienTai;
-  Map<String, NhatKyNgay> _nhatKyThang = {};
-  bool _dangTai = true;
 
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
-    _thangHienTai = DateTime(widget.nam ?? now.year, widget.thang ?? now.month);
-    if (widget.nhatKyThang == null) {
-      _taiDuLieuThang();
-    } else {
-      _nhatKyThang = widget.nhatKyThang!;
-      _dangTai = false;
-    }
+    final now = ChuoiHoc.gioVietNam();
+    _thangHienTai = DateTime.utc(now.year, now.month);
   }
 
-  @override
-  void didUpdateWidget(covariant LichHocThang oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.nhatKyThang != oldWidget.nhatKyThang) {
-      setState(() {
-        _nhatKyThang = widget.nhatKyThang ?? {};
-        _dangTai = false;
-      });
-    }
-  }
-
-  Future<void> _taiDuLieuThang() async {
-    setState(() => _dangTai = true);
-    final vm = ref.read(chuoiHocProvider.notifier);
-    final data = await vm.layNhatKyThang(
-      _thangHienTai.year,
-      _thangHienTai.month,
-    );
-    if (mounted) {
-      setState(() {
-        _nhatKyThang = data;
-        _dangTai = false;
-      });
-    }
-  }
-
-  void _thangTruoc() {
+  void _doiThang(int buoc) {
     setState(() {
-      _thangHienTai = DateTime(_thangHienTai.year, _thangHienTai.month - 1);
+      _thangHienTai = DateTime.utc(
+        _thangHienTai.year,
+        _thangHienTai.month + buoc,
+      );
     });
-    if (widget.nhatKyThang != null) {
-      widget.onThayDoiThang?.call(_thangHienTai.year, _thangHienTai.month);
-    } else {
-      _taiDuLieuThang();
-    }
   }
 
-  void _thangSau() {
-    setState(() {
-      _thangHienTai = DateTime(_thangHienTai.year, _thangHienTai.month + 1);
-    });
-    if (widget.nhatKyThang != null) {
-      widget.onThayDoiThang?.call(_thangHienTai.year, _thangHienTai.month);
-    } else {
-      _taiDuLieuThang();
-    }
-  }
-
-  void _hienChiTietNgay(BuildContext context, DateTime ngay, NhatKyNgay? nk) {
+  void _hienChiTietNgay(
+    BuildContext context,
+    DateTime ngay,
+    NhatKyNgay? nk,
+    bool dungFreeze,
+  ) {
     final text = Theme.of(context).textTheme;
     final mau = Theme.of(context).colorScheme;
     final ngayStr = ChuoiHoc.dinhDangNgay(ngay);
     var nhatKy = nk ?? NhatKyNgay(ngay: ngayStr);
-    if (!nhatKy.dungFreeze &&
-        (widget.cacNgayFreeze?.contains(ngayStr) ?? false)) {
+    if (!nhatKy.dungFreeze && dungFreeze) {
       nhatKy = nhatKy.danhDauDungFreeze();
     }
 
@@ -189,6 +133,16 @@ class _LichHocThangState extends ConsumerState<LichHocThang> {
   Widget build(BuildContext context) {
     final mau = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
+    final thang = nhatKyThangProvider((
+      _thangHienTai.year,
+      _thangHienTai.month,
+    ));
+    final nhatKyThang = ref.watch(thang);
+    final cacNgayFreeze = ref
+        .watch(chuoiHocProvider)
+        .asData
+        ?.value
+        .cacNgayFreezeDaDung;
 
     final soNgayTrongThang = DateUtils.getDaysInMonth(
       _thangHienTai.year,
@@ -198,7 +152,7 @@ class _LichHocThangState extends ConsumerState<LichHocThang> {
     // Thứ Hai = 1, Chủ Nhật = 7. Chuyển để T2 là cột 0, CN là cột 6.
     final viTriCotDau = (ngayDauThang.weekday - 1) % 7;
 
-    final homNay = DateTime.now();
+    final homNay = ChuoiHoc.gioVietNam();
     final homNayStr = ChuoiHoc.dinhDangNgay(homNay);
 
     return Card(
@@ -212,7 +166,7 @@ class _LichHocThangState extends ConsumerState<LichHocThang> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
-                  onPressed: _thangTruoc,
+                  onPressed: () => _doiThang(-1),
                   icon: const Icon(Icons.chevron_left),
                   tooltip: 'Tháng trước',
                 ),
@@ -223,7 +177,7 @@ class _LichHocThangState extends ConsumerState<LichHocThang> {
                   ),
                 ),
                 IconButton(
-                  onPressed: _thangSau,
+                  onPressed: () => _doiThang(1),
                   icon: const Icon(Icons.chevron_right),
                   tooltip: 'Tháng sau',
                 ),
@@ -246,10 +200,15 @@ class _LichHocThangState extends ConsumerState<LichHocThang> {
             const SizedBox(height: 8),
 
             // Lưới các ngày
-            if (_dangTai)
+            if (nhatKyThang.isLoading)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 32),
                 child: Center(child: CircularProgressIndicator()),
+              )
+            else if (nhatKyThang.hasError)
+              TextButton(
+                onPressed: () => ref.invalidate(thang),
+                child: const Text('Chưa tải được lịch học. Thử lại'),
               )
             else
               GridView.builder(
@@ -275,10 +234,10 @@ class _LichHocThangState extends ConsumerState<LichHocThang> {
                   );
                   final ngayStr = ChuoiHoc.dinhDangNgay(ngayDate);
                   final laHomNay = ngayStr == homNayStr;
-                  final nhatKy = _nhatKyThang[ngayStr];
+                  final nhatKy = nhatKyThang.requireValue[ngayStr];
                   final ngayDungFreeze =
                       nhatKy?.dungFreeze == true ||
-                      (widget.cacNgayFreeze?.contains(ngayStr) ?? false);
+                      (cacNgayFreeze?.contains(ngayStr) ?? false);
 
                   Color? nen;
                   Color? vien;
@@ -299,7 +258,12 @@ class _LichHocThangState extends ConsumerState<LichHocThang> {
                   }
 
                   return InkWell(
-                    onTap: () => _hienChiTietNgay(context, ngayDate, nhatKy),
+                    onTap: () => _hienChiTietNgay(
+                      context,
+                      ngayDate,
+                      nhatKy,
+                      ngayDungFreeze,
+                    ),
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
                       decoration: BoxDecoration(

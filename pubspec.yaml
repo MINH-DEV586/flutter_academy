@@ -13,6 +13,7 @@ dependencies:
   flutter:
     sdk: flutter
   material_ui: ^1.11.0
+  crypto: ^3.0.8
 
   # Điều hướng khai báo theo URL. Sách dùng Navigator 2.0 thô
   # (RouterDelegate + RouteInformationParser tự viết) — xem

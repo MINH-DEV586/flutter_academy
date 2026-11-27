@@ -80,13 +80,14 @@ abstract interface class KhoChuoiHoc {
 
 /// Kho đồng bộ trạng thái streak theo tài khoản đã đăng nhập.
 abstract interface class KhoDongBoChuoiHoc {
-  /// Nạp trạng thái tài khoản; lần đầu có thể nhập dữ liệu cục bộ.
-  Future<ChuoiHoc> layChuoiHoc(
-    String email, {
-    required ChuoiHoc duLieuCucBo,
-  });
+  /// Nạp trạng thái tài khoản với bản cục bộ đã xác định chủ sở hữu.
+  Future<ChuoiHoc> layChuoiHoc(String email, {required ChuoiHoc duLieuCucBo});
 
   Future<void> luuChuoiHoc(String email, ChuoiHoc chuoiHoc);
+}
+
+abstract interface class KhoNhatKyDemo {
+  Future<List<NhatKyNgay>> layNhatKyDemo(String email);
 }
 
 class LoiTaiKhoan implements Exception {

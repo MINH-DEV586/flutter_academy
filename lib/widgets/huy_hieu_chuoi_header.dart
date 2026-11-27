@@ -72,7 +72,7 @@ class _NoiDungHuyHieu extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _CotThongSo(
-                    nhan: 'Chuỗi hiện tại',
+                    nhan: 'Chuỗi hoạt động',
                     giaTri: '${chuoiHoc.chuoiHienTai} ngày',
                     icon: '',
                   ),
@@ -185,6 +185,7 @@ class _NoiDungHuyHieu extends StatelessWidget {
               SizedBox(width: compact ? 2 : 4),
               Text(
                 '${chuoiHoc.chuoiHienTai}',
+                semanticsLabel: 'Chuỗi hoạt động ${chuoiHoc.chuoiHienTai} ngày',
                 style: (compact ? text.labelMedium : text.titleSmall)?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: daHoc ? Colors.amber.shade900 : mau.onSurfaceVariant,

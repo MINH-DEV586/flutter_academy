@@ -2,6 +2,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/cap_do.dart';
+import '../models/chuoi_hoc.dart';
+import '../models/huy_hieu.dart';
 import '../models/nhat_ky_ngay.dart';
 import '../viewmodels/providers.dart';
 import '../widgets/lich_hoc_thang.dart';
@@ -13,38 +15,14 @@ import '../widgets/lich_hoc_thang.dart';
 /// - Tiến độ cấp độ hiện tại (thanh XP)
 /// - Lịch học tháng
 /// - Phân tích thống kê: tỷ lệ duy trì streak, số tuần hoàn thành mục tiêu
-class ThongKeScreen extends ConsumerStatefulWidget {
+class ThongKeScreen extends ConsumerWidget {
   const ThongKeScreen({super.key});
 
   @override
-  ConsumerState<ThongKeScreen> createState() => _ThongKeScreenState();
-}
-
-class _ThongKeScreenState extends ConsumerState<ThongKeScreen> {
-  final DateTime _bayGio = DateTime.now();
-  Map<String, NhatKyNgay> _nhatKyThang = {};
-  bool _dangTai = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _taiNhatKyThang(_bayGio.year, _bayGio.month);
-  }
-
-  Future<void> _taiNhatKyThang(int nam, int thang) async {
-    setState(() => _dangTai = true);
-    try {
-      final kq = await ref
-          .read(chuoiHocProvider.notifier)
-          .layNhatKyThang(nam, thang);
-      if (mounted) setState(() => _nhatKyThang = kq);
-    } finally {
-      if (mounted) setState(() => _dangTai = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bayGio = ChuoiHoc.gioVietNam();
+    final nhatKyProvider = nhatKyThangProvider((bayGio.year, bayGio.month));
+    final nhatKyAsync = ref.watch(nhatKyProvider);
     final chuoiAsync = ref.watch(chuoiHocProvider);
     final chu = Theme.of(context).textTheme;
     final mau = Theme.of(context).colorScheme;
@@ -52,18 +30,31 @@ class _ThongKeScreenState extends ConsumerState<ThongKeScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Thống kê học tập'), centerTitle: false),
       body: chuoiAsync.when(
+        skipLoadingOnRefresh: false,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Lỗi: $e')),
         data: (chuoi) {
           final cap = chuoi.capDo;
-          final tongNgayHoc = _nhatKyThang.values
+          if (nhatKyAsync.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (nhatKyAsync.hasError) {
+            return Center(
+              child: TextButton(
+                onPressed: () => ref.invalidate(nhatKyProvider),
+                child: const Text('Chưa tải được thống kê. Thử lại'),
+              ),
+            );
+          }
+          final nhatKyThang = nhatKyAsync.requireValue;
+          final tongNgayHoc = nhatKyThang.values
               .where((nk) => nk.datDieuKienStreak)
               .length;
-          final soTuanDatMucTieu = _tinhSoTuanDatMucTieu();
-          final tiLeDuyTri = _tinhTiLeDuyTri();
+          final soTuanDatMucTieu = _tinhSoTuanDatMucTieu(nhatKyThang);
+          final tiLeDuyTri = (tongNgayHoc / bayGio.day * 100).clamp(0, 100);
 
           return RefreshIndicator(
-            onRefresh: () => _taiNhatKyThang(_bayGio.year, _bayGio.month),
+            onRefresh: () => ref.refresh(nhatKyProvider.future).then<void>((_) {}),
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -144,21 +135,7 @@ class _ThongKeScreenState extends ConsumerState<ThongKeScreen> {
                 // ── Lịch học tháng ──
                 const _TieuDeMuc(title: ' Lịch học tháng này'),
                 const SizedBox(height: 12),
-                if (_dangTai)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(24),
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                else
-                  LichHocThang(
-                    nam: _bayGio.year,
-                    thang: _bayGio.month,
-                    nhatKyThang: _nhatKyThang,
-                    cacNgayFreeze: chuoi.cacNgayFreezeDaDung,
-                    onThayDoiThang: (nam, thang) => _taiNhatKyThang(nam, thang),
-                  ),
+                const LichHocThang(),
 
                 const SizedBox(height: 20),
 
@@ -169,20 +146,26 @@ class _ThongKeScreenState extends ConsumerState<ThongKeScreen> {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: chuoi.danhSachHuyHieu.map((ma) {
-                      return Chip(
-                        avatar: const Icon(
-                          Icons.emoji_events_rounded,
-                          size: 16,
-                        ),
-                        label: Text(ma),
-                        backgroundColor: mau.primaryContainer,
-                        labelStyle: chu.labelSmall?.copyWith(
-                          color: mau.onPrimaryContainer,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      );
-                    }).toList(),
+                    children: HuyHieu.tatCaMoc
+                        .where(
+                          (huyHieu) =>
+                              chuoi.danhSachHuyHieu.contains(huyHieu.ma),
+                        )
+                        .map((huyHieu) {
+                          return Chip(
+                            avatar: const Icon(
+                              Icons.emoji_events_rounded,
+                              size: 16,
+                            ),
+                            label: Text(huyHieu.tieuDe),
+                            backgroundColor: mau.primaryContainer,
+                            labelStyle: chu.labelSmall?.copyWith(
+                              color: mau.onPrimaryContainer,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          );
+                        })
+                        .toList(),
                   ),
                   const SizedBox(height: 20),
                 ],
@@ -197,9 +180,9 @@ class _ThongKeScreenState extends ConsumerState<ThongKeScreen> {
   }
 
   /// Tính số tuần trong tháng mà học viên hoàn thành mục tiêu (≥5 ngày/tuần).
-  int _tinhSoTuanDatMucTieu() {
-    if (_nhatKyThang.isEmpty) return 0;
-    final ngayHocSet = _nhatKyThang.entries
+  int _tinhSoTuanDatMucTieu(Map<String, NhatKyNgay> nhatKyThang) {
+    if (nhatKyThang.isEmpty) return 0;
+    final ngayHocSet = nhatKyThang.entries
         .where((e) => e.value.datDieuKienStreak)
         .map((e) {
           final parts = e.key.split('-');
@@ -219,16 +202,6 @@ class _ThongKeScreenState extends ConsumerState<ThongKeScreen> {
       if (soNgayTrongTuan >= 5) soTuan++;
     }
     return soTuan;
-  }
-
-  /// Tính tỷ lệ duy trì streak (số ngày học / số ngày trong tháng đã qua).
-  double _tinhTiLeDuyTri() {
-    final ngayHomNay = _bayGio.day;
-    if (ngayHomNay <= 0) return 0;
-    final soNgayHoc = _nhatKyThang.values
-        .where((nk) => nk.datDieuKienStreak)
-        .length;
-    return (soNgayHoc / ngayHomNay * 100).clamp(0, 100);
   }
 }
 

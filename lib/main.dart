@@ -35,7 +35,10 @@ Future<void> main() async {
     ProviderScope(
       overrides: [
         khoKhoaHocProvider.overrideWithValue(HiveKhoKhoaHoc(hop.khoaHoc)),
-        khoTienDoProvider.overrideWithValue(HiveKhoTienDo(hop.tienDo)),
+        khoTienDoProvider.overrideWith(
+          (ref) =>
+              HiveKhoTienDo(hop.tienDo, email: ref.watch(emailHocVienProvider)),
+        ),
         khoNguoiDungProvider.overrideWithValue(khoTaiKhoan),
         khoGiaSuAiProvider.overrideWithValue(
           HttpKhoGiaSuAi(hop.giaSuAi, hop.phien),
@@ -44,8 +47,13 @@ Future<void> main() async {
           HttpKhoThuongChuoi(hop.thuongDangCho, hop.phien),
         ),
         khoDongBoChuoiHocProvider.overrideWithValue(khoTaiKhoan),
-        khoChuoiHocProvider.overrideWithValue(
-          HiveKhoChuoiHoc(hopChuoiHoc: hop.chuoiHoc, hopNhatKy: hop.nhatKyHoc),
+        khoNhatKyDemoProvider.overrideWithValue(khoTaiKhoan),
+        khoChuoiHocProvider.overrideWith(
+          (ref) => HiveKhoChuoiHoc(
+            hopChuoiHoc: hop.chuoiHoc,
+            hopNhatKy: hop.nhatKyHoc,
+            email: ref.watch(emailHocVienProvider),
+          ),
         ),
         khoViCoinProvider.overrideWithValue(HttpKhoViCoin(hop.phien)),
         khoThanhVienProvider.overrideWithValue(HttpKhoThanhVien(hop.phien)),

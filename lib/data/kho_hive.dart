@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:hive_ce/hive_ce.dart';
 
 import '../models/chuoi_hoc.dart';
@@ -35,7 +38,9 @@ class HiveKhoKhoaHoc implements KhoKhoaHoc {
     final danhSach = DuLieuMau.khoaHoc();
     for (final k in danhSach) {
       final hienTai = hop.get(k.ma);
-      if (hienTai == null || hienTai.laPro != k.laPro || hienTai.baiHoc.length != k.baiHoc.length) {
+      if (hienTai == null ||
+          hienTai.laPro != k.laPro ||
+          hienTai.baiHoc.length != k.baiHoc.length) {
         await hop.put(k.ma, k);
       }
     }
@@ -51,55 +56,65 @@ class HiveKhoKhoaHoc implements KhoKhoaHoc {
 /// Kho tiến độ học.
 class HiveKhoTienDo implements KhoTienDo {
   final Box<TienDo> hop;
+  final String _phien;
 
-  HiveKhoTienDo(this.hop);
+  HiveKhoTienDo(this.hop, {String? email}) : _phien = _tienToHocVien(email);
 
   @override
   Future<TienDo> cua(String maKhoaHoc) async =>
-      hop.get(maKhoaHoc) ?? TienDo(maKhoaHoc: maKhoaHoc);
+      hop.get('$_phien$maKhoaHoc') ?? TienDo(maKhoaHoc: maKhoaHoc);
 
   @override
-  Future<List<TienDo>> tatCa() async => hop.values.toList(growable: false);
+  Future<List<TienDo>> tatCa() async => [
+    for (final key in hop.keys)
+      if (key is String && key.startsWith(_phien)) ?hop.get(key),
+  ];
 
   @override
-  Future<void> luu(TienDo tienDo) => hop.put(tienDo.maKhoaHoc, tienDo);
+  Future<void> luu(TienDo tienDo) =>
+      hop.put('$_phien${tienDo.maKhoaHoc}', tienDo);
 
   @override
-  Future<void> xoa(String maKhoaHoc) => hop.delete(maKhoaHoc);
+  Future<void> xoa(String maKhoaHoc) => hop.delete('$_phien$maKhoaHoc');
 }
+
+// Các khóa không có tiền tố là dữ liệu cũ không xác định được chủ sở hữu.
+String _tienToHocVien(String? email) =>
+    email == null ? 'v2:khach:' : 'v2:email:${sha256.convert(utf8.encode(email))}:';
 
 /// Kho lưu trữ Chuỗi học tập và Nhật ký ngày bằng Hive.
 class HiveKhoChuoiHoc implements KhoChuoiHoc {
-  static const String _khoaMacDinh = 'hien_tai';
   final Box<ChuoiHoc> hopChuoiHoc;
   final Box<NhatKyNgay> hopNhatKy;
+  final String _phien;
 
   HiveKhoChuoiHoc({
     required this.hopChuoiHoc,
     required this.hopNhatKy,
-  });
+    String? email,
+  }) : _phien = _tienToHocVien(email);
 
   @override
   Future<ChuoiHoc> lay() async =>
-      hopChuoiHoc.get(_khoaMacDinh) ?? const ChuoiHoc();
+      hopChuoiHoc.get('${_phien}hien_tai') ?? const ChuoiHoc();
 
   @override
   Future<void> luu(ChuoiHoc chuoiHoc) =>
-      hopChuoiHoc.put(_khoaMacDinh, chuoiHoc);
+      hopChuoiHoc.put('${_phien}hien_tai', chuoiHoc);
 
   @override
   Future<NhatKyNgay> layNhatKy(String ngay) async =>
-      hopNhatKy.get(ngay) ?? NhatKyNgay(ngay: ngay);
+      hopNhatKy.get('$_phien$ngay') ?? NhatKyNgay(ngay: ngay);
 
   @override
   Future<Map<String, NhatKyNgay>> nhatKyTrongThang(int nam, int thang) async {
     final prefix =
-        '${nam.toString().padLeft(4, '0')}-${thang.toString().padLeft(2, '0')}-';
+        '$_phien${nam.toString().padLeft(4, '0')}-${thang.toString().padLeft(2, '0')}-';
     final ketQua = <String, NhatKyNgay>{};
     for (final key in hopNhatKy.keys) {
       if (key is String && key.startsWith(prefix)) {
         final val = hopNhatKy.get(key);
-        if (val != null) ketQua[key] = val;
+        if (val != null) ketQua[val.ngay] = val;
       }
     }
     return ketQua;
@@ -107,5 +122,5 @@ class HiveKhoChuoiHoc implements KhoChuoiHoc {
 
   @override
   Future<void> luuNhatKy(NhatKyNgay nhatKy) =>
-      hopNhatKy.put(nhatKy.ngay, nhatKy);
+      hopNhatKy.put('$_phien${nhatKy.ngay}', nhatKy);
 }

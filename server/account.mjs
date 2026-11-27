@@ -1,6 +1,7 @@
 import { createHash, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { promisify } from 'node:util';
+import { docNhatKyDemo } from './seed-learning.mjs';
 
 const bamMatKhau = promisify(scrypt);
 const saltGia = randomBytes(16);
@@ -12,6 +13,11 @@ function bam(matKhau, salt) {
   return bamMatKhau(matKhau, salt, 64, {
     N: 2 ** 17, r: 8, p: 1, maxmem: 160 * 1024 * 1024,
   });
+}
+
+export async function taoBamMatKhau(matKhau) {
+  const salt = randomBytes(16);
+  return { salt, maBam: await bam(matKhau, salt) };
 }
 
 export function taoTaiKhoan(duongDan, maKhoaHocHopLe, { khoaHocPro = new Set(), kiemTraPro = null } = {}) {
@@ -118,6 +124,11 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe, { khoaHocPro = new Set(), 
 
   async function xuLy(request, tra, docJson) {
     const { url, method } = request;
+    if (url === '/api/account/demo-learning' && method === 'GET') {
+      const nguoiDung = xacThucToken(request.headers.authorization);
+      if (!nguoiDung) return tra(401, { loi: 'Vui lòng đăng nhập.' });
+      return tra(200, { nhatKy: docNhatKyDemo(db, nguoiDung.email) });
+    }
     if (url === '/api/account/streak') {
       const match = /^Bearer ([a-f0-9]{64})$/.exec(request.headers.authorization ?? '');
       const nguoiDung = match && docPhien.get(bamToken(match[1]), Date.now());
@@ -275,8 +286,7 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe, { khoaHocPro = new Set(), 
     dangBam++;
     try {
       if (dangKy) {
-        const salt = randomBytes(16);
-        const maBam = await bam(matKhau, salt);
+        const { salt, maBam } = await taoBamMatKhau(matKhau);
         const inserted = themTaiKhoan.run(email, hoTen, salt, maBam);
         if (!inserted.changes) return tra(409, { loi: 'Email này đã được sử dụng.' });
         return tra(201, capPhien(email, hoTen));

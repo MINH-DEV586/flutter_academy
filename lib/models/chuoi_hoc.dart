@@ -33,6 +33,9 @@ class ChuoiHoc {
   /// Cấp độ hiện tại tính toán tự động từ tổng XP.
   CapDo get capDo => CapDo.tuTongXp(tongXp);
 
+  static DateTime gioVietNam() =>
+      DateTime.now().toUtc().add(const Duration(hours: 7));
+
   /// Chuyển đổi DateTime sang định dạng chuẩn YYYY-MM-DD.
   static String dinhDangNgay(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-'
@@ -45,7 +48,7 @@ class ChuoiHoc {
   /// Kiểm tra hôm nay học viên đã có hoạt động học hợp lệ hay chưa.
   bool daHocHomNay([DateTime? thoiDiemHienTai]) {
     if (ngayHocGanNhat == null) return false;
-    final homNay = dinhDangNgay(thoiDiemHienTai ?? DateTime.now());
+    final homNay = dinhDangNgay(thoiDiemHienTai ?? gioVietNam());
     return ngayHocGanNhat == homNay;
   }
 
@@ -155,7 +158,9 @@ class ChuoiHoc {
       return ChuoiHoc(
         chuoiHienTai: chuoiHienTai + soNgayBiLo,
         chuoiDaiNhat: math.max(chuoiDaiNhat, chuoiHienTai + soNgayBiLo),
-        ngayHocGanNhat: dinhDangNgay(ganNhatUtc.add(Duration(days: soNgayBiLo))),
+        ngayHocGanNhat: dinhDangNgay(
+          ganNhatUtc.add(Duration(days: soNgayBiLo)),
+        ),
         soKhiensFreeze: soKhiensFreeze - soNgayBiLo,
         tongXp: tongXp,
         mucTieuPhutMoiNgay: mucTieuPhutMoiNgay,
@@ -220,15 +225,15 @@ class ChuoiHoc {
 
   /// Cập nhật mục tiêu học tập hàng ngày (phút).
   ChuoiHoc datMucTieu(int soPhut) => ChuoiHoc(
-        chuoiHienTai: chuoiHienTai,
-        chuoiDaiNhat: chuoiDaiNhat,
-        ngayHocGanNhat: ngayHocGanNhat,
-        soKhiensFreeze: soKhiensFreeze,
-        tongXp: tongXp,
-        mucTieuPhutMoiNgay: soPhut > 0 ? soPhut : 10,
-        danhSachHuyHieu: danhSachHuyHieu,
-        cacNgayFreezeDaDung: cacNgayFreezeDaDung,
-      );
+    chuoiHienTai: chuoiHienTai,
+    chuoiDaiNhat: chuoiDaiNhat,
+    ngayHocGanNhat: ngayHocGanNhat,
+    soKhiensFreeze: soKhiensFreeze,
+    tongXp: tongXp,
+    mucTieuPhutMoiNgay: soPhut > 0 ? soPhut : 10,
+    danhSachHuyHieu: danhSachHuyHieu,
+    cacNgayFreezeDaDung: cacNgayFreezeDaDung,
+  );
 
   /// Mở khóa một huy hiệu thành tích mới.
   ChuoiHoc moKhoaHuyHieu(String maHuyHieu) {
@@ -247,30 +252,30 @@ class ChuoiHoc {
   }
 
   Map<String, dynamic> sangMap() => {
-        'chuoiHienTai': chuoiHienTai,
-        'chuoiDaiNhat': chuoiDaiNhat,
-        'ngayHocGanNhat': ngayHocGanNhat,
-        'soKhiensFreeze': soKhiensFreeze,
-        'tongXp': tongXp,
-        'mucTieuPhutMoiNgay': mucTieuPhutMoiNgay,
-        'danhSachHuyHieu': danhSachHuyHieu.toList(),
-        'cacNgayFreezeDaDung': cacNgayFreezeDaDung.toList(),
-      };
+    'chuoiHienTai': chuoiHienTai,
+    'chuoiDaiNhat': chuoiDaiNhat,
+    'ngayHocGanNhat': ngayHocGanNhat,
+    'soKhiensFreeze': soKhiensFreeze,
+    'tongXp': tongXp,
+    'mucTieuPhutMoiNgay': mucTieuPhutMoiNgay,
+    'danhSachHuyHieu': danhSachHuyHieu.toList(),
+    'cacNgayFreezeDaDung': cacNgayFreezeDaDung.toList(),
+  };
 
   factory ChuoiHoc.tuMap(Map<dynamic, dynamic> m) => ChuoiHoc(
-        chuoiHienTai: (m['chuoiHienTai'] as num?)?.toInt() ?? 0,
-        chuoiDaiNhat: (m['chuoiDaiNhat'] as num?)?.toInt() ?? 0,
-        ngayHocGanNhat: m['ngayHocGanNhat'] as String?,
-        soKhiensFreeze: (m['soKhiensFreeze'] as num?)?.toInt() ?? 0,
-        tongXp: (m['tongXp'] as num?)?.toInt() ?? 0,
-        mucTieuPhutMoiNgay: (m['mucTieuPhutMoiNgay'] as num?)?.toInt() ?? 10,
-        danhSachHuyHieu: ((m['danhSachHuyHieu'] as List?) ?? const [])
-            .map((e) => e as String)
-            .toSet(),
-        cacNgayFreezeDaDung: ((m['cacNgayFreezeDaDung'] as List?) ?? const [])
-            .map((e) => e as String)
-            .toSet(),
-      );
+    chuoiHienTai: (m['chuoiHienTai'] as num?)?.toInt() ?? 0,
+    chuoiDaiNhat: (m['chuoiDaiNhat'] as num?)?.toInt() ?? 0,
+    ngayHocGanNhat: m['ngayHocGanNhat'] as String?,
+    soKhiensFreeze: (m['soKhiensFreeze'] as num?)?.toInt() ?? 0,
+    tongXp: (m['tongXp'] as num?)?.toInt() ?? 0,
+    mucTieuPhutMoiNgay: (m['mucTieuPhutMoiNgay'] as num?)?.toInt() ?? 10,
+    danhSachHuyHieu: ((m['danhSachHuyHieu'] as List?) ?? const [])
+        .map((e) => e as String)
+        .toSet(),
+    cacNgayFreezeDaDung: ((m['cacNgayFreezeDaDung'] as List?) ?? const [])
+        .map((e) => e as String)
+        .toSet(),
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -290,15 +295,15 @@ class ChuoiHoc {
 
   @override
   int get hashCode => Object.hash(
-        chuoiHienTai,
-        chuoiDaiNhat,
-        ngayHocGanNhat,
-        soKhiensFreeze,
-        tongXp,
-        mucTieuPhutMoiNgay,
-        Object.hashAll(danhSachHuyHieu),
-        Object.hashAll(cacNgayFreezeDaDung),
-      );
+    chuoiHienTai,
+    chuoiDaiNhat,
+    ngayHocGanNhat,
+    soKhiensFreeze,
+    tongXp,
+    mucTieuPhutMoiNgay,
+    Object.hashAll(danhSachHuyHieu),
+    Object.hashAll(cacNgayFreezeDaDung),
+  );
 
   @override
   String toString() =>
