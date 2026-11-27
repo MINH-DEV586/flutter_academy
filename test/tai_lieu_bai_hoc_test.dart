@@ -46,6 +46,7 @@ void main() {
       expect(idVideo.add(bai.youtubeId!), isTrue);
     }
     expect(taiLieu['dieu-huong-url/b1']?.youtubeId, 'b6Z885Z46cU');
+    expect(taiLieu['flutter-animation/b1']?.youtubeId, 'yI-8QHpGIP4');
     expect(taiLieu['dieu-huong-url/b2']?.code, contains('queryParameters'));
     expect(taiLieu['dieu-huong-url/b3']?.code, contains('ShellRoute'));
   });

@@ -134,7 +134,7 @@
   },
   "flutter-animation/b1": {
     "tieuDe": "Chuyển động ngầm định với AnimatedContainer",
-    "youtubeId": "yI-8QHpG84E",
+    "youtubeId": "yI-8QHpGIP4",
     "kenhYouTube": "Flutter",
     "noiDung": "Implicit Animations giúp tạo hiệu ứng chuyển động dễ dàng chỉ bằng cách thay đổi giá trị thuộc tính. Flutter tự động nội suy giữa trạng thái cũ và mới trong thời gian quy định.",
     "code": "AnimatedContainer(\n  duration: const Duration(milliseconds: 300),\n  curve: Curves.easeInOut,\n  width: isSelected ? 200 : 100,\n  height: 60,\n  color: isSelected ? Colors.blue : Colors.grey,\n)"
