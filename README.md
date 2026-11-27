@@ -19,15 +19,20 @@ if (!(Test-Path .env)) { Copy-Item .env.example .env }
 
 ## Android thật
 
+1. Cài Git LFS, rồi chạy `git lfs install` và `git lfs pull` từ gốc repo để lấy APK tại `build/app/outputs/flutter-apk/app-debug.apk`. Bạn cũng có thể lấy `app-debug.apk` từ bản `android-debug-7f1ab49d` trong **Releases** và lưu vào cùng đường dẫn.
+2. Khởi động backend theo mục trên. Nếu thử Coin hoặc MetaMask, khởi động cả Hardhat và dùng địa chỉ hợp đồng khớp với cấu hình backend.
+3. Bật **Gỡ lỗi USB**, cắm điện thoại và chấp nhận hộp thoại cấp quyền. Chạy các lệnh sau từ gốc repo và thay `SERIAL` bằng mã thiết bị từ ADB.
+
 ```powershell
 adb devices -l
 adb -s SERIAL reverse tcp:8787 tcp:8787
 adb -s SERIAL reverse tcp:8545 tcp:8545
-flutter build apk --debug --no-pub --dart-define=ACADEMY_API_URL=http://127.0.0.1:8787
 adb -s SERIAL install -r build/app/outputs/flutter-apk/app-debug.apk
 ```
 
-Thay `SERIAL` bằng serial do ADB trả về. Với backend demo ở host `18785` và Hardhat `18545`, đổi cổng bên phải hai lệnh reverse tương ứng. APK nằm trong `build/app/outputs/flutter-apk/`.
+4. Mở **Flutter Academy** trên điện thoại và giữ cáp USB khi dùng backend hoặc Hardhat. Với backend demo ở cổng host `18785` và Hardhat ở `18545`, đổi cổng bên phải hai lệnh reverse tương ứng.
+
+Nếu cần tự build từ source, chạy `flutter build apk --debug --no-pub --dart-define=ACADEMY_API_URL=http://127.0.0.1:8787`. APK được ghi vào cùng đường dẫn trên.
 
 ## Kiểm thử nhanh
 
