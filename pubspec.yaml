@@ -13,6 +13,7 @@ dependencies:
   flutter:
     sdk: flutter
   material_ui: ^1.11.0
+  crypto: ^3.0.8
 
   # Điều hướng khai báo theo URL. Sách dùng Navigator 2.0 thô
   # (RouterDelegate + RouteInformationParser tự viết) — xem
@@ -24,8 +25,8 @@ dependencies:
 
   # Lưu trữ cục bộ. Gói `hive` gốc dừng ở 2.2.3 (30/06/2022);
   # `hive_ce` là bản cộng đồng tiếp nối, vẫn ra bản mới.
-  hive_ce: ^2.20.0
-  hive_ce_flutter: ^2.3.4
+  hive_ce: 2.20.0
+  hive_ce_flutter: 2.3.4
   http: ^1.5.0
   youtube_player_iframe: ^6.0.0
   url_launcher: ^6.3.0

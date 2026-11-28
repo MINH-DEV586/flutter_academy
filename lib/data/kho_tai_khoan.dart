@@ -3,20 +3,19 @@ import 'dart:convert';
 import 'package:hive_ce/hive_ce.dart';
 import 'package:http/http.dart' as http;
 
+import '../cau_hinh/may_chu.dart';
 import '../models/chuoi_hoc.dart';
 import '../models/nguoi_dung.dart';
+import '../models/nhat_ky_ngay.dart';
 import 'kho_du_lieu.dart';
 
-class KhoTaiKhoan implements KhoNguoiDung, KhoDongBoChuoiHoc {
+class KhoTaiKhoan implements KhoNguoiDung, KhoDongBoChuoiHoc, KhoNhatKyDemo {
   KhoTaiKhoan(this._phien);
 
-  static const _diaChi = String.fromEnvironment(
-    'ACCOUNT_API_URL',
-    defaultValue: 'http://127.0.0.1:8787/api/account',
-  );
+  static final _diaChi = MayChu.taiKhoan;
   static const _khoaToken = 'token';
-  static const _khoaTaiKhoanStreak = 'tai_khoan_streak';
   final Box<String> _phien;
+  String? _emailHienTai;
 
   Future<http.Response> _gui(
     String method,
@@ -62,17 +61,23 @@ class KhoTaiKhoan implements KhoNguoiDung, KhoDongBoChuoiHoc {
     final token = _phien.get(_khoaToken);
     if (token == null) return null;
     final response = await _gui('GET', 'session', token: token);
+    if (_phien.get(_khoaToken) != token) return null;
     if (response.statusCode == 401) {
+      _emailHienTai = null;
       await _phien.delete(_khoaToken);
       return null;
     }
-    return NguoiDung.tuMap(_doc(response)['nguoiDung'] as Map);
+    final nguoiDung = NguoiDung.tuMap(_doc(response)['nguoiDung'] as Map);
+    _emailHienTai = nguoiDung.email;
+    return nguoiDung;
   }
 
   Future<NguoiDung> _xacThuc(String path, Map<String, String> duLieu) async {
     final ketQua = _doc(await _gui('POST', path, duLieu: duLieu));
     final nguoiDung = NguoiDung.tuMap(ketQua['nguoiDung'] as Map);
+    _emailHienTai = null;
     await _phien.put(_khoaToken, ketQua['token'] as String);
+    _emailHienTai = nguoiDung.email;
     return nguoiDung;
   }
 
@@ -99,7 +104,10 @@ class KhoTaiKhoan implements KhoNguoiDung, KhoDongBoChuoiHoc {
     if (token == null) return;
     final response = await _gui('DELETE', 'session', token: token);
     if (response.statusCode != 401) _doc(response);
-    await _phien.delete(_khoaToken);
+    if (_phien.get(_khoaToken) == token) {
+      _emailHienTai = null;
+      await _phien.delete(_khoaToken);
+    }
   }
 
   String _docToken() {
@@ -108,6 +116,13 @@ class KhoTaiKhoan implements KhoNguoiDung, KhoDongBoChuoiHoc {
       throw const LoiTaiKhoan('Vui lòng đăng nhập để đăng ký khóa học.');
     }
     return token;
+  }
+
+  String _tokenCua(String email) {
+    if (_emailHienTai != email) {
+      throw const LoiTaiKhoan('Phiên tài khoản đã thay đổi.');
+    }
+    return _docToken();
   }
 
   @override
@@ -132,19 +147,16 @@ class KhoTaiKhoan implements KhoNguoiDung, KhoDongBoChuoiHoc {
     String email, {
     required ChuoiHoc duLieuCucBo,
   }) async {
-    final response = await _gui('GET', 'streak', token: _docToken());
+    final token = _tokenCua(email);
+    final response = await _gui('GET', 'streak', token: token);
+    if (_tokenCua(email) != token) {
+      throw const LoiTaiKhoan('Phiên tài khoản đã thay đổi.');
+    }
     final duLieu = _doc(response);
     if (duLieu['tonTai'] == true) {
-      await _phien.put(_khoaTaiKhoanStreak, email);
       return ChuoiHoc.tuMap(duLieu);
     }
-
-    final taiKhoanTruoc = _phien.get(_khoaTaiKhoanStreak);
-    final duLieuNhap = taiKhoanTruoc == null || taiKhoanTruoc == email
-        ? duLieuCucBo
-        : const ChuoiHoc();
-    await luuChuoiHoc(email, duLieuNhap);
-    return duLieuNhap;
+    return duLieuCucBo;
   }
 
   @override
@@ -154,10 +166,22 @@ class KhoTaiKhoan implements KhoNguoiDung, KhoDongBoChuoiHoc {
     final response = await _gui(
       'POST',
       'streak',
-      token: _docToken(),
+      token: _tokenCua(email),
       duLieu: duLieu,
     );
     _doc(response);
-    await _phien.put(_khoaTaiKhoanStreak, email);
+  }
+
+  @override
+  Future<List<NhatKyNgay>> layNhatKyDemo(String email) async {
+    final token = _tokenCua(email);
+    final response = await _gui('GET', 'demo-learning', token: token);
+    if (_tokenCua(email) != token) {
+      throw const LoiTaiKhoan('Phiên tài khoản đã thay đổi.');
+    }
+    return [
+      for (final ngay in _doc(response)['nhatKy'] as List<dynamic>)
+        NhatKyNgay.tuMap(ngay as Map),
+    ];
   }
 }

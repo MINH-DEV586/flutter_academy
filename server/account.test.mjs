@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { test } from 'node:test';
 import { taoMayChu } from './ai-tutor.mjs';
+import { ngayVietNam } from './ngay-viet-nam.mjs';
 
 test('đăng ký, đăng nhập, đọc phiên và thu hồi token', async (t) => {
   const server = taoMayChu().listen(0, '127.0.0.1');
@@ -80,6 +81,56 @@ test('chỉ lưu một đăng ký cho mỗi khóa và từng tài khoản', asyn
   assert.equal((await ghiDanh(a, 'python-co-ban')).status, 200);
   assert.deepEqual(await (await danhSach(a)).json(), { maKhoaHoc: ['python-co-ban'] });
   assert.deepEqual(await (await danhSach(b)).json(), { maKhoaHoc: [] });
+});
+
+test('nhật ký demo đọc theo tài khoản, mỗi ngày và mỗi mốc chỉ có một bản', async (t) => {
+  let bayGio = new Date('2026-11-20T17:05:00Z');
+  const mayChu = taoMayChu({ dongHo: () => bayGio }).listen(0, '127.0.0.1');
+  t.after(() => mayChu.close());
+  await once(mayChu, 'listening');
+  const goc = `http://127.0.0.1:${mayChu.address().port}/api`;
+  async function gui(path, token, data) {
+    return fetch(goc + path, {
+      method: data ? 'POST' : 'GET',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(data ? { 'Content-Type': 'application/json' } : {}),
+      },
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+  async function dangKy(email) {
+    const res = await gui('/account/register', null, {
+      email, hoTen: 'Học viên thử', matKhau: 'mat-khau-kiem-thu',
+    });
+    assert.equal(res.status, 201);
+    return (await res.json()).token;
+  }
+  const email = 'demo@example.com';
+  const token = await dangKy(email);
+  const tokenKhac = await dangKy('khac@example.test');
+  const cacNgay = [];
+  for (let i = 0; i < 6; i++) {
+    const { ngay } = ngayVietNam(bayGio);
+    cacNgay.push(ngay);
+    const payload = {
+      email, eventId: `video-demo-${ngay}-hoan-thanh`,
+      lesson: 'flutter-nhap-mon/b1', from: false, to: true,
+    };
+    assert.equal((await gui('/rewards/complete', token, payload)).status, 200);
+    assert.equal((await gui('/rewards/complete', token, payload)).status, 200);
+    bayGio = new Date(bayGio.getTime() + 86_400_000);
+  }
+  assert.equal((await gui('/account/demo-learning')).status, 401);
+  assert.deepEqual(await (await gui('/account/demo-learning', tokenKhac)).json(), { nhatKy: [] });
+  const { nhatKy } = await (await gui('/account/demo-learning', token)).json();
+  assert.deepEqual(nhatKy.map((nk) => nk.ngay), cacNgay);
+  assert.equal(nhatKy.reduce((tong, nk) => tong + nk.xpNhanDuoc, 0), 120);
+  assert.ok(nhatKy.every((nk) => nk.baiDaHoanThanh.length === 1));
+  assert.deepEqual((await (await gui('/account/demo-learning', token)).json()).nhatKy, nhatKy);
+  const { days, awards } = await (await gui('/rewards', token)).json();
+  assert.equal(days, 6);
+  assert.deepEqual(awards.map(({ milestone, amount }) => [milestone, amount]), [[3, 10]]);
 });
 
 test('lưu streak riêng theo từng tài khoản', async (t) => {

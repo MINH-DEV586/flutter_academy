@@ -7,6 +7,7 @@ import 'providers.dart';
 /// Phiên đăng nhập. `null` nghĩa là khách vãng lai.
 class PhienVM extends AsyncNotifier<NguoiDung?> {
   KhoNguoiDung get _kho => ref.read(khoNguoiDungProvider);
+  bool _dangDoiPhien = false;
 
   @override
   Future<NguoiDung?> build() => _kho.hienTai();
@@ -20,29 +21,35 @@ class PhienVM extends AsyncNotifier<NguoiDung?> {
     final t = hoTen?.trim();
     if (!hopLeEmail(e)) return 'Email chưa đúng định dạng.';
     if (t != null && t.length < 2) return 'Họ tên phải có ít nhất 2 ký tự.';
+    if (_dangDoiPhien) return 'Đang xử lý phiên đăng nhập.';
 
+    _dangDoiPhien = true;
     try {
       final nd = t == null
           ? await _kho.dangNhap(email: e, matKhau: matKhau)
           : await _kho.dangKy(email: e, hoTen: t, matKhau: matKhau);
       state = AsyncData(nd);
-      ref.invalidate(chuoiHocProvider);
       return null;
     } on LoiTaiKhoan catch (loi) {
       return loi.thongBao;
     } catch (_) {
       return 'Không kết nối được máy chủ tài khoản. Vui lòng thử lại.';
+    } finally {
+      _dangDoiPhien = false;
     }
   }
 
   Future<bool> dangXuat() async {
+    if (_dangDoiPhien) return false;
+    _dangDoiPhien = true;
     try {
       await _kho.dangXuat();
       state = const AsyncData(null);
-      ref.invalidate(chuoiHocProvider);
       return true;
     } catch (_) {
       return false;
+    } finally {
+      _dangDoiPhien = false;
     }
   }
 }

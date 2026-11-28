@@ -1,17 +1,25 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/kho_du_lieu.dart';
+import '../data/kho_thanh_vien.dart';
+import '../data/kho_vi_coin.dart';
 import '../models/che_do_giao_dien.dart';
 import '../models/chuoi_hoc.dart';
+import '../models/don_nap_coin.dart';
+import '../models/giao_dich_coin.dart';
+import '../models/goi_pro.dart';
 import '../models/khoa_hoc.dart';
 import '../models/nguoi_dung.dart';
 import '../models/nhat_ky_ngay.dart';
 import '../models/tien_do.dart';
+import '../models/vi_coin.dart';
 import 'chu_de_vm.dart';
 import 'chuoi_hoc_vm.dart';
 import 'dang_ky_khoa_hoc_vm.dart';
 import 'phien_vm.dart';
+import 'thanh_vien_vm.dart';
 import 'tien_do_vm.dart';
+import 'vi_coin_vm.dart';
 
 // ---------------------------------------------------------------------------
 // Tầng kho dữ liệu
@@ -42,8 +50,17 @@ final khoChuoiHocProvider = Provider<KhoChuoiHoc>(
   (ref) => throw UnimplementedError('Chưa ghi đè khoChuoiHocProvider'),
 );
 
+final khoViCoinProvider = Provider<KhoViCoin>(
+  (ref) => throw UnimplementedError('Chưa ghi đè khoViCoinProvider'),
+);
+
+final khoThanhVienProvider = Provider<KhoThanhVien>(
+  (ref) => throw UnimplementedError('Chưa ghi đè khoThanhVienProvider'),
+);
+
 /// Kho đồng bộ streak qua tài khoản. Có thể không được cấu hình trong kiểm thử.
 final khoDongBoChuoiHocProvider = Provider<KhoDongBoChuoiHoc?>((ref) => null);
+final khoNhatKyDemoProvider = Provider<KhoNhatKyDemo?>((ref) => null);
 
 // ---------------------------------------------------------------------------
 // Khoá học
@@ -69,9 +86,13 @@ final danhSachKhoaHocProvider = FutureProvider<List<KhoaHoc>>(
 final khoaHocNoiBatProvider = Provider<AsyncValue<List<KhoaHoc>>>((ref) {
   final nguon = ref.watch(danhSachKhoaHocProvider);
   return switch (nguon) {
-    AsyncData(:final value) =>
-      AsyncData(value.where((k) => k.noiBat).toList(growable: false)),
-    AsyncError(:final error, :final stackTrace) => AsyncError(error, stackTrace),
+    AsyncData(:final value) => AsyncData(
+      value.where((k) => k.noiBat).toList(growable: false),
+    ),
+    AsyncError(:final error, :final stackTrace) => AsyncError(
+      error,
+      stackTrace,
+    ),
     _ => const AsyncLoading(),
   };
 });
@@ -112,18 +133,25 @@ KhoaHoc? timKhoaHoc(List<KhoaHoc> ds, String ma) {
 // Tiến độ và phiên
 // ---------------------------------------------------------------------------
 
-final tienDoProvider =
-    AsyncNotifierProvider<TienDoVM, Map<String, TienDo>>(TienDoVM.new);
+final tienDoProvider = AsyncNotifierProvider<TienDoVM, Map<String, TienDo>>(
+  TienDoVM.new,
+);
 
 final phienProvider = AsyncNotifierProvider<PhienVM, NguoiDung?>(
   PhienVM.new,
   retry: (_, _) => null,
 );
 
-final dangKyKhoaHocProvider = AsyncNotifierProvider<DangKyKhoaHocVM, Set<String>>(
-  DangKyKhoaHocVM.new,
-  retry: (_, _) => null,
+final emailHocVienProvider = Provider<String?>(
+  (ref) =>
+      ref.watch(phienProvider.select((phien) => phien.asData?.value?.email)),
 );
+
+final dangKyKhoaHocProvider =
+    AsyncNotifierProvider<DangKyKhoaHocVM, Set<String>>(
+      DangKyKhoaHocVM.new,
+      retry: (_, _) => null,
+    );
 
 /// Đã đăng nhập hay chưa. Lúc chưa tải xong thì coi như chưa — `redirect`
 /// của go_router cần một câu trả lời đồng bộ, không chờ được.
@@ -196,7 +224,10 @@ final khoaHocDangHocProvider = Provider<AsyncValue<List<KhoaHoc>>>((ref) {
   final phanTram = ref.watch(phanTramTienDoProvider);
   return switch (ds) {
     AsyncData(:final value) => AsyncData(locDangHoc(value, phanTram)),
-    AsyncError(:final error, :final stackTrace) => AsyncError(error, stackTrace),
+    AsyncError(:final error, :final stackTrace) => AsyncError(
+      error,
+      stackTrace,
+    ),
     _ => const AsyncLoading(),
   };
 });
@@ -225,21 +256,96 @@ List<KhoaHoc> locDangHoc(List<KhoaHoc> danhSach, Map<String, int> phanTram) {
 // ---------------------------------------------------------------------------
 
 /// Chế độ sáng/tối. Ví dụ cho `Notifier` đồng bộ.
-final chuDeProvider =
-    NotifierProvider<ChuDeVM, CheDoGiaoDien>(ChuDeVM.new);
+final chuDeProvider = NotifierProvider<ChuDeVM, CheDoGiaoDien>(ChuDeVM.new);
 
 // ---------------------------------------------------------------------------
 // Chuỗi học tập & Gamification
 // ---------------------------------------------------------------------------
 
 /// Toàn bộ trạng thái Chuỗi học tập, Khiên Freeze, XP và Cấp độ.
-final chuoiHocProvider =
-    AsyncNotifierProvider<ChuoiHocVM, ChuoiHoc>(ChuoiHocVM.new);
+final chuoiHocProvider = AsyncNotifierProvider<ChuoiHocVM, ChuoiHoc>(
+  ChuoiHocVM.new,
+);
 
-/// Nhật ký học tập của ngày hôm nay.
-final nhatKyHomNayProvider = FutureProvider<NhatKyNgay>((ref) async {
-  ref.watch(chuoiHocProvider);
-  final kho = ref.watch(khoChuoiHocProvider);
-  final homNayStr = ChuoiHoc.dinhDangNgay(DateTime.now());
-  return kho.layNhatKy(homNayStr);
+final nhatKyDemoProvider = FutureProvider<Map<String, NhatKyNgay>>((ref) async {
+  final kho = ref.watch(khoNhatKyDemoProvider);
+  if (kho == null) return const {};
+  final email = (await ref.watch(phienProvider.future))?.email;
+  if (!ref.mounted ||
+      email == null ||
+      (email != 'demo@example.com' && !email.endsWith('@example.test'))) {
+    return const {};
+  }
+  try {
+    return {for (final ngay in await kho.layNhatKyDemo(email)) ngay.ngay: ngay};
+  } catch (_) {
+    return const {};
+  }
+});
+
+final nhatKyNgayProvider = FutureProvider.autoDispose
+    .family<NhatKyNgay, String>((ref, ngay) async {
+      ref.watch(chuoiHocProvider);
+      final kho = ref.watch(khoChuoiHocProvider);
+      final demo = ref.watch(nhatKyDemoProvider.future);
+      return (await demo)[ngay] ?? await kho.layNhatKy(ngay);
+    });
+
+final nhatKyThangProvider = FutureProvider.autoDispose
+    .family<Map<String, NhatKyNgay>, (int, int)>((ref, thang) async {
+      ref.watch(chuoiHocProvider);
+      final kho = ref.watch(khoChuoiHocProvider);
+      final demo = ref.watch(nhatKyDemoProvider.future);
+      final (nam, soThang) = thang;
+      final tienTo = ChuoiHoc.dinhDangNgay(DateTime.utc(nam, soThang, 1))
+          .substring(0, 7);
+      return {
+        for (final ngay in (await demo).values)
+          if (ngay.ngay.startsWith(tienTo)) ngay.ngay: ngay,
+        ...await kho.nhatKyTrongThang(nam, soThang),
+      };
+    });
+
+/// Nhật ký học tập của ngày hôm nay theo giờ Việt Nam.
+final nhatKyHomNayProvider = FutureProvider<NhatKyNgay>((ref) {
+  final homNay = ChuoiHoc.dinhDangNgay(ChuoiHoc.gioVietNam());
+  return ref.watch(nhatKyNgayProvider(homNay).future);
+});
+// ---------------------------------------------------------------------------
+// Ví Coin, Blockchain & Thành viên Pro
+// ---------------------------------------------------------------------------
+
+/// Provider thông tin Ví Coin.
+final viCoinProvider = AsyncNotifierProvider<ViCoinVM, ViCoin?>(ViCoinVM.new);
+
+/// Provider trạng thái thành viên Pro.
+final thanhVienProvider =
+    AsyncNotifierProvider<ThanhVienVM, TrangThaiThanhVien>(ThanhVienVM.new);
+
+/// Người học có quyền Pro hay không.
+final laThanhVienProProvider = Provider<bool>((ref) {
+  final tv = ref.watch(thanhVienProvider);
+  return switch (tv) {
+    AsyncData(:final value) => value.isPro && !value.daHetHan,
+    _ => false,
+  };
+});
+
+/// Danh sách gói Pro từ backend.
+final danhSachGoiProProvider = FutureProvider<List<GoiPro>>((ref) async {
+  final kho = ref.watch(khoThanhVienProvider);
+  return kho.layDanhSachGoiPro();
+});
+
+/// Danh sách gói nạp Coin từ backend.
+final danhSachGoiNapProvider = FutureProvider<List<GoiNapCoin>>((ref) async {
+  final kho = ref.watch(khoViCoinProvider);
+  return kho.layGoiNap();
+});
+
+/// Lịch sử giao dịch Coin gần nhất.
+final lichSuGiaoDichProvider = FutureProvider<List<GiaoDichCoin>>((ref) async {
+  ref.watch(viCoinProvider);
+  final kho = ref.watch(khoViCoinProvider);
+  return kho.layLichSuGiaoDich();
 });

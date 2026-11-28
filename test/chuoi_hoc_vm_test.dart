@@ -61,7 +61,7 @@ void main() {
     final streakMayChu = ChuoiHoc(
       chuoiHienTai: 3,
       chuoiDaiNhat: 6,
-      ngayHocGanNhat: ChuoiHoc.dinhDangNgay(DateTime.now()),
+      ngayHocGanNhat: ChuoiHoc.dinhDangNgay(ChuoiHoc.gioVietNam()),
       tongXp: 150,
     );
     final khoCucBo = KhoChuoiHocGiaLap();
@@ -72,14 +72,14 @@ void main() {
     final container = dungContainer(khoCucBo: khoCucBo, khoMayChu: khoMayChu);
 
     expect(await container.read(chuoiHocProvider.future), streakMayChu);
-    expect(khoCucBo.chuoi, isNot(streakMayChu));
+    expect(khoCucBo.chuoi, streakMayChu);
   });
 
   test('khởi tạo tài khoản mới từ dữ liệu Hive hiện có', () async {
     final streakCucBo = ChuoiHoc(
       chuoiHienTai: 2,
       chuoiDaiNhat: 4,
-      ngayHocGanNhat: ChuoiHoc.dinhDangNgay(DateTime.now()),
+      ngayHocGanNhat: ChuoiHoc.dinhDangNgay(ChuoiHoc.gioVietNam()),
       tongXp: 80,
     );
     final khoCucBo = KhoChuoiHocGiaLap(chuoi: streakCucBo);
@@ -92,7 +92,7 @@ void main() {
   });
 
   test('đẩy trạng thái mới lên máy chủ khi ghi nhận học', () async {
-    final homQua = DateTime.now().subtract(const Duration(days: 1));
+    final homQua = ChuoiHoc.gioVietNam().subtract(const Duration(days: 1));
     final streakBanDau = ChuoiHoc(
       chuoiHienTai: 2,
       chuoiDaiNhat: 2,
@@ -121,7 +121,7 @@ void main() {
     final streakCucBo = ChuoiHoc(
       chuoiHienTai: 8,
       chuoiDaiNhat: 8,
-      ngayHocGanNhat: ChuoiHoc.dinhDangNgay(DateTime.now()),
+      ngayHocGanNhat: ChuoiHoc.dinhDangNgay(ChuoiHoc.gioVietNam()),
     );
     final khoCucBo = KhoChuoiHocGiaLap(chuoi: streakCucBo);
     final khoMayChu = _KhoDongBoGiaLap(email: 'tai-khoan-a@example.test');

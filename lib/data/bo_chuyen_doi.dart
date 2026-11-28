@@ -105,13 +105,14 @@ class KhoaHocAdapter extends TypeAdapter<KhoaHoc> {
       noiBat: f[11] as bool? ?? false,
       // Hive trả về `List<dynamic>`; phải ép kiểu tường minh.
       baiHoc: (f[12] as List).cast<BaiHoc>(),
+      laPro: f[13] as bool? ?? false,
     );
   }
 
   @override
   void write(BinaryWriter writer, KhoaHoc obj) {
     writer
-      ..writeByte(13)
+      ..writeByte(14)
       ..writeByte(0)
       ..write(obj.ma)
       ..writeByte(1)
@@ -137,7 +138,9 @@ class KhoaHocAdapter extends TypeAdapter<KhoaHoc> {
       ..writeByte(11)
       ..write(obj.noiBat)
       ..writeByte(12)
-      ..write(obj.baiHoc);
+      ..write(obj.baiHoc)
+      ..writeByte(13)
+      ..write(obj.laPro);
   }
 }
 

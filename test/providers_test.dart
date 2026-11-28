@@ -40,8 +40,10 @@ void main() {
           khoKhoaHoc ?? KhoKhoaHocGiaLap(khoaHoc ?? boMau()),
         ),
         khoTienDoProvider.overrideWithValue(tienDo ?? KhoTienDoGiaLap()),
-        khoNguoiDungProvider
-            .overrideWithValue(nguoiDung ?? KhoNguoiDungGiaLap()),
+        khoChuoiHocProvider.overrideWithValue(KhoChuoiHocGiaLap()),
+        khoNguoiDungProvider.overrideWithValue(
+          nguoiDung ?? KhoNguoiDungGiaLap(),
+        ),
       ],
     );
   }
@@ -67,8 +69,12 @@ void main() {
     test('rút danh mục không trùng, giữ thứ tự xuất hiện', () async {
       final c = dung();
       await c.read(danhSachKhoaHocProvider.future);
-      expect(c.read(danhMucProvider),
-          ['Web', 'Dữ liệu', 'Nhập môn', 'Kiến trúc']);
+      expect(c.read(danhMucProvider), [
+        'Web',
+        'Dữ liệu',
+        'Nhập môn',
+        'Kiến trúc',
+      ]);
     });
 
     test('lúc chưa tải xong thì là danh sách rỗng, không null', () {
@@ -135,8 +141,11 @@ void main() {
       await vm.daoTrangThaiBai('c-dart', 'b1');
 
       expect(bang(c)['c-dart']?.daXong('b1'), isTrue);
-      expect(kho.duLieu['c-dart']?.daXong('b1'), isTrue,
-          reason: 'phải ghi xuống kho, không chỉ đổi trên màn hình');
+      expect(
+        kho.duLieu['c-dart']?.daXong('b1'),
+        isTrue,
+        reason: 'phải ghi xuống kho, không chỉ đổi trên màn hình',
+      );
 
       await vm.daoTrangThaiBai('c-dart', 'b1');
       expect(bang(c)['c-dart']?.daXong('b1'), isFalse);

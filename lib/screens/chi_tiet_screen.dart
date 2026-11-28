@@ -452,17 +452,47 @@ class _TheHanhDongState extends ConsumerState<_TheHanhDong> {
         daDangNhap && (dangKy.asData?.value.contains(khoaHoc.ma) ?? false);
     final dangTai = daDangNhap && dangKy.isLoading;
 
+    final laPro = ref.watch(laThanhVienProProvider);
+    final canNangCap = khoaHoc.laPro && !laPro;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (khoaHoc.laPro)
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF3E0),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFFFB74D)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.workspace_premium, color: Color(0xFFE65100), size: 18),
+                    SizedBox(width: 6),
+                    Text(
+                      'Khóa học PRO',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFE65100),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             Text(
-              dd.tienVND(khoaHoc.gia),
+              khoaHoc.laPro ? 'Dành cho thành viên PRO' : dd.tienVND(khoaHoc.gia),
               style: t.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w800,
-                color: khoaHoc.mienPhi ? const Color(0xFF0E7C66) : null,
+                color: khoaHoc.laPro
+                    ? const Color(0xFFE65100)
+                    : (khoaHoc.mienPhi ? const Color(0xFF0E7C66) : null),
               ),
             ),
             const SizedBox(height: 16),
@@ -489,36 +519,74 @@ class _TheHanhDongState extends ConsumerState<_TheHanhDong> {
               ),
               const SizedBox(height: 16),
             ],
-            if (!daDangKy)
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _dangGui || dangTai ? null : _dangKy,
-                  child: Text(_dangGui ? 'Đang đăng ký…' : 'Đăng ký khóa học'),
+            if (canNangCap) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: mau.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              )
-            else
-              const Text('Đã đăng ký khóa học'),
-            if (bai != null) const SizedBox(height: 8),
-            if (daDangKy)
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: bai == null
-                      ? null
-                      : () => context.go(DuongDan.baiHoc(khoaHoc.ma, bai.ma)),
-                  child: Text(widget.daBatDau ? 'Học tiếp' : 'Bắt đầu học'),
-                ),
-              )
-            else if (bai != null)
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () =>
-                      context.go(DuongDan.baiHoc(khoaHoc.ma, bai.ma)),
-                  child: const Text('Xem bài học'),
+                child: Text(
+                  'Khóa học này dành riêng cho thành viên gói Pro. Hãy nâng cấp để mở khóa toàn bộ bài giảng và thực hành.',
+                  style: t.bodySmall,
                 ),
               ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFE65100),
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () => context.go(DuongDan.nangCapPro),
+                  icon: const Icon(Icons.workspace_premium, size: 20),
+                  label: const Text('Nâng cấp gói Pro'),
+                ),
+              ),
+              if (bai != null && bai.xemThu) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () =>
+                        context.go(DuongDan.baiHoc(khoaHoc.ma, bai.ma)),
+                    child: const Text('Học thử bài 1 (Miễn phí)'),
+                  ),
+                ),
+              ],
+            ] else ...[
+              if (!daDangKy)
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _dangGui || dangTai ? null : _dangKy,
+                    child: Text(_dangGui ? 'Đang đăng ký…' : 'Đăng ký khóa học'),
+                  ),
+                )
+              else
+                const Text('Đã đăng ký khóa học'),
+              if (bai != null) const SizedBox(height: 8),
+              if (daDangKy)
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: bai == null
+                        ? null
+                        : () => context.go(DuongDan.baiHoc(khoaHoc.ma, bai.ma)),
+                    child: Text(widget.daBatDau ? 'Học tiếp' : 'Bắt đầu học'),
+                  ),
+                )
+              else if (bai != null)
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () =>
+                        context.go(DuongDan.baiHoc(khoaHoc.ma, bai.ma)),
+                    child: const Text('Xem bài học'),
+                  ),
+                ),
+            ],
             if (bai != null && daDangKy) ...[
               const SizedBox(height: 8),
               Text(

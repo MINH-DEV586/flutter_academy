@@ -11,6 +11,7 @@ import '../models/dinh_dang.dart' as dd;
 import '../models/khoa_hoc.dart';
 import '../models/tien_do.dart';
 import '../viewmodels/providers.dart';
+import '../viewmodels/thuong_chuoi_vm.dart';
 import '../widgets/gia_su_ai.dart';
 import '../widgets/trang_thai.dart';
 import '../widgets/video_bai_hoc.dart';
@@ -100,7 +101,7 @@ class _BaiHocScreenState extends ConsumerState<BaiHocScreen> {
   }
 }
 
-class _NoiDung extends ConsumerWidget {
+class _NoiDung extends ConsumerStatefulWidget {
   final KhoaHoc khoaHoc;
   final BaiHoc bai;
   final TienDo? tienDo;
@@ -108,7 +109,20 @@ class _NoiDung extends ConsumerWidget {
   const _NoiDung({required this.khoaHoc, required this.bai, this.tienDo});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_NoiDung> createState() => _NoiDungState();
+}
+
+class _NoiDungState extends ConsumerState<_NoiDung> {
+  bool _moTutor = false;
+
+  void _dongTutor() {
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _moTutor = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final _NoiDung(:khoaHoc, :bai, :tienDo) = widget;
     final t = Theme.of(context).textTheme;
     final mau = Theme.of(context).colorScheme;
     final rong = !context.kho.laDienThoai;
@@ -123,17 +137,94 @@ class _NoiDung extends ConsumerWidget {
     final taiLieu = ref.watch(taiLieuBaiHocProvider);
     final taiLieuBai = taiLieu.asData?.value[maTaiLieu];
     final youtubeId = taiLieuBai?.youtubeId;
+    final laPro = ref.watch(laThanhVienProProvider);
+    final biKhoaPro = khoaHoc.laPro && !laPro && !bai.xemThu;
+    final phien = ref.watch(phienProvider);
+    final email = phien.asData?.value?.email;
+    final thuongDangCho = ref.watch(dongBoThuongProvider);
+    final coTutor = !biKhoaPro;
+    final trangThaiTutor = switch ((taiLieu, phien)) {
+      _ when taiLieu.isLoading => 'Đang tải tài liệu bài học…',
+      _ when taiLieu.hasError => 'Không tải được tài liệu bài học.',
+      _ when taiLieuBai == null =>
+        'Bài này chưa có tài liệu dành cho Gia sư AI.',
+      _ when phien.isLoading => 'Đang kiểm tra phiên đăng nhập…',
+      _ when phien.hasError => 'Không kết nối được máy chủ tài khoản.',
+      _ => null,
+    };
+    final hienTutor = _moTutor && coTutor;
+    final tutorCanhBai = hienTutor && rong;
+    final rongTutor = MediaQuery.sizeOf(context).width >= DiemNgat.manHinhRong
+        ? 420.0
+        : 350.0;
+    final hienMucLuc = rong && (!tutorCanhBai || context.kho.laManHinhRong);
 
     final khungPhat = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (youtubeId != null)
+        if (biKhoaPro)
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E1E2C),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFFE65100).withValues(alpha: 0.6),
+                ),
+              ),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.lock,
+                        size: 48,
+                        color: Color(0xFFFFB74D),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Bài học này dành riêng cho hội viên Pro',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Vui lòng nâng cấp gói Pro để xem toàn bộ video và tài liệu của khóa học này.',
+                        style: TextStyle(color: Colors.white70, fontSize: 13),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFFE65100),
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () => context.go(DuongDan.nangCapPro),
+                        icon: const Icon(Icons.workspace_premium, size: 20),
+                        label: const Text('Nâng cấp Pro ngay'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          )
+        else if (youtubeId != null)
           VideoBaiHoc(
             key: ValueKey(youtubeId),
             youtubeId: youtubeId,
             kenhYouTube: taiLieuBai?.kenhYouTube,
             onThoiGianHoc: (giay) {
-              ref.read(chuoiHocProvider.notifier).ghiNhanHocTap(
+              ref
+                  .read(chuoiHocProvider.notifier)
+                  .ghiNhanHocTap(
                     giayHocThem: giay,
                     maKhoaHoc: khoaHoc.ma,
                     maBaiHoc: bai.ma,
@@ -193,9 +284,11 @@ class _NoiDung extends ConsumerWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             FilledButton.icon(
-              onPressed: () => ref
-                  .read(tienDoProvider.notifier)
-                  .daoTrangThaiBai(khoaHoc.ma, bai.ma),
+              onPressed: () {
+                ref
+                    .read(tienDoProvider.notifier)
+                    .daoTrangThaiBai(khoaHoc.ma, bai.ma);
+              },
               icon: Icon(daXong ? Icons.undo : Icons.check),
               label: Text(daXong ? 'Bỏ đánh dấu' : 'Đánh dấu đã xong'),
             ),
@@ -222,6 +315,14 @@ class _NoiDung extends ConsumerWidget {
               ),
           ],
         ),
+        if (thuongDangCho > 0)
+          TextButton.icon(
+            onPressed: () => ref.read(dongBoThuongProvider.notifier).thuLai(),
+            icon: const Icon(Icons.sync),
+            label: Text(
+              '$thuongDangCho bài đang chờ đồng bộ chuỗi học · Thử lại',
+            ),
+          ),
         if (taiLieu.isLoading)
           const LinearProgressIndicator(semanticsLabel: 'Đang tải tài liệu')
         else if (taiLieu.hasError)
@@ -229,7 +330,7 @@ class _NoiDung extends ConsumerWidget {
             onPressed: () => ref.invalidate(taiLieuBaiHocProvider),
             child: const Text('Tải lại tài liệu bài học'),
           )
-        else if (taiLieuBai != null) ...[
+        else if (taiLieuBai != null && !biKhoaPro) ...[
           const SizedBox(height: 24),
           Text('Nội dung bài học', style: t.titleLarge),
           const SizedBox(height: 8),
@@ -247,32 +348,21 @@ class _NoiDung extends ConsumerWidget {
               style: t.bodyMedium?.copyWith(fontFamily: 'monospace'),
             ),
           ),
-          const SizedBox(height: 24),
-          GiaSuAi(
-            key: ValueKey(maTaiLieu),
-            maBai: maTaiLieu,
-            tenBai: bai.tieuDe,
-            onHoiThanhCong: () {
-              ref.read(chuoiHocProvider.notifier).ghiNhanHocTap(
-                    maKhoaHoc: khoaHoc.ma,
-                    maBaiHoc: bai.ma,
-                    xpCongThem: 10,
-                    moTaHoatDong: 'Hỏi bài Gia sư AI: ${bai.tieuDe}',
-                  );
-            },
-          ),
         ],
       ],
     );
 
     final mucLuc = _MucLuc(khoaHoc: khoaHoc, bai: bai, tienDo: tienDo);
 
-    return Column(
+    final noiDungBai = Column(
       children: [
-        _ThanhTren(khoaHoc: khoaHoc),
+        _ThanhTren(
+          khoaHoc: khoaHoc,
+          onMoTutor: !coTutor ? null : () => setState(() => _moTutor = true),
+        ),
         const Divider(height: 1),
         Expanded(
-          child: rong
+          child: hienMucLuc
               ? Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -295,12 +385,77 @@ class _NoiDung extends ConsumerWidget {
         ),
       ],
     );
+    return PopScope(
+      canPop: !hienTutor,
+      onPopInvokedWithResult: (daPop, _) {
+        if (!daPop && hienTutor) _dongTutor();
+      },
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(right: tutorCanhBai ? rongTutor : 0),
+            // WebView của video phải ngừng vẽ khi Tutor phủ toàn màn hình.
+            child: Offstage(offstage: hienTutor && !rong, child: noiDungBai),
+          ),
+          if (hienTutor)
+            Positioned(
+              top: 0,
+              bottom: 0,
+              right: 0,
+              left: rong ? null : 0,
+              width: rong ? rongTutor : null,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(left: BorderSide(color: mau.outlineVariant)),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.only(left: rong ? 1 : 0),
+                  child: GiaSuAi(
+                    key: ValueKey((email, maTaiLieu)),
+                    khoa: email == null || trangThaiTutor != null
+                        ? null
+                        : (email: email, bai: maTaiLieu),
+                    tenBai: bai.tieuDe,
+                    onDong: _dongTutor,
+                    thongBao: trangThaiTutor,
+                    dangTai:
+                        taiLieu.isLoading ||
+                        (taiLieuBai != null && phien.isLoading),
+                    thuLai: taiLieu.hasError
+                        ? () => ref.invalidate(taiLieuBaiHocProvider)
+                        : phien.hasError && taiLieuBai != null
+                        ? () => ref.invalidate(phienProvider)
+                        : null,
+                    onDangNhap: () => context.push(
+                      DuongDan.dangNhapRoiVe(
+                        DuongDan.baiHoc(khoaHoc.ma, bai.ma),
+                      ),
+                    ),
+                    onHoiThanhCong: () {
+                      ref
+                          .read(chuoiHocProvider.notifier)
+                          .ghiNhanHocTap(
+                            maKhoaHoc: khoaHoc.ma,
+                            maBaiHoc: bai.ma,
+                            xpCongThem: 10,
+                            moTaHoatDong: 'Hỏi bài Gia sư AI: ${bai.tieuDe}',
+                          );
+                    },
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 
 class _ThanhTren extends StatelessWidget {
   final KhoaHoc khoaHoc;
-  const _ThanhTren({required this.khoaHoc});
+  final VoidCallback? onMoTutor;
+  const _ThanhTren({required this.khoaHoc, required this.onMoTutor});
 
   @override
   Widget build(BuildContext context) {
@@ -325,6 +480,13 @@ class _ThanhTren extends StatelessWidget {
                   ?.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
+          if (onMoTutor != null)
+            IconButton(
+              tooltip: 'Mở Gia sư AI',
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              icon: const Icon(Icons.auto_awesome),
+              onPressed: onMoTutor,
+            ),
         ],
       ),
     );

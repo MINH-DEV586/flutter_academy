@@ -42,6 +42,7 @@ class BoLoc {
   final MucDo? mucDo;
 
   final bool chiMienPhi;
+  final bool chiPro;
   final ThuTuSapXep thuTu;
 
   const BoLoc({
@@ -49,6 +50,7 @@ class BoLoc {
     this.danhMuc,
     this.mucDo,
     this.chiMienPhi = false,
+    this.chiPro = false,
     this.thuTu = ThuTuSapXep.phoBien,
   });
 
@@ -59,7 +61,8 @@ class BoLoc {
       tuKhoa.trim().isNotEmpty ||
       danhMuc != null ||
       mucDo != null ||
-      chiMienPhi;
+      chiMienPhi ||
+      chiPro;
 
   /// `copyVoi` thường không xoá được giá trị về null. Ở đây cần xoá được
   /// (bỏ lọc danh mục), nên dùng cờ `xoaDanhMuc` / `xoaMucDo` rõ ràng thay vì
@@ -69,6 +72,7 @@ class BoLoc {
     String? danhMuc,
     MucDo? mucDo,
     bool? chiMienPhi,
+    bool? chiPro,
     ThuTuSapXep? thuTu,
     bool xoaDanhMuc = false,
     bool xoaMucDo = false,
@@ -78,6 +82,7 @@ class BoLoc {
       danhMuc: xoaDanhMuc ? null : (danhMuc ?? this.danhMuc),
       mucDo: xoaMucDo ? null : (mucDo ?? this.mucDo),
       chiMienPhi: chiMienPhi ?? this.chiMienPhi,
+      chiPro: chiPro ?? this.chiPro,
       thuTu: thuTu ?? this.thuTu,
     );
   }
@@ -95,6 +100,7 @@ class BoLoc {
     if (danhMuc != null) ra['danh-muc'] = danhMuc!;
     if (mucDo != null) ra['muc-do'] = mucDo!.name;
     if (chiMienPhi) ra['mien-phi'] = '1';
+    if (chiPro) ra['pro'] = '1';
     if (thuTu != ThuTuSapXep.phoBien) ra['sap'] = thuTu.ma;
     return ra;
   }
@@ -108,6 +114,7 @@ class BoLoc {
       danhMuc: _rongThanhNull(thamSo['danh-muc']),
       mucDo: _mucDoTuTen(tenMucDo),
       chiMienPhi: thamSo['mien-phi'] == '1',
+      chiPro: thamSo['pro'] == '1',
       thuTu: ThuTuSapXep.tuMa(thamSo['sap']),
     );
   }
@@ -140,6 +147,7 @@ class BoLoc {
     if (danhMuc != null && k.danhMuc != danhMuc) return false;
     if (mucDo != null && k.mucDo != mucDo) return false;
     if (chiMienPhi && !k.mienPhi) return false;
+    if (chiPro && !k.laPro) return false;
     if (!khopTuKhoa('${k.tieuDe} ${k.giangVien} ${k.moTaNgan} ${k.danhMuc}',
         tuKhoa)) {
       return false;
@@ -169,10 +177,12 @@ class BoLoc {
       other.danhMuc == danhMuc &&
       other.mucDo == mucDo &&
       other.chiMienPhi == chiMienPhi &&
+      other.chiPro == chiPro &&
       other.thuTu == thuTu;
 
   @override
-  int get hashCode => Object.hash(tuKhoa, danhMuc, mucDo, chiMienPhi, thuTu);
+  int get hashCode =>
+      Object.hash(tuKhoa, danhMuc, mucDo, chiMienPhi, chiPro, thuTu);
 
   @override
   String toString() => 'BoLoc(${sangThamSo()})';

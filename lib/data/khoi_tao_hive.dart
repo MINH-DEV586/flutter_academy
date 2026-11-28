@@ -12,6 +12,8 @@ class HopDaMo {
   final Box<KhoaHoc> khoaHoc;
   final Box<TienDo> tienDo;
   final Box<String> phien;
+  final Box<String> giaSuAi;
+  final Box<String> thuongDangCho;
   final Box<ChuoiHoc> chuoiHoc;
   final Box<NhatKyNgay> nhatKyHoc;
 
@@ -19,6 +21,8 @@ class HopDaMo {
     required this.khoaHoc,
     required this.tienDo,
     required this.phien,
+    required this.giaSuAi,
+    required this.thuongDangCho,
     required this.chuoiHoc,
     required this.nhatKyHoc,
   });
@@ -41,6 +45,8 @@ Future<HopDaMo> khoiTaoHive() async {
   final phien = await Hive.openBox<String>(TenHop.phien);
   final chuoiHoc = await Hive.openBox<ChuoiHoc>(TenHop.chuoiHoc);
   final nhatKyHoc = await Hive.openBox<NhatKyNgay>(TenHop.nhatKyHoc);
+  final giaSuAi = await Hive.openBox<String>('gia_su_ai');
+  final thuongDangCho = await Hive.openBox<String>('thuong_dang_cho');
 
   await HiveKhoKhoaHoc.gieoNeuTrong(khoaHoc);
 
@@ -48,6 +54,8 @@ Future<HopDaMo> khoiTaoHive() async {
     khoaHoc: khoaHoc,
     tienDo: tienDo,
     phien: phien,
+    giaSuAi: giaSuAi,
+    thuongDangCho: thuongDangCho,
     chuoiHoc: chuoiHoc,
     nhatKyHoc: nhatKyHoc,
   );

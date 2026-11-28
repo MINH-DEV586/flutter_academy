@@ -17,26 +17,40 @@ class AnhBia extends StatelessWidget {
   /// Tỉ lệ khung hình. 16/9 cho thẻ, 21/9 cho ảnh đầu trang chi tiết.
   final double tiLe;
 
+  /// Chiều cao cố định tuỳ chọn. Nếu có, ảnh sẽ chiếm đúng chiều cao này và bề rộng 100%.
+  final double? chieuCao;
+
   const AnhBia({
     super.key,
     required this.tenTep,
     required this.danhMuc,
     required this.tieuDe,
     this.tiLe = 16 / 9,
+    this.chieuCao,
   });
 
   @override
   Widget build(BuildContext context) {
+    final hinh = Image.asset(
+      'assets/images/$tenTep',
+      fit: BoxFit.cover,
+      errorBuilder: (context, loi, vet) => _BiaDuPhong(
+        danhMuc: danhMuc,
+        tieuDe: tieuDe,
+      ),
+    );
+
+    if (chieuCao != null) {
+      return SizedBox(
+        height: chieuCao,
+        width: double.infinity,
+        child: hinh,
+      );
+    }
+
     return AspectRatio(
       aspectRatio: tiLe,
-      child: Image.asset(
-        'assets/images/$tenTep',
-        fit: BoxFit.cover,
-        errorBuilder: (context, loi, vet) => _BiaDuPhong(
-          danhMuc: danhMuc,
-          tieuDe: tieuDe,
-        ),
-      ),
+      child: hinh,
     );
   }
 }

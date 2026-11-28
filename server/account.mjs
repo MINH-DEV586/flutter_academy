@@ -1,6 +1,7 @@
 import { createHash, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { promisify } from 'node:util';
+import { docNhatKyDemo } from './seed-learning.mjs';
 
 const bamMatKhau = promisify(scrypt);
 const saltGia = randomBytes(16);
@@ -14,8 +15,19 @@ function bam(matKhau, salt) {
   });
 }
 
-export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
-  const db = new DatabaseSync(duongDan);
+export async function taoBamMatKhau(matKhau) {
+  const salt = randomBytes(16);
+  return { salt, maBam: await bam(matKhau, salt) };
+}
+
+export function taoTaiKhoan(duongDan, maKhoaHocHopLe, { khoaHocPro = new Set(), kiemTraPro = null } = {}) {
+  let hamKiemTraPro = kiemTraPro;
+  let tapKhoaHocPro = khoaHocPro;
+  function datKiemTraPro(fn, tapPro) {
+    hamKiemTraPro = fn;
+    if (tapPro) tapKhoaHocPro = tapPro;
+  }
+  const db = typeof duongDan === 'object' && duongDan !== null && duongDan.prepare ? duongDan : new DatabaseSync(duongDan);
   db.exec(`
     PRAGMA journal_mode = WAL;
     PRAGMA foreign_keys = ON;
@@ -112,6 +124,11 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
 
   async function xuLy(request, tra, docJson) {
     const { url, method } = request;
+    if (url === '/api/account/demo-learning' && method === 'GET') {
+      const nguoiDung = xacThucToken(request.headers.authorization);
+      if (!nguoiDung) return tra(401, { loi: 'Vui lòng đăng nhập.' });
+      return tra(200, { nhatKy: docNhatKyDemo(db, nguoiDung.email) });
+    }
     if (url === '/api/account/streak') {
       const match = /^Bearer ([a-f0-9]{64})$/.exec(request.headers.authorization ?? '');
       const nguoiDung = match && docPhien.get(bamToken(match[1]), Date.now());
@@ -215,6 +232,12 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
       if (!docPhien.get(bamToken(match[1]), Date.now())) {
         return tra(401, { loi: 'Phiên đã hết hạn. Vui lòng đăng nhập lại.' });
       }
+      if (tapKhoaHocPro.has(maKhoaHoc)) {
+        const pro = hamKiemTraPro ? hamKiemTraPro(nguoiDung.email) : { isPro: false };
+        if (!pro?.isPro) {
+          return tra(403, { loi: 'Khóa học này chỉ dành cho tài khoản PRO. Vui lòng nâng cấp gói Pro.' });
+        }
+      }
       themDangKy.run(nguoiDung.email, maKhoaHoc);
       return tra(200, { maKhoaHoc });
     }
@@ -263,8 +286,7 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
     dangBam++;
     try {
       if (dangKy) {
-        const salt = randomBytes(16);
-        const maBam = await bam(matKhau, salt);
+        const { salt, maBam } = await taoBamMatKhau(matKhau);
         const inserted = themTaiKhoan.run(email, hoTen, salt, maBam);
         if (!inserted.changes) return tra(409, { loi: 'Email này đã được sử dụng.' });
         return tra(201, capPhien(email, hoTen));
@@ -280,5 +302,11 @@ export function taoTaiKhoan(duongDan, maKhoaHocHopLe) {
     }
   }
 
-  return { xuLy, dong: () => db.close() };
+  function xacThucToken(authorization) {
+    const match = /^Bearer ([a-f0-9]{64})$/.exec(authorization ?? '');
+    if (!match) return null;
+    return docPhien.get(bamToken(match[1]), Date.now()) ?? null;
+  }
+
+  return { xuLy, dong: () => db.close(), xacThucToken, db, datKiemTraPro };
 }

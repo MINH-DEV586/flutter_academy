@@ -5,8 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../cau_hinh/diem_ngat.dart';
 import '../dinh_tuyen/duong_dan.dart';
 import '../viewmodels/providers.dart';
+import '../viewmodels/thuong_chuoi_vm.dart';
 import 'hop_thoai_len_cap.dart';
 import 'huy_hieu_chuoi_header.dart';
+import 'huy_hieu_pro_badge.dart';
 
 /// Khung bao quanh mọi trang: thanh trên, thanh điều hướng, vùng nội dung.
 ///
@@ -87,7 +89,16 @@ class KhungUngDung extends ConsumerWidget {
                   selectedIndex: chiSo < 0 ? null : chiSo,
                   onDestinationSelected: (i) => _chon(context, i),
                   extended: kho.laManHinhRong,
-                  minExtendedWidth: 208,
+                  minExtendedWidth: 220,
+                  indicatorColor: Theme.of(context).colorScheme.primary
+                      .withValues(alpha: 0.12),
+                  selectedIconTheme: IconThemeData(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  selectedLabelTextStyle: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
                   labelType: kho.laManHinhRong
                       ? NavigationRailLabelType.none
                       : NavigationRailLabelType.all,
@@ -99,6 +110,81 @@ class KhungUngDung extends ConsumerWidget {
                         label: Text(m.nhan),
                       ),
                   ],
+                  trailingAtBottom: true,
+                  trailing: kho.laManHinhRong
+                      ? Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Container(
+                            width: 188,
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF1E1B4B), Color(0xFF31104B)],
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: const Color(0xFFFFD700)
+                                    .withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Row(
+                                  children: [
+                                    Icon(
+                                      Icons.workspace_premium,
+                                      color: Color(0xFFFFD700),
+                                      size: 18,
+                                    ),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Gói PRO VIP',
+                                      style: TextStyle(
+                                        color: Color(0xFFFFD700),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                const Text(
+                                  'Mở khóa 15 khóa học & AI không giới hạn.',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: FilledButton(
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: const Color(0xFFFFD700),
+                                      foregroundColor: Colors.black87,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 6,
+                                      ),
+                                      minimumSize: Size.zero,
+                                    ),
+                                    onPressed: () =>
+                                        context.go(DuongDan.nangCapPro),
+                                    child: const Text(
+                                      'Nâng cấp',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : null,
                 ),
                 const VerticalDivider(width: 1),
                 Expanded(child: noiDung),
@@ -130,60 +216,392 @@ class _ThanhTren extends ConsumerWidget implements PreferredSizeWidget {
   const _ThanhTren({required this.diaChiHienTai});
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(64);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mau = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
     final daDangNhap = ref.watch(daDangNhapProvider);
     final phien = ref.watch(phienProvider);
-    final ten = switch (phien) {
-      AsyncData(:final value) => value?.hoTen,
+    final nguoiDung = switch (phien) {
+      AsyncData(:final value) => value,
       _ => null,
     };
+    final ten = nguoiDung?.hoTen;
+    final laPro = ref.watch(laThanhVienProProvider);
+    final coinThuong = ref.watch(soDuCoinProvider);
+    final laDienThoai = context.kho.laDienThoai;
 
     return AppBar(
       automaticallyImplyLeading: false,
-      title: InkWell(
-        onTap: () => context.go(DuongDan.trangChu),
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.school_rounded, color: mau.primary),
-              const SizedBox(width: 10),
-              Text(
-                'Flutter Academy',
-                style: Theme.of(context).textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700),
+      titleSpacing: laDienThoai ? 8 : 24,
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InkWell(
+            onTap: () => context.go(DuongDan.trangChu),
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(laDienThoai ? 6 : 7),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF1E40AF), Color(0xFF0284C7)],
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF1E40AF).withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.school_rounded,
+                      color: Colors.white,
+                      size: laDienThoai ? 18 : 20,
+                    ),
+                  ),
+                  if (!laDienThoai) ...[
+                    const SizedBox(width: 10),
+                    Text(
+                      'Flutter Academy',
+                      style: t.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+          if (!laDienThoai) ...[
+            const SizedBox(width: 20),
+            InkWell(
+              onTap: () => context.go(DuongDan.danhSach),
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: mau.surfaceContainerHighest.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: mau.outlineVariant),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.search, size: 16, color: mau.onSurfaceVariant),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Tìm kiếm khóa học...',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: mau.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
       actions: [
-        const HuyHieuChuoiHeader(),
-        if (daDangNhap)
+        if (daDangNhap) ...[
+          // Coin Chip
           Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: TextButton.icon(
-              onPressed: () => context.go(DuongDan.hoSo),
-              icon: const Icon(Icons.account_circle_outlined, size: 20),
-              label: Text(ten ?? 'Hồ sơ'),
+            padding: EdgeInsets.only(right: laDienThoai ? 4 : 8),
+            child: InkWell(
+              onTap: () => context.go(DuongDan.viCoin),
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: laDienThoai ? 6 : 10,
+                  vertical: laDienThoai ? 3 : 5,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.amber.shade700.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.monetization_on,
+                      size: laDienThoai ? 14 : 16,
+                      color: Colors.amber,
+                    ),
+                    const SizedBox(width: 3),
+                    Tooltip(
+                      message: 'Số dư ví Coin',
+                      child: Text(
+                        '${coinThuong ?? '–'} Coin',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: laDienThoai ? 11 : 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          )
-        else
+          ),
+          HuyHieuChuoiHeader(compact: laDienThoai),
+          if (!laDienThoai) const SizedBox(width: 6),
+          // Nút PRO hoặc Badge
+          if (laPro)
+            Padding(
+              padding: EdgeInsets.only(right: laDienThoai ? 4 : 8),
+              child: InkWell(
+                onTap: () => context.go(DuongDan.nangCapPro),
+                borderRadius: BorderRadius.circular(8),
+                child: HuyHieuProBadge(fontSize: 10, compact: laDienThoai),
+              ),
+            )
+          else
+            Padding(
+              padding: EdgeInsets.only(right: laDienThoai ? 4 : 8),
+              child: FilledButton.tonal(
+                style: FilledButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: laDienThoai ? 6 : 10,
+                    vertical: laDienThoai ? 4 : 6,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  backgroundColor: const Color(0xFFFFF3E0),
+                ),
+                onPressed: () => context.go(DuongDan.nangCapPro),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.workspace_premium,
+                      size: laDienThoai ? 13 : 15,
+                      color: const Color(0xFFE65100),
+                    ),
+                    const SizedBox(width: 3),
+                    Text(
+                      'PRO',
+                      style: TextStyle(
+                        fontSize: laDienThoai ? 10 : 11,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFFE65100),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          // User Avatar + Dropdown Menu
           Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: FilledButton.tonal(
-              // Ghi lại trang đang đứng để đăng nhập xong quay về đúng chỗ.
+            padding: EdgeInsets.only(right: laDienThoai ? 8 : 20),
+            child: PopupMenuButton<String>(
+              tooltip: 'Tài khoản',
+              offset: const Offset(0, 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              onSelected: (giaTri) async {
+                switch (giaTri) {
+                  case 'hoso':
+                    context.go(DuongDan.hoSo);
+                  case 'vicoin':
+                    context.go(DuongDan.viCoin);
+                  case 'pro':
+                    context.go(DuongDan.nangCapPro);
+                  case 'thongke':
+                    context.go(DuongDan.thongKe);
+                  case 'bxh':
+                    context.go(DuongDan.bangXepHang);
+                  case 'dangxuat':
+                    await ref.read(phienProvider.notifier).dangXuat();
+                    if (context.mounted) context.go(DuongDan.trangChu);
+                }
+              },
+              itemBuilder: (ctx) => [
+                // Header item
+                PopupMenuItem<String>(
+                  enabled: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              ten ?? 'Người học',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                                fontSize: 14,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (laPro)
+                            const HuyHieuProBadge(fontSize: 9, compact: true),
+                        ],
+                      ),
+                      Text(
+                        nguoiDung?.email ?? '',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: mau.onSurfaceVariant,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const Divider(height: 16),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'hoso',
+                  child: Row(
+                    children: [
+                      Icon(Icons.person_outline, size: 20),
+                      SizedBox(width: 12),
+                      Text('Hồ sơ cá nhân'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'vicoin',
+                  child: Row(
+                    children: [
+                      Icon(Icons.account_balance_wallet_outlined, size: 20),
+                      SizedBox(width: 12),
+                      Text('Ví Coin & Thưởng'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'pro',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.workspace_premium_outlined,
+                        size: 20,
+                        color: Color(0xFFE65100),
+                      ),
+                      SizedBox(width: 12),
+                      Text('Nâng cấp PRO ⭐'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'thongke',
+                  child: Row(
+                    children: [
+                      Icon(Icons.bar_chart_outlined, size: 20),
+                      SizedBox(width: 12),
+                      Text('Thống kê học tập'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'bxh',
+                  child: Row(
+                    children: [
+                      Icon(Icons.leaderboard_outlined, size: 20),
+                      SizedBox(width: 12),
+                      Text('Bảng xếp hạng'),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(),
+                const PopupMenuItem<String>(
+                  value: 'dangxuat',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, size: 20, color: Colors.red),
+                      SizedBox(width: 12),
+                      Text('Đăng xuất', style: TextStyle(color: Colors.red)),
+                    ],
+                  ),
+                ),
+              ],
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(laPro ? 2 : 0),
+                    decoration: laPro
+                        ? const BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [Color(0xFFFFD700), Color(0xFFFFA000)],
+                            ),
+                          )
+                        : null,
+                    child: CircleAvatar(
+                      radius: laDienThoai ? 15 : 17,
+                      backgroundColor: mau.primaryContainer,
+                      child: Text(
+                        nguoiDung?.chuVietTat ?? 'H',
+                        style: TextStyle(
+                          fontSize: laDienThoai ? 11 : 12,
+                          fontWeight: FontWeight.bold,
+                          color: mau.onPrimaryContainer,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (laPro)
+                    const Positioned(
+                      right: -2,
+                      bottom: -2,
+                      child: Icon(
+                        Icons.workspace_premium,
+                        size: 13,
+                        color: Color(0xFFFFD700),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ] else ...[
+          if (!laDienThoai)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: TextButton(
+                onPressed: () => context.go(DuongDan.danhSach),
+                child: const Text('Khám phá'),
+              ),
+            ),
+          Padding(
+            padding: EdgeInsets.only(right: laDienThoai ? 12 : 24),
+            child: FilledButton(
+              style: laDienThoai
+                  ? FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      minimumSize: Size.zero,
+                    )
+                  : null,
               onPressed: () =>
                   context.go(DuongDan.dangNhapRoiVe(diaChiHienTai)),
               child: const Text('Đăng nhập'),
             ),
           ),
+        ],
       ],
     );
   }
